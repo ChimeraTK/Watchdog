@@ -1,0 +1,23 @@
+<logicalNameMap>
+  <module name="Device">
+    <redirectedRegister name="WORD_FIRMWARE_APP">
+      <targetDevice>ADC0</targetDevice>
+      <targetRegister>APP0/WORD_FIRMWARE_APP</targetRegister>
+    </redirectedRegister>
+ </module>
+  <module name="Configuration">
+    <constant name="clockFrequency">
+      <value>65</value>
+      <type>integer</type>
+    </constant>
+    <constant name="rfFrequency">
+      <value>1300</value>
+      <type>integer</type>
+    </constant>
+    <constant name="IQdetectionLength">
+      <value>36</value>
+      <type>integer</type>
+    </constant>
+  </module>
+</logicalNameMap>
+ 

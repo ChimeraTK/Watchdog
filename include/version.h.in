@@ -1,0 +1,6 @@
+class AppVersion {
+  public:
+    static constexpr major = ${${PROJECT_NAME}_MAJOR_VERSION}
+    static constexpr minor = ${${PROJECT_NAME}_MINOR_VERSION}
+    static constexpr patch = ${${PROJECT_NAME}_PATCH_VERSION}
+};

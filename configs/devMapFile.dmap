@@ -1,0 +1,2 @@
+@LOAD_LIB libwatchdog_server.so
+Device   sdm://./logicalNameMap                 watchdog_server.xlmap
