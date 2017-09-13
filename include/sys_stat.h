@@ -13,6 +13,29 @@
 #include <memory>
 #include <proc/readproc.h>
 
+extern pid_t parent_pid;
+extern bool isRunning;
+
+class ProcessHandler{
+private:
+	std::string path;
+	std::string command;
+
+public:
+	static void sigquit_handler (int sig);
+
+	ProcessHandler(const std::string &path_, const std::string &cmd_);
+	virtual ~ProcessHandler();
+	void startProcess(int &pid);
+	bool checkStatus(){return isRunning;}
+//	void killProcess();
+//	void SetPath(std::string path_){path = path_;}
+//	void SetCMD(std::string cmd_){command = cmd_;}
+};
+
+
+
+std::string space2underscore(std::string text);
 
 struct Helper{
 	bool checkIsRunning(const std::string &cmd, int &PID, proc_t *data = nullptr);

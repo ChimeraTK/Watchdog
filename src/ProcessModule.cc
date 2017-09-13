@@ -7,57 +7,123 @@
 
 #include "ProcessModule.h"
 
-ProcessModule::ProcessModule(){
-	h.reset(new Helper());
+ProcessModule::ProcessModule(EntityOwner *owner, const std::string &name, const std::string &description,
+        bool eliminateHierarchy, const std::unordered_set<std::string> &tags):
+		ctk::ApplicationModule(owner, name, description, eliminateHierarchy, tags), process(nullptr){
+
 }
+
+#ifdef BOOST_1_64
 void ProcessModule::mainLoop(){
 	int PID;
 	while(true) {
 	  startProcess.read();
 	  processCMD.read();
-	  std::string CMD = processCMD;
-	  std::cout << "Before checking status." << std::endl;
-	  bool isRunning = h->checkIsRunning(CMD, PID);
-	  std::cout << "After checking status: " << isRunning << std::endl;
 	  if(startProcess){
-		  if(!isRunning){
+		  if(process.get() == nullptr || !process->running()){
 			  std::cout << "Trying to start the process..." << std::endl;
-			  std::stringstream ss;
-			  ss << CMD << "&";
-			  int ret = system(ss.str().c_str());
-			  if(ret){
-				  std::cerr << "Starting of process " << CMD << " returned code: " << ret << std::endl;
+			  try{
+				  process.reset(new bp::child((std::string)processCMD));
+			  } catch (std::system_error &e){
+				  std::cerr << "Failed to start the process with cmd: " << (std::string)processCMD << "\n Message: " << e.what() << std::endl;
 			  }
-			  usleep(2000000);
-			  if(h->checkIsRunning(CMD, PID)){
-				  std::cout << "Process sucessfully started. PID: " << PID << std::endl;
-				  processPID = PID;
-				  processPID.write();
-			  }
+
+			  processPID = process->id();
+			  processPID.write();
+			  process->detach();
 		  } else {
 			  std::cout << "Process is running..." << std::endl;
 		  }
 	  } else {
-		  if(!isRunning){
+		  if(process.get() == nullptr || !process->running()){
 			  std::cout << "Process is not running...OK" << std::endl;
-		  } else {
+		  } else if (process->running()) {
 			  std::cout << "Trying to kill the process..." << std::endl;
-			  processPID.read();
-			  std::stringstream ss;
-			  ss << "kill " << processPID;
-			  int ret = system(ss.str().c_str());
-			  if(ret){
-				  std::cerr << "Killing the process returned code: " << ret << std::endl;
-			  }
-			  usleep(200000);
-			  if(!h->checkIsRunning(CMD, PID)){
-				  std::cout << "Process sucessfully killed." << std::endl;
-				  processPID = -1;
-				  processPID.write();
+			  try{
+				  process->terminate();
+				  process.reset();
+			  } catch (std::system_error &e){
+				  std::cerr << "Failed to kill the process." << std::endl;
 			  }
 		  }
 	  }
 	  usleep(200000);
 	}
 }
+#else
+
+void ProcessModule::mainLoop(){
+	processRunning = 0;
+	processRunning.write();
+	while(true) {
+	  startProcess.read();
+	  processCMD.read();
+	  processPath.read();
+	  // check child started process
+	  if(process.get() != nullptr){
+		  processRunning = process->checkStatus();
+		  std::cout << "Child status is: " << processRunning << std::endl;
+		  processRunning.write();
+	  } else {
+		  processRunning = 0;
+		  processRunning.write();
+	  }
+
+	  if(!processRunning && process.get() != nullptr){
+		  processNFailed = processNFailed + 1;
+		  processNFailed.write();
+		  std::cout << "Deleting parent process since child is not running!" << std::endl;
+		  process.reset();
+	  }
+
+	  // reset number of failed tries in case the process is set offline
+	  if(!startProcess){
+		  processNFailed = 0;
+		  processNFailed.write();
+	  }
+
+	  // don't do anything in case failed more than 4 times -> to reset turn off/on the process
+	  if(processNFailed > 4){
+		  usleep(200000);
+		  continue;
+	  }
+
+	  if(startProcess){
+		  if(process.get() == nullptr){
+			  std::cout << "Trying to start the process..." << " PID: " << getpid() <<std::endl;
+			  try{
+				  process.reset(new ProcessHandler((std::string)processPath, (std::string)processCMD));
+				  int pid;
+				  process->startProcess(pid);
+			  } catch (std::runtime_error &e){
+				  std::cerr << "Failed to start the process with cmd: " << (std::string)processCMD << "\n Message: " << e.what() << std::endl;
+				  std::cerr << "Command was executed here: " << (std::string)processPath << std::endl;
+				  std::cerr << "Resetting process pointer for process: " << getpid() << std::endl;
+				  process.reset(nullptr);
+			  } catch (std::logic_error &e){
+				  std::cout << "I'm not the child process." << std::endl;
+			  }
+		  } else {
+			  std::cout << "Process is running..." << processRunning << " PID: " << getpid() << std::endl;
+		  }
+	  } else {
+		  if(process.get() == nullptr){
+			  std::cout << "Process Running: " << processRunning << std::endl;
+			  std::cout << "Process is not running...OK" << " PID: " << getpid() <<std::endl;
+		  } else {
+			  std::cout << "Trying to kill the process..." << " PID: " << getpid() <<std::endl;
+			  try{
+				  process.reset(nullptr);
+			  } catch (std::system_error &e){
+				  std::cerr << "Failed to kill the process." << " PID: " << getpid() <<std::endl;
+			  }
+		  }
+	  }
+//	  usleep(200000);
+	  sleep(5);
+	}
+}
+
+#endif
+
 

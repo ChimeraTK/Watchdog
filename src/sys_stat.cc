@@ -14,6 +14,109 @@
 
 #include "sys_stat.h"
 
+#include <signal.h>
+#include <stdlib.h>
+#include <sstream>
+#include <iostream>
+#include <sys/wait.h>
+
+#include <algorithm>
+
+std::string space2underscore(std::string text){
+	std::transform(text.begin(), text.end(), text.begin(), [](char ch) {
+	    return ch == ' ' ? '_' : ch;
+	});
+	return text;
+}
+
+pid_t parent_pid;
+bool isRunning;
+
+ProcessHandler::ProcessHandler(const std::string &path_, const std::string &cmd_):
+	path(path_), command(cmd_){
+	signal(SIGCHLD, &ProcessHandler::sigquit_handler);
+	signal(SIGILL, &ProcessHandler::sigquit_handler);
+
+	parent_pid = getpid();
+	isRunning = false;
+	std::cout << "Parent pid is: " << parent_pid << std::endl;
+}
+
+void ProcessHandler::sigquit_handler(int sig){
+//	if(sig != SIGILL){
+//		throw std::runtime_error("Received signal that I did not expect.");
+//	}
+	pid_t self = getpid();
+	std::cout << "Signal handler--> pid: " << self << "\t Signal: " << sig << std::endl;
+	if(self == parent_pid){
+		if (sig == SIGCHLD){
+			std::cout << "Child status changed:" << std::endl;
+			isRunning = !isRunning;
+			std::cout << "New child status: " << isRunning << std::endl;
+		}
+		if(sig == SIGILL){
+			std::cout << "Nothing to do for me - I'm the parent!" << std::endl;
+		}
+	} else {
+		if(sig == SIGILL || sig == SIGINT || sig == SIGQUIT){
+			std::cout << "Going to kill program with pid: " << self << std::endl;
+			std::stringstream ss;
+			ss << "/bin/kill -SIGINT " << self +2 ;
+			std::cout << "String: " << ss.str() << std::endl;
+			system(ss.str().c_str());
+			_exit(0);
+		}
+	}
+
+}
+
+void ProcessHandler::startProcess(int &pid){
+	if(path.empty() || command.empty()){
+		throw std::runtime_error("Path or command not set before starting a proccess!");
+	}
+	pid_t p = fork();
+	pid_t child;
+	std::stringstream ss;
+	switch (p) {
+	case 0:
+		child = (int)getpid();
+		pid = child + 2;
+		printf("child running: %d\n", (int)child);
+		signal(SIGINT, &ProcessHandler::sigquit_handler);
+		signal(SIGILL, &ProcessHandler::sigquit_handler);
+		kill(parent_pid, SIGCHLD);
+		if(chdir(path.c_str())){
+			std::stringstream ss;
+			ss << "Failed to change to directory: " << path;
+			throw std::runtime_error(ss.str());
+		}
+//			execl("/home/zenker/singenerator_server/singenerator_server", "singenerator_server", NULL);
+		ss << "cd " << path.c_str() << " && ./" << command.c_str();
+		std::cout << "Sending signal to process: " << parent_pid << std::endl;
+		if(system(ss.str().c_str())){
+			std::stringstream sss;
+			sss << "Failed to call: " << ss.str();
+			throw std::runtime_error(sss.str());
+		}
+		_exit(0);
+		break;
+	default:
+		throw std::logic_error("I'm not the child process!");
+		break;
+	}
+}
+
+ProcessHandler::~ProcessHandler(){
+	kill(-parent_pid, SIGILL);
+	if(getpid() != parent_pid){
+		puts("killing children");
+		int status;
+		pid_t child = wait(&status);
+		if (child > 0 && WIFEXITED(status) && WEXITSTATUS(status) == 0)
+			printf("child %d succesully quit\n", (int)child);
+	}
+}
+
 bool Helper::checkIsRunning(const std::string &cmd, int &PID, proc_t* data){
 	PROCTAB* proc = openproc(PROC_FILLMEM | PROC_FILLSTAT | PROC_FILLSTATUS);
 	PID = -1;
