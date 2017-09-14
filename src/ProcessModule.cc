@@ -57,6 +57,8 @@ void ProcessModule::mainLoop(){
 	processRunning.write();
 	processPID = -1;
 	processPID.write();
+	processRestarts = 0;
+	processRestarts.write();
 	process.reset(new ProcessHandler(&processPath, &processCMD, &processPID));
 	while(true) {
 	  startProcess.read();
@@ -73,7 +75,7 @@ void ProcessModule::mainLoop(){
 	  }
 
 	  // \ToDo: Check number of fails
-	  if(processPID > 0){
+	  if(processPID > 0 && startProcess){
 		  if(!isProcessRunning(processPID)){
 			  processNFailed = processNFailed + 1;
 			  processNFailed.write();
@@ -82,6 +84,9 @@ void ProcessModule::mainLoop(){
 			  processPID = -1;
 			  processPID.write();
 			  std::cerr << "Child process not running any more, but it should run!" << std::endl;
+			  processRestarts += 1;
+			  processRestarts.write();
+
 		  } else {
 			  processRunning = 1;
 			  processRunning.write();

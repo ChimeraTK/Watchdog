@@ -25,6 +25,7 @@ void WatchdogServer::defineConnections(){
 	process.processRunning >> cs["PROCESS"]("Status");
 	process.processNFailed >> cs["PROCESS"]("NFails");
 	process.processPID >> cs["PROCESS"]("PID");
+	process.processRestarts >> cs["PROCESS"]("Restarts Number of unexpected restarts.");
 	dumpConnections();
 }
 

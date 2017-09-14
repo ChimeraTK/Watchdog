@@ -42,6 +42,7 @@ struct ProcessModule : public ctk::ApplicationModule {
     ctk::ScalarOutput<int> processRunning{this, "Status", "", "Process status 0: not running, 1: running"};
     ctk::ScalarOutput<int> processNFailed{this, "Failed", "", "Number of failed restarts"};
     ctk::ScalarOutput<int> processPID{this, "PID", "", "PID of the process"};
+    ctk::ScalarOutput<int> processRestarts{this, "Restarts", "", "Number of time the process disappeared."};
 
 
     void mainLoop();
