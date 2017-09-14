@@ -14,12 +14,10 @@
 
 #include "sys_stat.h"
 
-#include <signal.h>
 #include <stdlib.h>
 #include <sstream>
 #include <iostream>
-#include <sys/wait.h>
-
+#include <fstream>
 #include <algorithm>
 
 std::string space2underscore(std::string text){
@@ -29,91 +27,78 @@ std::string space2underscore(std::string text){
 	return text;
 }
 
-pid_t parent_pid;
-bool isRunning;
-
-ProcessHandler::ProcessHandler(const std::string &path_, const std::string &cmd_):
-	path(path_), command(cmd_){
-	signal(SIGCHLD, &ProcessHandler::sigquit_handler);
-	signal(SIGILL, &ProcessHandler::sigquit_handler);
-
-	parent_pid = getpid();
-	isRunning = false;
-	std::cout << "Parent pid is: " << parent_pid << std::endl;
+ProcessHandler::ProcessHandler(ChimeraTK::ScalarPollInput<std::string> *path_, ChimeraTK::ScalarPollInput<std::string> *cmd_, ChimeraTK::ScalarOutput<int> *PID):
+	path(path_), command(cmd_), pid(PID){
+	(*pid) = -1;
+	pid->write();
 }
 
-void ProcessHandler::sigquit_handler(int sig){
-//	if(sig != SIGILL){
-//		throw std::runtime_error("Received signal that I did not expect.");
-//	}
-	pid_t self = getpid();
-	std::cout << "Signal handler--> pid: " << self << "\t Signal: " << sig << std::endl;
-	if(self == parent_pid){
-		if (sig == SIGCHLD){
-			std::cout << "Child status changed:" << std::endl;
-			isRunning = !isRunning;
-			std::cout << "New child status: " << isRunning << std::endl;
-		}
-		if(sig == SIGILL){
-			std::cout << "Nothing to do for me - I'm the parent!" << std::endl;
-		}
-	} else {
-		if(sig == SIGILL || sig == SIGINT || sig == SIGQUIT){
-			std::cout << "Going to kill program with pid: " << self << std::endl;
-			std::stringstream ss;
-			ss << "/bin/kill -SIGINT " << self +2 ;
-			std::cout << "String: " << ss.str() << std::endl;
-			system(ss.str().c_str());
-			_exit(0);
-		}
-	}
-
-}
-
-void ProcessHandler::startProcess(int &pid){
-	if(path.empty() || command.empty()){
+void ProcessHandler::startProcess(){
+	if(((std::string)(*path)).empty() || ((std::string)(*command)).empty()){
 		throw std::runtime_error("Path or command not set before starting a proccess!");
 	}
 	pid_t p = fork();
 	pid_t child;
 	std::stringstream ss;
+	std::ofstream pidFile;
 	switch (p) {
 	case 0:
 		child = (int)getpid();
-		pid = child + 2;
 		printf("child running: %d\n", (int)child);
-		signal(SIGINT, &ProcessHandler::sigquit_handler);
-		signal(SIGILL, &ProcessHandler::sigquit_handler);
-		kill(parent_pid, SIGCHLD);
-		if(chdir(path.c_str())){
+		(*pid) = (int)child;
+		pidFile.open("pid");
+		pidFile << child;
+		pidFile.close();
+		pid->write();
+		if(chdir(((std::string)(*path)).c_str())){
 			std::stringstream ss;
-			ss << "Failed to change to directory: " << path;
+			ss << "Failed to change to directory: " << (std::string)(*path);
 			throw std::runtime_error(ss.str());
 		}
-//			execl("/home/zenker/singenerator_server/singenerator_server", "singenerator_server", NULL);
-		ss << "cd " << path.c_str() << " && ./" << command.c_str();
-		std::cout << "Sending signal to process: " << parent_pid << std::endl;
-		if(system(ss.str().c_str())){
-			std::stringstream sss;
-			sss << "Failed to call: " << ss.str();
-			throw std::runtime_error(sss.str());
-		}
+		std::cout << "Going to call: execl(\"" << ((std::string)(*path)+(std::string)(*command)).c_str() << "\", \"" << ((std::string)(*command)).c_str() << "\",NULL)" << std::endl;
+		execl(((std::string)(*path) + std::string("/") +(std::string)(*command)).c_str(), ((std::string)(*command)).c_str(), NULL);
 		_exit(0);
 		break;
 	default:
+		sleep(1);
+		if (checkStatus(true))
+		{
+			std::cout << "PID was read:" << *pid <<std::endl;
+			remove("pid");
+		}
 		throw std::logic_error("I'm not the child process!");
 		break;
 	}
 }
 
 ProcessHandler::~ProcessHandler(){
-	kill(-parent_pid, SIGILL);
-	if(getpid() != parent_pid){
-		puts("killing children");
-		int status;
-		pid_t child = wait(&status);
-		if (child > 0 && WIFEXITED(status) && WEXITSTATUS(status) == 0)
-			printf("child %d succesully quit\n", (int)child);
+	std::cout << "killing children" << std::endl;
+	// file is not present so the pid is known
+	if(checkStatus(true)){
+		std::cout << "WARNING: PID file seems to exist when destroying process (should not be the case!)" << std::endl;
+	}
+	std::cout << "Going to kill process: " << (*pid) << std::endl;
+	std::stringstream ss;
+	ss << "/bin/kill -SIGINT " <<  (int)(*pid);
+	std::cout << "String: " << ss.str() << std::endl;
+	system(ss.str().c_str());
+}
+
+bool ProcessHandler::checkStatus(bool readPID){
+	std::ifstream testFile;
+	testFile.open("pid");
+	if(testFile.is_open()){
+		if(readPID){
+			std::string line;
+			getline (testFile,line);
+			(*pid) = atoi(line.c_str());
+			pid->write();
+		}
+		testFile.close();
+		return true;
+	} else {
+		testFile.close();
+		return false;
 	}
 }
 

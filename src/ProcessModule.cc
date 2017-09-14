@@ -55,15 +55,24 @@ void ProcessModule::mainLoop(){
 void ProcessModule::mainLoop(){
 	processRunning = 0;
 	processRunning.write();
+	processPID = -1;
+	processPID.write();
 	while(true) {
 	  startProcess.read();
 	  processCMD.read();
 	  processPath.read();
 	  // check child started process
 	  if(process.get() != nullptr){
-		  processRunning = process->checkStatus();
-		  std::cout << "Child status is: " << processRunning << std::endl;
-		  processRunning.write();
+		  if(processPID > 0){
+			  /** ToDo: check for the real PID using the system (ps...)! **/
+			  processRunning = 1;
+		  	  std::cout << "Child status is: " << processRunning << std::endl;
+		  	  processRunning.write();
+		  } else {
+			  processRunning = 0;
+			  std::cout << "Child status is: " << processRunning << std::endl;
+			  processRunning.write();
+		  }
 	  } else {
 		  processRunning = 0;
 		  processRunning.write();
@@ -92,14 +101,14 @@ void ProcessModule::mainLoop(){
 		  if(process.get() == nullptr){
 			  std::cout << "Trying to start the process..." << " PID: " << getpid() <<std::endl;
 			  try{
-				  process.reset(new ProcessHandler((std::string)processPath, (std::string)processCMD));
-				  int pid;
-				  process->startProcess(pid);
+				  process.reset(new ProcessHandler(&processPath, &processCMD, &processPID));
+				  process->startProcess();
 			  } catch (std::runtime_error &e){
 				  std::cerr << "Failed to start the process with cmd: " << (std::string)processCMD << "\n Message: " << e.what() << std::endl;
 				  std::cerr << "Command was executed here: " << (std::string)processPath << std::endl;
 				  std::cerr << "Resetting process pointer for process: " << getpid() << std::endl;
 				  process.reset(nullptr);
+				  processPID = -1;
 			  } catch (std::logic_error &e){
 				  std::cout << "I'm not the child process." << std::endl;
 			  }
@@ -114,6 +123,7 @@ void ProcessModule::mainLoop(){
 			  std::cout << "Trying to kill the process..." << " PID: " << getpid() <<std::endl;
 			  try{
 				  process.reset(nullptr);
+				  processPID = -1;
 			  } catch (std::system_error &e){
 				  std::cerr << "Failed to kill the process." << " PID: " << getpid() <<std::endl;
 			  }

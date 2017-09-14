@@ -13,21 +13,21 @@
 #include <memory>
 #include <proc/readproc.h>
 
-extern pid_t parent_pid;
-extern bool isRunning;
+#undef GENERATE_XML
+#include <ChimeraTK/ApplicationCore/ScalarAccessor.h>
 
 class ProcessHandler{
 private:
-	std::string path;
-	std::string command;
+	ChimeraTK::ScalarPollInput<std::string> *path;
+	ChimeraTK::ScalarPollInput<std::string> *command;
+	ChimeraTK::ScalarOutput<int> *pid;
+
 
 public:
-	static void sigquit_handler (int sig);
-
-	ProcessHandler(const std::string &path_, const std::string &cmd_);
+	ProcessHandler(ChimeraTK::ScalarPollInput<std::string> *path_, ChimeraTK::ScalarPollInput<std::string> *cmd_, ChimeraTK::ScalarOutput<int> *PID);
 	virtual ~ProcessHandler();
-	void startProcess(int &pid);
-	bool checkStatus(){return isRunning;}
+	void startProcess();
+	bool checkStatus(bool readPID = false);
 //	void killProcess();
 //	void SetPath(std::string path_){path = path_;}
 //	void SetCMD(std::string cmd_){command = cmd_;}

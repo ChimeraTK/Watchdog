@@ -13,7 +13,6 @@ void WatchdogServer::defineConnections(){
 		std::cout << "Adding system info: " << space2underscore(it->first) << std::endl;
 		it->second >> cs["SYS"](space2underscore(it->first));
 	}
-	systemInfo.processor >> cs["SYS"]("processor");
 
 	cs["PROCESS"]("enableProcess") >> process.startProcess;
 	cs["PROCESS"]("CMD") >> process.processCMD;
@@ -25,6 +24,7 @@ void WatchdogServer::defineConnections(){
 
 	process.processRunning >> cs["PROCESS"]("Status");
 	process.processNFailed >> cs["PROCESS"]("NFails");
+	process.processPID >> cs["PROCESS"]("PID");
 	dumpConnections();
 }
 

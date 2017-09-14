@@ -23,7 +23,6 @@ public:
 	SystemInfoModule(EntityOwner *owner, const std::string &name, const std::string &description,
             bool eliminateHierarchy=false, const std::unordered_set<std::string> &tags={});
 //	using ctk::ApplicationModule::ApplicationModule;
-	ctk::ScalarOutput<std::string> processor{this, "processor", "", "Name of the processor"};
     std::map<std::string,ctk::ScalarOutput<std::string> > strInfos;
 
     void mainLoop();

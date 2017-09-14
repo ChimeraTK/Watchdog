@@ -18,8 +18,6 @@ SystemInfoModule::SystemInfoModule(EntityOwner *owner, const std::string &name, 
 }
 
 void SystemInfoModule::mainLoop(){
-	processor = "test";
-	processor.write();
 	for(auto it = sysInfo.nfo.ibegin; it != sysInfo.nfo.iend; it++){
 		strInfos.at(it->first) = it->second;
 		strInfos.at(it->first).write();

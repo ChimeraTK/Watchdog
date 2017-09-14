@@ -41,6 +41,7 @@ struct ProcessModule : public ctk::ApplicationModule {
     ctk::ScalarPollInput<std::string> processCMD{this, "cmd", "", "Command used to start the process"};
     ctk::ScalarOutput<int> processRunning{this, "Status", "", "Process status 0: not running, 1: running"};
     ctk::ScalarOutput<int> processNFailed{this, "Failed", "", "Number of failed restarts"};
+    ctk::ScalarOutput<int> processPID{this, "PID", "", "PID of the process"};
 
 
     void mainLoop();
