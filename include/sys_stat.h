@@ -28,12 +28,12 @@ public:
 	virtual ~ProcessHandler();
 	void startProcess();
 	bool checkStatus(bool readPID = false);
-//	void killProcess();
+	void killProcess();
 //	void SetPath(std::string path_){path = path_;}
 //	void SetCMD(std::string cmd_){command = cmd_;}
 };
 
-
+extern bool isProcessRunning(const int &PID);
 
 std::string space2underscore(std::string text);
 

@@ -19,6 +19,7 @@
 #include <iostream>
 #include <fstream>
 #include <algorithm>
+#include <signal.h>
 
 std::string space2underscore(std::string text){
 	std::transform(text.begin(), text.end(), text.begin(), [](char ch) {
@@ -41,8 +42,11 @@ void ProcessHandler::startProcess(){
 	pid_t child;
 	std::stringstream ss;
 	std::ofstream pidFile;
+	path->read();
+	command->read();
 	switch (p) {
 	case 0:
+		// Don't throw in the child since the parent will not catch it
 		child = (int)getpid();
 		printf("child running: %d\n", (int)child);
 		(*pid) = (int)child;
@@ -53,13 +57,17 @@ void ProcessHandler::startProcess(){
 		if(chdir(((std::string)(*path)).c_str())){
 			std::stringstream ss;
 			ss << "Failed to change to directory: " << (std::string)(*path);
-			throw std::runtime_error(ss.str());
+			std::cout << ss.str() << std::endl;
+			_exit(0);
 		}
 		std::cout << "Going to call: execl(\"" << ((std::string)(*path)+(std::string)(*command)).c_str() << "\", \"" << ((std::string)(*command)).c_str() << "\",NULL)" << std::endl;
 		execl(((std::string)(*path) + std::string("/") +(std::string)(*command)).c_str(), ((std::string)(*command)).c_str(), NULL);
 		_exit(0);
 		break;
 	default:
+		// Ignore the signal SIGCHLD by the parent since after killing the child it will hang in defunct status since the kernel
+		// thinks that the parent expects a status
+		signal(SIGCHLD, SIG_IGN);
 		sleep(1);
 		if (checkStatus(true))
 		{
@@ -72,16 +80,7 @@ void ProcessHandler::startProcess(){
 }
 
 ProcessHandler::~ProcessHandler(){
-	std::cout << "killing children" << std::endl;
-	// file is not present so the pid is known
-	if(checkStatus(true)){
-		std::cout << "WARNING: PID file seems to exist when destroying process (should not be the case!)" << std::endl;
-	}
-	std::cout << "Going to kill process: " << (*pid) << std::endl;
-	std::stringstream ss;
-	ss << "/bin/kill -SIGINT " <<  (int)(*pid);
-	std::cout << "String: " << ss.str() << std::endl;
-	system(ss.str().c_str());
+
 }
 
 bool ProcessHandler::checkStatus(bool readPID){
@@ -100,6 +99,33 @@ bool ProcessHandler::checkStatus(bool readPID){
 		testFile.close();
 		return false;
 	}
+}
+
+void ProcessHandler::killProcess(){
+	std::cout << "killing children" << std::endl;
+	// file is not present so the pid is known
+	if(checkStatus(true)){
+		std::cout << "WARNING: PID file seems to exist when destroying process (should not be the case!)" << std::endl;
+	}
+	std::cout << "Going to kill process: " << (*pid) << std::endl;
+	std::stringstream ss;
+	ss << "/bin/kill -SIGINT " <<  (int)(*pid);
+	std::cout << "String: " << ss.str() << std::endl;
+	// kill returns 0 even if the process is not found, so no need to return the result
+	system(ss.str().c_str());
+}
+
+bool isProcessRunning(const int &PID){
+	PROCTAB* proc = openproc(PROC_FILLMEM | PROC_FILLSTAT | PROC_FILLSTATUS);
+	proc_t* proc_info;
+	while (proc_info = readproc(proc, NULL)) {
+		if(PID == proc_info->tid){
+		  freeproc(proc_info);
+		  return true;
+		}
+	}
+	freeproc(proc_info);
+	return false;
 }
 
 bool Helper::checkIsRunning(const std::string &cmd, int &PID, proc_t* data){
