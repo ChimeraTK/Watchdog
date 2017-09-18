@@ -9,7 +9,7 @@
 
 ProcessModule::ProcessModule(EntityOwner *owner, const std::string &name, const std::string &description,
         bool eliminateHierarchy, const std::unordered_set<std::string> &tags):
-		ctk::ApplicationModule(owner, name, description, eliminateHierarchy, tags), process(nullptr){
+		ctk::ApplicationModule(owner, name, description, eliminateHierarchy, tags){
 
 }
 
@@ -53,13 +53,9 @@ void ProcessModule::mainLoop(){
 #else
 
 void ProcessModule::mainLoop(){
-	processRunning = 0;
-	processRunning.write();
-	processPID = -1;
-	processPID.write();
+	SetOffline();
 	processRestarts = 0;
 	processRestarts.write();
-	process.reset(new ProcessHandler(&processPath, &processCMD, &processPID));
 	while(true) {
 	  startProcess.read();
 	  // reset number of failed tries in case the process is set offline
@@ -79,10 +75,7 @@ void ProcessModule::mainLoop(){
 		  if(!isProcessRunning(processPID)){
 			  processNFailed = processNFailed + 1;
 			  processNFailed.write();
-			  processRunning = 0;
-			  processRunning.write();
-			  processPID = -1;
-			  processPID.write();
+			  SetOffline();
 			  std::cerr << "Child process not running any more, but it should run!" << std::endl;
 			  processRestarts += 1;
 			  processRestarts.write();
@@ -97,9 +90,16 @@ void ProcessModule::mainLoop(){
 		  if(processPID < 0){
 			  std::cout << "Trying to start the process..." << " PID: " << getpid() <<std::endl;
 			  try{
-				  process->startProcess();
+				  processPath.read();
+				  processCMD.read();
+				  SetOnline(process.startProcess((std::string)processPath, (std::string)processCMD));
 			  } catch (std::logic_error &e){
 				  std::cout << "I'm not the child process." << std::endl;
+			  } catch (std::runtime_error &e){
+				  std::cout << e.what() << std::endl;
+				  processNFailed = processNFailed + 1;
+				  processNFailed.write();
+				  SetOffline();
 			  }
 		  } else {
 			  std::cout << "Process is running..." << processRunning << " PID: " << getpid() << std::endl;
@@ -110,16 +110,27 @@ void ProcessModule::mainLoop(){
 			  std::cout << "Process is not running...OK" << " PID: " << getpid() <<std::endl;
 		  } else {
 			  std::cout << "Trying to kill the process..." << " PID: " << getpid() <<std::endl;
-			  process->killProcess();
-			  processRunning = 0;
-			  processRunning.write();
-			  processPID = -1;
-			  processPID.write();
+			  process.killProcess(processPID);
+			  SetOffline();
 		  }
 	  }
 //	  usleep(200000);
 	  sleep(5);
 	}
+}
+
+void ProcessModule::SetOnline(const int &pid){
+	processPID = pid;
+	processPID.write();
+	processRunning = 1;
+	processRunning.write();
+}
+
+void ProcessModule::SetOffline(){
+	processPID = -1;
+	processPID.write();
+	processRunning = 0;
+	processRunning.write();
 }
 
 #endif

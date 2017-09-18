@@ -16,21 +16,10 @@
 #undef GENERATE_XML
 #include <ChimeraTK/ApplicationCore/ScalarAccessor.h>
 
-class ProcessHandler{
-private:
-	ChimeraTK::ScalarPollInput<std::string> *path;
-	ChimeraTK::ScalarPollInput<std::string> *command;
-	ChimeraTK::ScalarOutput<int> *pid;
-
-
-public:
-	ProcessHandler(ChimeraTK::ScalarPollInput<std::string> *path_, ChimeraTK::ScalarPollInput<std::string> *cmd_, ChimeraTK::ScalarOutput<int> *PID);
-	virtual ~ProcessHandler();
-	void startProcess();
-	bool checkStatus(bool readPID = false);
-	void killProcess();
-//	void SetPath(std::string path_){path = path_;}
-//	void SetCMD(std::string cmd_){command = cmd_;}
+struct ProcessHandler{
+	int startProcess(const std::string &path, const std::string &cmd);
+	bool checkStatus(int *PID = nullptr);
+	void killProcess(const int &PID);
 };
 
 extern bool isProcessRunning(const int &PID);

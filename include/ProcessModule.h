@@ -33,7 +33,7 @@ struct ProcessModule : public ctk::ApplicationModule {
     std::shared_ptr<boost_process::process::child> process;
     ctk::ScalarOutput<int> processPID{this, "PID", "", "PID of the process"};
 #else
-    std::unique_ptr<ProcessHandler> process;
+    ProcessHandler process;
     ctk::ScalarPollInput<std::string> processPath{this, "path", "", "Path where to execute the command used to start the process"};
 #endif
 
@@ -44,6 +44,8 @@ struct ProcessModule : public ctk::ApplicationModule {
     ctk::ScalarOutput<int> processPID{this, "PID", "", "PID of the process"};
     ctk::ScalarOutput<int> processRestarts{this, "Restarts", "", "Number of time the process disappeared."};
 
+    void SetOnline(const int &pid);
+    void SetOffline();
 
     void mainLoop();
 };
