@@ -28,7 +28,7 @@ find_library(procps NAMES procps REQUIRED)
 
 IF(ADAPTER STREQUAL "OPCUA")
   message("Building against the OPC UA ControlSystemAdater")
-  add_dependency(ControlSystemAdapterOPCUAAdapter REQUIRED)
+  add_dependency(ChimeraTK-ControlSystemAdapter-OPCUAAdapter REQUIRED)
 ELSEIF(ADAPTER STREQUAL "DOOCS")
   message("Building against the DOOCS ControlSystemAdater")
   add_dependency(ChimeraTK-ControlSystemAdapter-DoocsAdapter REQUIRED)
@@ -46,16 +46,16 @@ IF(Boost_FOUND)
   MESSAGE(STATUS "Found boost version that includes boost process (>1.64).")
   add_definitions( "-DBOOST_1_64" )
 ELSE()
-  MESSAGE(STATUS "Found no boost version that includes boost process. Will use system calls.")
+  MESSAGE(STATUS "Found no boost version that includes boost process. Will use fork/exec.")
   FIND_PACKAGE(Boost COMPONENTS thread system filesystem unit_test_framework)
 ENDIF(Boost_FOUND)
 ENABLE_TESTING()
 ####################QUICK FIX#########################################
 
 # extend compiler flags with flags from dependencies
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${ChimeraTK-ControlSystemAdapter-DoocsAdapter_CXX_FLAGS} ${ControlSystemAdapterOPCUAAdapter_CXX_FLAGS} ${ChimeraTK-ApplicationCore_CXX_FLAGS}" )
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${ChimeraTK-ControlSystemAdapter-DoocsAdapter_CXX_FLAGS} ${ChimeraTK-ControlSystemAdapter-OPCUAAdapter_CXX_FLAGS} ${ChimeraTK-ApplicationCore_CXX_FLAGS}" )
 
-set(CMAKE_EXE_LINKER_FLAGS "-Wl,--no-as-needed ${ChimeraTK-ControlSystemAdapter-DoocsAdapter_LINK_FLAGS} ${ControlSystemAdapterOPCUAAdapter_LINK_FLAGS} ${ChimeraTK-ApplicationCore_LINK_FLAGS}")
+set(CMAKE_EXE_LINKER_FLAGS "-Wl,--no-as-needed ${ChimeraTK-ControlSystemAdapter-DoocsAdapter_LINK_FLAGS} ${ChimeraTK-ControlSystemAdapter-OPCUAAdapter_LINK_FLAGS} ${ChimeraTK-ApplicationCore_LINK_FLAGS}")
 
 # set include directories
 include_directories(${CMAKE_SOURCE_DIR}/include)
@@ -89,7 +89,7 @@ target_link_libraries(${PROJECT_NAME}lib ${Boost_LIBRARIES}
 
 # main server executable
 add_executable(${PROJECT_NAME} ${server_sources})
-target_link_libraries(${PROJECT_NAME} ${PROJECT_NAME}lib ${ChimeraTK-ControlSystemAdapter-DoocsAdapter_LIBRARIES} ${ControlSystemAdapterOPCUAAdapter_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${PROJECT_NAME}lib ${ChimeraTK-ControlSystemAdapter-DoocsAdapter_LIBRARIES} ${ChimeraTK-ControlSystemAdapter-OPCUAAdapter_LIBRARIES})
 
 # XML file generation
 add_executable(${PROJECT_NAME}-xmlGenerator ${server_sources})
