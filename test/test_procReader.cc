@@ -12,21 +12,20 @@
 #include <boost/test/unit_test.hpp>
 using namespace boost::unit_test_framework;
 
-BOOST_AUTO_TEST_CASE( testProcessHelper){
-	std::string CMD = "ping alpsdaq0";
-	std::stringstream ss;
-	ss << CMD << "&";
-	system(ss.str().c_str());
-	usleep(200000);
-	Helper h;
-	int PID;
-	bool status = h.checkIsRunning(CMD,PID);
-	BOOST_CHECK_EQUAL(status, true);
+using namespace std;
 
-	ss.clear();
-	ss << "kill " << PID;
-	system(ss.str().c_str());
-	usleep(200000);
-	status = h.checkIsRunning(CMD,PID);
-	BOOST_CHECK_EQUAL(status, false);
+BOOST_AUTO_TEST_CASE( testProcessHelper){
+	ProcessHandler p;
+	int pid = -1;
+	try{
+		pid = p.startProcess("/bin","ping google.de");
+//		pid = p.startProcess("/home/zenker/singenerator_server","singenerator_server");
+	} catch (std::logic_error &e){
+		cout << e.what() << endl;
+	}
+	sleep(2);
+	BOOST_CHECK_EQUAL(p.isProcessRunning(pid), true);
+	p.killProcess(pid);
+	sleep(2);
+	BOOST_CHECK_EQUAL(p.isProcessRunning(pid), false);
 }
