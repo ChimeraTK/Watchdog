@@ -26,7 +26,6 @@ namespace bp = boost_process;
 #endif
 
 struct ProcessModule : public ctk::ApplicationModule {
-//    using ctk::ApplicationModule::ApplicationModule;
     ProcessModule(EntityOwner *owner, const std::string &name, const std::string &description,
             bool eliminateHierarchy=false, const std::unordered_set<std::string> &tags={});
 #ifdef BOOST_1_64
@@ -42,11 +41,29 @@ struct ProcessModule : public ctk::ApplicationModule {
     ctk::ScalarOutput<int> processRunning{this, "Status", "", "Process status 0: not running, 1: running"};
     ctk::ScalarOutput<int> processNFailed{this, "Failed", "", "Number of failed restarts"};
     ctk::ScalarOutput<int> processPID{this, "PID", "", "PID of the process"};
-    ctk::ScalarOutput<int> processRestarts{this, "Restarts", "", "Number of time the process disappeared."};
+    ctk::ScalarOutput<int> processRestarts{this, "Restarts", "", "Number of time the process was automatically "
+    		"restarted by the watchdog since server start."};
 
+    /**
+     * Set the PID and set status to running.
+     * \param pid PID of the process that was started.
+     */
     void SetOnline(const int &pid);
+
+    /**
+     * Reset the PID to -1 and the status to not running.
+     */
     void SetOffline();
 
+    /**
+     * Calls SetOffset and increases the failed counter.
+     * In addition a sleep of 1s is added to have some delay between different attempts to start a process.
+     */
+    void Failed();
+
+    /**
+     * Application core main loop.
+     */
     void mainLoop();
 };
 

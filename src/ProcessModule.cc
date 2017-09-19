@@ -70,12 +70,9 @@ void ProcessModule::mainLoop(){
 		  continue;
 	  }
 
-	  // \ToDo: Check number of fails
 	  if(processPID > 0 && startProcess){
-		  if(!isProcessRunning(processPID)){
-			  processNFailed = processNFailed + 1;
-			  processNFailed.write();
-			  SetOffline();
+		  if(!process.isProcessRunning(processPID)){
+			  Failed();
 			  std::cerr << "Child process not running any more, but it should run!" << std::endl;
 			  processRestarts += 1;
 			  processRestarts.write();
@@ -93,13 +90,9 @@ void ProcessModule::mainLoop(){
 				  processPath.read();
 				  processCMD.read();
 				  SetOnline(process.startProcess((std::string)processPath, (std::string)processCMD));
-			  } catch (std::logic_error &e){
-				  std::cout << "I'm not the child process." << std::endl;
 			  } catch (std::runtime_error &e){
 				  std::cout << e.what() << std::endl;
-				  processNFailed = processNFailed + 1;
-				  processNFailed.write();
-				  SetOffline();
+				  Failed();
 			  }
 		  } else {
 			  std::cout << "Process is running..." << processRunning << " PID: " << getpid() << std::endl;
@@ -131,6 +124,13 @@ void ProcessModule::SetOffline(){
 	processPID.write();
 	processRunning = 0;
 	processRunning.write();
+}
+
+void ProcessModule::Failed(){
+	processNFailed = processNFailed + 1;
+    processNFailed.write();
+    SetOffline();
+    sleep(2);
 }
 
 #endif
