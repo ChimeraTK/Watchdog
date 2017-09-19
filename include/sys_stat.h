@@ -17,20 +17,16 @@
 #include <ChimeraTK/ApplicationCore/ScalarAccessor.h>
 
 struct ProcessHandler{
+private:
+	bool checkStatus(int &PID);
+public:
 	int startProcess(const std::string &path, const std::string &cmd);
-	bool checkStatus(int *PID = nullptr);
 	void killProcess(const int &PID);
-};
-
-extern bool isProcessRunning(const int &PID);
-
-std::string space2underscore(std::string text);
-
-struct Helper{
-	bool checkIsRunning(const std::string &cmd, int &PID, proc_t *data = nullptr);
-	int findPID(const std::string &cmd);
+	bool isProcessRunning(const int &PID);
 	std::shared_ptr<proc_t> getInfo(const size_t &PID);
 };
+
+std::string space2underscore(std::string text);
 
 /**
  * Struct used to store system information that changes during

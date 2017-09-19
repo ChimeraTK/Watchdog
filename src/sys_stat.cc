@@ -20,6 +20,8 @@
 #include <fstream>
 #include <algorithm>
 #include <signal.h>
+#include <iterator>
+#include <boost/algorithm/string.hpp>
 
 std::string space2underscore(std::string text){
 	std::transform(text.begin(), text.end(), text.begin(), [](char ch) {
@@ -28,6 +30,17 @@ std::string space2underscore(std::string text){
 	return text;
 }
 
+std::vector<std::string> split_arguments(const std::string &arguments){
+	std::vector<std::string> strs;
+	boost::split(strs, arguments, boost::is_any_of("\t "));
+	for(auto st : strs){
+		std::cout << st.c_str() << std::endl;
+	}
+	return strs;
+}
+
+
+
 int ProcessHandler::startProcess(const std::string &path, const std::string &cmd){
 	if(path.empty() || cmd.empty()){
 		throw std::runtime_error("Path or command not set before starting a proccess!");
@@ -35,53 +48,65 @@ int ProcessHandler::startProcess(const std::string &path, const std::string &cmd
 	pid_t p = fork();
 	pid_t child;
 	std::stringstream ss;
-	std::ofstream pidFile;
 	int pid;
-	switch (p) {
-	case 0:
+	if(p == 0){
 		// Don't throw in the child since the parent will not catch it
 		child = (int)getpid();
 		printf("child running: %d\n", (int)child);
+		std::ofstream pidFile;
 		pidFile.open("pid");
-		pidFile << child;
-		pidFile.close();
+		if(!pidFile.is_open()){
+			pidFile.close();
+			throw std::runtime_error("Failed to create PID file.");
+		} else {
+			pidFile << child;
+			pidFile.close();
+		}
+		std::string path_copy = path;
+		if(path.back() != '/')
+			path_copy.append(std::string("/").c_str());
 		if(chdir(path.c_str())){
 			std::stringstream ss;
 			ss << "Failed to change to directory: " << path;
 			std::cout << ss.str() << std::endl;
 			_exit(0);
 		}
-		std::cout << "Going to call: execl(\"" << (path+cmd).c_str() << "\", \"" << cmd.c_str() << "\",NULL)" << std::endl;
-		execl((path + std::string("/") + cmd).c_str(), cmd.c_str(), NULL);
+		auto args = split_arguments(cmd);
+		char * exec_args[1024];
+		int arg_count = 0;
+		std::cout << "Going to call: execv(\"" << (path_copy+args.at(0)).c_str();
+		for (size_t x = 0; x < args.size(); x++) {
+		   exec_args[arg_count++] = strdup(args[x].c_str());
+		   std::cout << "\", \"" << exec_args[x];
+		}
+		exec_args[arg_count++] = 0; // tell it when to stop!
+		std::cout << "\", \"NULL\")" << std::endl;
+		execv((path_copy+args.at(0)).c_str(), exec_args);
+//		execl((path + std::string("/") + cmd).c_str(), cmd.c_str(), NULL);
 		_exit(0);
-		break;
-	default:
+	} else {
 		// Ignore the signal SIGCHLD by the parent since after killing the child it will hang in defunct status since the kernel
 		// thinks that the parent expects a status
 		signal(SIGCHLD, SIG_IGN);
 		sleep(1);
-		if (checkStatus(&pid))
+		if (checkStatus(pid))
 		{
 			std::cout << "PID was read:" << pid <<std::endl;
 			remove("pid");
 		} else {
 			throw std::runtime_error("Process is not started!");
 		}
-		throw std::logic_error("I'm not the child process!");
-		break;
 	}
 	return pid;
 }
 
-bool ProcessHandler::checkStatus(int *PID){
+bool ProcessHandler::checkStatus(int &PID){
 	std::ifstream testFile;
 	testFile.open("pid");
 	if(testFile.is_open()){
-		if(PID != nullptr){
-			std::string line;
-			getline (testFile,line);
-			(*PID) = atoi(line.c_str());
-		}
+		std::string line;
+		getline (testFile,line);
+		PID = atoi(line.c_str());
 		testFile.close();
 		return true;
 	} else {
@@ -92,9 +117,9 @@ bool ProcessHandler::checkStatus(int *PID){
 
 void ProcessHandler::killProcess(const int &PID){
 	std::cout << "killing children" << std::endl;
-	// file is not present so the pid is known
-	if(checkStatus()){
-		std::cout << "WARNING: PID file seems to exist when destroying process (should not be the case!)" << std::endl;
+	if(!isProcessRunning(PID)){
+		std::cout << "No process with PID " << PID << " running!" << std::endl;
+		return;
 	}
 	std::cout << "Going to kill process: " << PID << std::endl;
 	std::stringstream ss;
@@ -104,7 +129,7 @@ void ProcessHandler::killProcess(const int &PID){
 	system(ss.str().c_str());
 }
 
-bool isProcessRunning(const int &PID){
+bool ProcessHandler::isProcessRunning(const int &PID){
 	PROCTAB* proc = openproc(PROC_FILLMEM | PROC_FILLSTAT | PROC_FILLSTATUS);
 	proc_t* proc_info;
 	while (proc_info = readproc(proc, NULL)) {
@@ -117,32 +142,7 @@ bool isProcessRunning(const int &PID){
 	return false;
 }
 
-bool Helper::checkIsRunning(const std::string &cmd, int &PID, proc_t* data){
-	PROCTAB* proc = openproc(PROC_FILLMEM | PROC_FILLSTAT | PROC_FILLSTATUS);
-	PID = -1;
-	while (proc_t* proc_info = readproc(proc, NULL)) {
-		std::string tmp(proc_info->cmd);
-		if(tmp.find(cmd) != std::string::npos){
-			PID = proc_info->tid;
-			if(data != nullptr)
-				data = proc_info;
-	  }
-	  freeproc(proc_info);
-	}
-	closeproc(proc);
-	if(PID < 0)
-		return false;
-	else
-		return true;
-}
-
-int Helper::findPID(const std::string& cmd){
-	int PID;
-	checkIsRunning(cmd, PID);
-	return PID;
-}
-
-std::shared_ptr<proc_t> Helper::getInfo(const size_t &PID){
+std::shared_ptr<proc_t> ProcessHandler::getInfo(const size_t &PID){
 	PROCTAB* proc = openproc(PROC_FILLMEM | PROC_FILLSTAT | PROC_FILLSTATUS);
 	std::shared_ptr<proc_t> result(nullptr);
 	while (proc_t* proc_info = readproc(proc, NULL)) {
