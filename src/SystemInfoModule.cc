@@ -26,6 +26,11 @@ void SystemInfoModule::mainLoop(){
 	}
 	double tmp[3];
 	while(true){
+		/**
+		 *  Setting an interruption point is included in read() methods of ChimeraTK but not in write()!
+		 *  Thus set it by hand here!
+		 */
+		boost::this_thread::interruption_point();
 		meminfo ();
 
 		maxMem            = kb_main_total;
@@ -35,7 +40,7 @@ void SystemInfoModule::mainLoop(){
 		maxSwap           = kb_swap_total;
 		freeSwap          = kb_swap_free;
 		usedSwap          = maxSwap - freeSwap;
-//
+
 		maxMem.write();
 		freeMem.write();
 		cachedMem.write();
@@ -43,7 +48,7 @@ void SystemInfoModule::mainLoop(){
 		maxSwap.write();
 		freeSwap.write();
 		usedSwap.write();
-//
+
 //		// get system uptime
 		double    uptime_secs;
 		double    idle_secs;
@@ -53,12 +58,12 @@ void SystemInfoModule::mainLoop(){
 		uptime_day_hour   = (uptime_sec - (uptime_days * 86400)) / 3600;
 		uptime_day_mins   = (uptime_sec - (uptime_days * 86400) -
 		                    (uptime_day_hour * 3600)) / 60;
-////		cpu_use =
+//		cpu_use =
 		loadavg (&tmp[0], &tmp[1], &tmp[2]);
 		loadAvg = tmp[0];
 		loadAvg5 = tmp[1];
 		loadAvg15 = tmp[2];
-//
+
 		uptime_sec.write();
 		uptime_days.write();
 		uptime_day_hour.write();
