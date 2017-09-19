@@ -30,12 +30,10 @@ struct ProcessModule : public ctk::ApplicationModule {
             bool eliminateHierarchy=false, const std::unordered_set<std::string> &tags={});
 #ifdef BOOST_1_64
     std::shared_ptr<boost_process::process::child> process;
-    ctk::ScalarOutput<int> processPID{this, "PID", "", "PID of the process"};
 #else
     ProcessHandler process;
-    ctk::ScalarPollInput<std::string> processPath{this, "path", "", "Path where to execute the command used to start the process"};
 #endif
-
+    ctk::ScalarPollInput<std::string> processPath{this, "path", "", "Path where to execute the command used to start the process"};
     ctk::ScalarPollInput<int> startProcess{this, "startProcess", "", "Start the process"};
     ctk::ScalarPollInput<std::string> processCMD{this, "cmd", "", "Command used to start the process"};
     ctk::ScalarOutput<int> processRunning{this, "Status", "", "Process status 0: not running, 1: running"};

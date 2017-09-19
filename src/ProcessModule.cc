@@ -15,22 +15,36 @@ ProcessModule::ProcessModule(EntityOwner *owner, const std::string &name, const 
 
 #ifdef BOOST_1_64
 void ProcessModule::mainLoop(){
-	int PID;
+	SetOffline();
+	processRestarts = 0;
+	processRestarts.write();
 	while(true) {
 	  startProcess.read();
-	  processCMD.read();
+	  // reset number of failed tries in case the process is set offline
+	  if(!startProcess){
+		  processNFailed = 0;
+		  processNFailed.write();
+	  }
+
+	  // don't do anything in case failed more than 4 times -> to reset turn off/on the process
+	  if(processNFailed > 4){
+		  usleep(200000);
+		  continue;
+	  }
+
 	  if(startProcess){
 		  if(process.get() == nullptr || !process->running()){
 			  std::cout << "Trying to start the process..." << std::endl;
+			  processCMD.read();
 			  try{
-				  process.reset(new bp::child((std::string)processCMD));
+				  process.reset(new bp::child((std::string)processPath + (std::string)processCMD));
+				  SetOnline(process->id());
+				  process->detach();
 			  } catch (std::system_error &e){
-				  std::cerr << "Failed to start the process with cmd: " << (std::string)processCMD << "\n Message: " << e.what() << std::endl;
+				  std::cerr << "Failed to start the process with cmd: " << (std::string)processPath + (std::string)processCMD << "\n Message: " << e.what() << std::endl;
+				  Failed();
 			  }
 
-			  processPID = process->id();
-			  processPID.write();
-			  process->detach();
 		  } else {
 			  std::cout << "Process is running..." << std::endl;
 		  }
@@ -42,6 +56,7 @@ void ProcessModule::mainLoop(){
 			  try{
 				  process->terminate();
 				  process.reset();
+				  SetOffline();
 			  } catch (std::system_error &e){
 				  std::cerr << "Failed to kill the process." << std::endl;
 			  }
@@ -95,12 +110,16 @@ void ProcessModule::mainLoop(){
 				  Failed();
 			  }
 		  } else {
+#ifdef DEBUG
 			  std::cout << "Process is running..." << processRunning << " PID: " << getpid() << std::endl;
+#endif
 		  }
 	  } else {
 		  if(processPID < 0 ){
+#ifdef DEBUG
 			  std::cout << "Process Running: " << processRunning << std::endl;
 			  std::cout << "Process is not running...OK" << " PID: " << getpid() <<std::endl;
+#endif
 		  } else {
 			  std::cout << "Trying to kill the process..." << " PID: " << getpid() <<std::endl;
 			  process.killProcess(processPID);
