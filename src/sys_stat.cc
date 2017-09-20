@@ -123,7 +123,8 @@ void ProcessHandler::killProcess(const int &PID){
 	}
 	std::cout << "Going to kill process: " << PID << std::endl;
 	std::stringstream ss;
-	ss << "/bin/kill -SIGINT " <<  PID;
+	// use minus sign for the PID in order to kill also possible sub processes belonging to the same PGID!
+	ss << "/bin/kill -SIGINT -" <<  PID;
 	std::cout << "String: " << ss.str() << std::endl;
 	// kill returns 0 even if the process is not found, so no need to return the result
 	system(ss.str().c_str());
