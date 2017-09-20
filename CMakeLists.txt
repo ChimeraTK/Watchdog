@@ -3,8 +3,8 @@ cmake_minimum_required(VERSION 2.8)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/Modules)
 
-set(${PROJECT_NAME}_MAJOR_VERSION 02)
-set(${PROJECT_NAME}_MINOR_VERSION 05)
+set(${PROJECT_NAME}_MAJOR_VERSION 00)
+set(${PROJECT_NAME}_MINOR_VERSION 01)
 set(${PROJECT_NAME}_PATCH_VERSION 00)
 include(cmake/set_version_numbers.cmake)
 
@@ -15,6 +15,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fPIC -Wextra -ansi -Wuninitialize
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSER=\\\"`whoami`\\\" -DHOST=\\\"`hostname`\\\"")
 
 #use -DCMAKE_BUILD_TYPE=Debug in your cmake command to turn on the coverage option
+#set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 --coverage -DDEBUG")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 --coverage")
 #set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O3 --coverage")
 
@@ -51,6 +52,13 @@ ELSE()
 ENDIF(Boost_FOUND)
 ENABLE_TESTING()
 ####################QUICK FIX#########################################
+
+FIND_PACKAGE(PkgConfig REQUIRED)
+set(LIBXML++_VERSION "libxml++-2.6")
+PKG_CHECK_MODULES(LibXML++ REQUIRED ${LIBXML++_VERSION})
+PKG_CHECK_MODULES(glib REQUIRED glib-2.0)
+include_directories(SYSTEM "${LibXML++_INCLUDEDIR}/${LIBXML++_VERSION}")
+include_directories(${LibXML++_INCLUDE_DIRS})
 
 # extend compiler flags with flags from dependencies
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${ChimeraTK-ControlSystemAdapter-DoocsAdapter_CXX_FLAGS} ${ChimeraTK-ControlSystemAdapter-OPCUAAdapter_CXX_FLAGS} ${ChimeraTK-ApplicationCore_CXX_FLAGS}" )
@@ -119,6 +127,7 @@ ENDIF(CMAKE_BUILD_TYPE STREQUAL "Debug")
 # copy config file for running in virtuallab environment
 FILE( COPY ${CMAKE_SOURCE_DIR}/configs/devMapFile.dmap DESTINATION ${PROJECT_BINARY_DIR})
 FILE( COPY ${CMAKE_SOURCE_DIR}/configs/${PROJECT_NAME}.xlmap DESTINATION ${PROJECT_BINARY_DIR})
+FILE( COPY ${CMAKE_SOURCE_DIR}/configs/${PROJECT_NAME}_processes.xml DESTINATION ${PROJECT_BINARY_DIR})
 IF(ADAPTER STREQUAL "OPCUA")
   FILE( COPY ${CMAKE_SOURCE_DIR}/configs/WatchdogServer_mapping.xml DESTINATION ${PROJECT_BINARY_DIR})
 #  FILE( COPY ${CMAKE_SOURCE_DIR}/serverTypes/${TYPE}/configs/LLRFServer.persist DESTINATION ${PROJECT_BINARY_DIR})
@@ -137,4 +146,17 @@ else()
   # the RPC_LIBNO file is not installed when not following the DOOCS directory scheme
 endif()
 
+find_package(Doxygen)
+if(DOXYGEN_FOUND)
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/doc/Doxyfile.in ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY)
 
+  add_custom_target(doc ${DOC_DEPENDENCY}
+    ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    )
+  #note the / after ${CMAKE_BINARY_DIR}/doc/. This causes the directory to be renamed to the destination, not copied into
+  install(DIRECTORY ${CMAKE_BINARY_DIR}/doc/ DESTINATION share/doc/${PROJECT_NAME}-${${PROJECT_NAME}_SOVERSION}
+          COMPONENT doc)
+else(DOXYGEN_FOUND)
+  message("Doxygen not found, documentation cannot be build.")
+endif(DOXYGEN_FOUND)

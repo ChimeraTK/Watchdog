@@ -11,17 +11,19 @@
 #undef GENERATE_XML
 #include <ChimeraTK/ApplicationCore/ApplicationCore.h>
 
+#include <map>
+
 #include "SystemInfoModule.h"
 #include "ProcessModule.h"
 
 namespace ctk = ChimeraTK;
 
 struct WatchdogServer : public ctk::Application {
-	WatchdogServer() : Application("WatchdogServer") {}
+	WatchdogServer();
 	~WatchdogServer() { shutdown(); }
 
 	SystemInfoModule systemInfo{this, "systeminfo", "Module reading system information"};
-	ProcessModule process{this, "process", "Test process"};
+	std::map<std::string, std::shared_ptr<ProcessModule> > processes;
 	/**
 	 * Use either
 	 * - ctk::ControlSystemModule cs;

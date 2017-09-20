@@ -24,7 +24,9 @@ void SystemInfoModule::mainLoop(){
 		strInfos.at(it->first) = it->second;
 		strInfos.at(it->first).write();
 	}
-	double tmp[3];
+	ticksPerSecond = sysconf(_SC_CLK_TCK);
+	ticksPerSecond.write();
+	double tmp[3] = {0., 0., 0.};
 	while(true){
 		/**
 		 *  Setting an interruption point is included in read() methods of ChimeraTK but not in write()!

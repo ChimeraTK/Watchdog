@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<watchdog>
+  <process name="PROCESS_1">
+    <path> "/bin/" </path>
+    <cmd> "ping google.de" </cmd>
+  </process>
+   <process name="PROCESS_2">
+    <path> "/home/zenker/singenerator_server/" </path>
+    <cmd> "singenerator_server" </cmd>
+  </process>
+</watchdog>

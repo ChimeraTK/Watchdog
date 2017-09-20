@@ -8,6 +8,7 @@
 #define BOOST_TEST_MODULE sysTest
 
 #include "sys_stat.h"
+#include <signal.h>
 
 #include <boost/test/unit_test.hpp>
 using namespace boost::unit_test_framework;
@@ -25,7 +26,7 @@ BOOST_AUTO_TEST_CASE( testProcessHelper){
 	}
 	sleep(2);
 	BOOST_CHECK_EQUAL(p.isProcessRunning(pid), true);
-	p.killProcess(pid);
+	p.killProcess(pid,SIGINT);
 	sleep(2);
 	BOOST_CHECK_EQUAL(p.isProcessRunning(pid), false);
 }

@@ -1,4 +1,4 @@
-/*
+/**
  * ProcessModule.h
  *
  *  Created on: Sep 6, 2017
@@ -25,22 +25,99 @@ namespace bp = boost_process;
 #include "sys_stat.h"
 #endif
 
+/**
+ * \brief
+ * This module is used to start and stop subprocess controlled by the watchdog.
+ * It also collects information about the running job.
+ * \todo Implement proper data types instead of using int for all of them!
+ */
 struct ProcessModule : public ctk::ApplicationModule {
-    ProcessModule(EntityOwner *owner, const std::string &name, const std::string &description,
-            bool eliminateHierarchy=false, const std::unordered_set<std::string> &tags={});
+    using ctk::ApplicationModule::ApplicationModule;
 #ifdef BOOST_1_64
     std::shared_ptr<boost_process::process::child> process;
 #else
-    ProcessHandler process;
+    ProcessHandler process; ///< The process handler used to get information about the subprocess
 #endif
+    /**
+     * \name Process parameter and status
+     * @{
+     */
+    /** Path where to execute the command used to start the process */
     ctk::ScalarPollInput<std::string> processPath{this, "path", "", "Path where to execute the command used to start the process"};
+    /** Start the process */
     ctk::ScalarPollInput<int> startProcess{this, "startProcess", "", "Start the process"};
+    /** Command used to start the process */
     ctk::ScalarPollInput<std::string> processCMD{this, "cmd", "", "Command used to start the process"};
+    /** Signal used to kill the process (2: SIGINT, 9: SIGKILL) */
+    ctk::ScalarPollInput<int> killSig{this, "killSig", "", "Signal used to kill the process (2: SIGINT, 9: SIGKILL)"};
+    /** PID offset used when monitoring the started process */
+    ctk::ScalarPollInput<int> pidOffset{this, "pidOffset", "", "PID offset used when monitoring the started process"};
+    /** Process status 0: not running, 1: running */
     ctk::ScalarOutput<int> processRunning{this, "Status", "", "Process status 0: not running, 1: running"};
+    /** Number of failed restarts */
     ctk::ScalarOutput<int> processNFailed{this, "Failed", "", "Number of failed restarts"};
+    /** PID of the process */
     ctk::ScalarOutput<int> processPID{this, "PID", "", "PID of the process"};
+    /** Number of started processes */
+    ctk::ScalarOutput<int> processNChilds{this, "nChilds", "", "Number of started processes"};
+    /** Number of time the process was automatically */
     ctk::ScalarOutput<int> processRestarts{this, "Restarts", "", "Number of time the process was automatically "
     		"restarted by the watchdog since server start."};
+    /** Time since process is running */
+    ctk::ScalarOutput<int> runtime{this, "runtime", "s", "Time since process is running"};
+    /** @} */
+
+    /**
+     * Store an internal time stamp that is used to calculate the cpu usage.
+     */
+    boost::posix_time::ptime time_stamp;
+
+    /**
+     * \name Information from the SystemInfoModule
+     * @{
+     */
+    /** Number of clock ticks per second */
+    ctk::ScalarPollInput<int> ticksPerSecond{this,"tickPerSecond", "Hz", "Number of clock ticks per second"};
+    /** Uptime of the system */
+    ctk::ScalarPollInput<int> uptime{this,"uptime", "s", "Uptime of the system"};
+    /** @} */
+
+    /**
+     * \name Parameters read by proc
+     * @{
+     */
+
+    //\todo Use unsigned long long int
+    /** user-mode CPU time accumulated by process */
+    ctk::ScalarOutput<int> utime{this, "utime", "clock ticks", "user-mode CPU time accumulated by process"};
+    /** kernel-mode CPU time accumulated by process */
+    ctk::ScalarOutput<int> stime{this, "stime", "clock ticks", "kernel-mode CPU time accumulated by process"};
+    /** cumulative utime of process and reaped children */
+    ctk::ScalarOutput<int> cutime{this, "cutime", "clock ticks", "cumulative utime of process and reaped children"};
+    /** cumulative stime of process and reaped children */
+    ctk::ScalarOutput<int> cstime{this, "cstime", "clock ticks", "cumulative stime of process and reaped children"};
+    /** start time of process -- seconds since 1-1-70 */
+    ctk::ScalarOutput<int> startTime{this, "startTime", "clock ticks", "start time of process -- seconds since 1-1-70"};
+
+    //\todo Use long
+    /** kernel scheduling priority */
+    ctk::ScalarOutput<int> priority{this, "priority", "", "kernel scheduling priority"};
+    /** standard unix nice level of process */
+    ctk::ScalarOutput<int> nice{this, "nice", "", "standard unix nice level of process"};
+    /** resident set size from /proc/#/stat (pages) */
+    ctk::ScalarOutput<int> rss{this, "rss", "", "resident set size from /proc/#/stat (pages)"};
+
+    /**
+     * CPU usage for measured between two control system loops.
+     * The process time includes utime, stime, sutime, sctime.
+     */
+    ctk::ScalarOutput<double> pcpu{this, "pcpu", "%", "Actual CPU usage"};
+    /**
+     * CPU usage averaged over the whole runtime of the process.
+     * The process time includes utime, stime, sutime, sctime.
+     */
+    ctk::ScalarOutput<double> avpcpu{this, "avpcpu", "%", "Average CPU usage"};
+    /** @} */
 
     /**
      * Set the PID and set status to running.
@@ -63,6 +140,13 @@ struct ProcessModule : public ctk::ApplicationModule {
      * Application core main loop.
      */
     void mainLoop();
+
+    /**
+     * Fill process information read via proc interface.
+     * \remark When changing the pidOffset to get information of another child the
+     * cpu usage value will be wrong for the first reading!
+     */
+    void FillProcInfo(const std::shared_ptr<proc_t> &info);
 };
 
 
