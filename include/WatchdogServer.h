@@ -43,12 +43,12 @@ struct WatchdogServer : public ctk::Application {
 
 	SystemInfoModule systemInfo{this, "systeminfo", "Module reading system information"};
 	/**
-	 * map storing the process names and the processes
-	 * The map is filled during construction using information from the input xml file called:
+	 * vector storing processes
+	 * The vector is filled during construction using information from the input xml file called:
 	 * watchdog_server_processes.xml
 	 * If that file is not found only one process named PROCESS is added.
 	 */
-	std::map<std::string, std::shared_ptr<ProcessModule> > processes;
+	std::vector<std::shared_ptr<ProcessModule> > processes;
 	/**
 	 * Use either
 	 * - ctk::ControlSystemModule cs;

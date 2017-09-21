@@ -45,7 +45,7 @@ WatchdogServer::WatchdogServer(): Application("WatchdogServer") {
 			if(!nameAttr) {
 				std::cerr << "Missing name attribute of 'process' tag. Going to skip one the process elements in the xml file: " << fileName << std::endl;
 			} else {
-				processes[nameAttr->get_value().data()].reset(new ProcessModule{this, nameAttr->get_value().data(), "process"});
+				processes.emplace_back(new ProcessModule{this, nameAttr->get_value().data(), "process"});
 				for(const auto&cchild : element->get_children()){
 					const xmlpp::Element *eelement = dynamic_cast<const xmlpp::Element*>(cchild);
 					if(!eelement) continue;
@@ -64,7 +64,7 @@ WatchdogServer::WatchdogServer(): Application("WatchdogServer") {
 	} catch(xmlpp::exception &e) {
 	  std::cerr << "Error opening the xml file '"+fileName+"': "+e.what() << std::endl;
 	  std::cout << "I will create only one process named PROCESS..." << std::endl;
-	  processes["PROCESS"].reset(new ProcessModule{this, "PROCESS", "Test process"});
+	  processes.emplace_back(new ProcessModule{this, "PROCESS", "Test process"});
 	}
 }
 
@@ -82,15 +82,15 @@ void WatchdogServer::defineConnections(){
 
 	std::cout << "Adding " << processes.size() << " processes..." << std::endl;
 	for(auto item : processes){
-		cs[item.first]("enableProcess") >> item.second->startProcess;
-		cs[item.first]("CMD") >> item.second->processCMD;
-		cs[item.first]("Path") >> item.second->processPath;
-		cs[item.first]("killSig") >> item.second->killSig;
-		cs[item.first]("pidOffset") >> item.second->pidOffset;
-		item.second->findTag("CS").connectTo(cs[item.first]);
-		systemInfo.ticksPerSecond >> item.second->ticksPerSecond;
-		systemInfo.uptime_sec >> item.second->uptime;
-		timer.trigger >> item.second->trigger;
+		cs[item->getName()]("enableProcess") >> item->startProcess;
+		cs[item->getName()]("CMD") >> item->processCMD;
+		cs[item->getName()]("Path") >> item->processPath;
+		cs[item->getName()]("killSig") >> item->killSig;
+		cs[item->getName()]("pidOffset") >> item->pidOffset;
+		item->findTag("CS").connectTo(cs[item->getName()]);
+		systemInfo.ticksPerSecond >> item->ticksPerSecond;
+		systemInfo.uptime_sec >> item->uptime;
+		timer.trigger >> item->trigger;
 	}
 	dumpConnections();
 }
