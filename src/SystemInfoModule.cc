@@ -28,12 +28,9 @@ void SystemInfoModule::mainLoop(){
 	ticksPerSecond.write();
 	double tmp[3] = {0., 0., 0.};
 	while(true){
-		/**
-		 *  Setting an interruption point is included in read() methods of ChimeraTK but not in write()!
-		 *  Thus set it by hand here!
-		 */
-		boost::this_thread::interruption_point();
-		meminfo ();
+	  trigger.read();
+
+	  meminfo ();
 
 		maxMem            = kb_main_total;
 		freeMem           = kb_main_free;
@@ -74,6 +71,6 @@ void SystemInfoModule::mainLoop(){
 		loadAvg5.write();
 		loadAvg15.write();
 
-		usleep(200000);
+//		usleep(200000);
 	}
 }

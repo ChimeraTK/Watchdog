@@ -29,6 +29,8 @@ public:
   SystemInfoModule(EntityOwner *owner, const std::string &name,
       const std::string &description, bool eliminateHierarchy = false,
       const std::unordered_set<std::string> &tags = { });
+
+  ctk::ScalarPushInput<int> trigger{this, "trigger", "", "Trigger used to update the watchdog"};
   /**
    * \name Static system information (read only once)
    * @{
@@ -42,26 +44,26 @@ public:
    */
   //\todo: Implement the following as unsigned long!
   ctk::ScalarOutput<int> maxMem { this, "maxMem", "kB",
-      "Maximum available memory" };
-  ctk::ScalarOutput<int> freeMem { this, "freeMem", "kB", "Free memory" };
-  ctk::ScalarOutput<int> cachedMem { this, "cachedMem", "kB", "Cached memory" };
-  ctk::ScalarOutput<int> usedMem { this, "usedMem", "kB", "Used memory" };
-  ctk::ScalarOutput<int> maxSwap { this, "maxSwap", "kB", "Swap size" };
-  ctk::ScalarOutput<int> freeSwap { this, "freeSwap", "kB", "Free swap" };
-  ctk::ScalarOutput<int> usedSwap { this, "usedSwap", "kB", "Used swap" };
+      "Maximum available memory" , {"CS", "SYS"}};
+  ctk::ScalarOutput<int> freeMem { this, "freeMem", "kB", "Free memory" , {"CS", "SYS"}};
+  ctk::ScalarOutput<int> cachedMem { this, "cachedMem", "kB", "Cached memory" , {"CS", "SYS"}};
+  ctk::ScalarOutput<int> usedMem { this, "usedMem", "kB", "Used memory" , {"CS", "SYS"}};
+  ctk::ScalarOutput<int> maxSwap { this, "maxSwap", "kB", "Swap size" , {"CS", "SYS"}};
+  ctk::ScalarOutput<int> freeSwap { this, "freeSwap", "kB", "Free swap" , {"CS", "SYS"}};
+  ctk::ScalarOutput<int> usedSwap { this, "usedSwap", "kB", "Used swap" , {"CS", "SYS"}};
   //\todo: Implement the following as long!
-  ctk::ScalarOutput<int> uptime_sec { this, "uptimeSec", "s", "Uptime" };
-  ctk::ScalarOutput<int> uptime_days { this, "uptimeDays", "day", "Days up" };
-  ctk::ScalarOutput<int> uptime_day_hour { this, "uptimeHours", "h", "Hours up" };
+  ctk::ScalarOutput<int> uptime_sec { this, "uptimeSec", "s", "Uptime" , {"CS", "SYS"}};
+  ctk::ScalarOutput<int> uptime_days { this, "uptimeDays", "day", "Days up" , {"CS", "SYS"}};
+  ctk::ScalarOutput<int> uptime_day_hour { this, "uptimeHours", "h", "Hours up" , {"CS", "SYS"}};
   ctk::ScalarOutput<int> uptime_day_mins { this, "uptimeMin", "min",
-      "Minutes up" };
+      "Minutes up" , {"CS", "SYS"}};
 //    ctk::ScalarOutput<float>              cpu_use{this, "cpuUsage", "", "CPU usage"};
   ctk::ScalarOutput<double> loadAvg { this, "loadAvg", "",
-      "Average load within last min" };
+      "Average load within last min" , {"CS", "SYS"}};
   ctk::ScalarOutput<double> loadAvg5 { this, "loadAvg5", "",
-      "Average load within last 5min" };
+      "Average load within last 5min" , {"CS", "SYS"}};
   ctk::ScalarOutput<double> loadAvg15 { this, "loadAvg15", "",
-      "Average load within last 15min" };
+      "Average load within last 15min" , {"CS", "SYS"}};
   /** @} */
   void mainLoop();
 };

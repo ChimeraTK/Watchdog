@@ -143,7 +143,6 @@ bool ProcessHandler::readTempPID(size_t &PID) {
 }
 
 void ProcessHandler::killProcess(const size_t &PID, const int &sig) {
-  std::cout << "killing children" << std::endl;
   if (!isProcessRunning(PID)) {
     std::cerr << "When trying to kill a process with PID " << PID
         << " no such process was running!" << std::endl;
@@ -202,7 +201,6 @@ std::shared_ptr<proc_t> ProcessHandler::getInfo(const size_t &PID) {
 
 SysInfo::SysInfo() {
   cpu_info_read();
-  mem_info_read();
 }
 
 bool SysInfo::lookup(const std::string &line, const std::string &pattern) {
@@ -237,31 +235,3 @@ void SysInfo::cpu_info_read() {
   std::getline(cpufile, line);
   nfo.count = std::atoi(line.substr(2, 2).c_str());
 }
-
-void SysInfo::mem_info_read() {
-  loadavg(&mem_.loadavg[0], &mem_.loadavg[1], &mem_.loadavg[2]);
-
-  // get system wide memory usage
-
-  meminfo();
-
-  mem_.maxmem = kb_main_total;
-  mem_.freemem = kb_main_free;
-  mem_.cachedmem = kb_main_cached;
-  mem_.usedmem = mem_.maxmem - mem_.freemem;
-  mem_.maxswap = kb_swap_total;
-  mem_.freeswap = kb_swap_free;
-  mem_.usedswap = mem_.maxswap - mem_.freeswap;
-
-  // get system uptime
-  double uptime_secs;
-  double idle_secs;
-  uptime(&uptime_secs, &idle_secs);
-
-  mem_.uptime_sec = (long) uptime_secs;
-  mem_.uptime_days = mem_.uptime_sec / 86400;
-  mem_.uptime_day_hour = (mem_.uptime_sec - (mem_.uptime_days * 86400)) / 3600;
-  mem_.uptime_day_mins = (mem_.uptime_sec - (mem_.uptime_days * 86400)
-      - (mem_.uptime_day_hour * 3600)) / 60;
-}
-

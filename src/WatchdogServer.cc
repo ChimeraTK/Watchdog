@@ -9,6 +9,19 @@
 
 #include <libxml++/libxml++.h>
 
+void TimerModule::mainLoop(){
+  while(true){
+    /**
+     *  Setting an interruption point is included in read() methods of ChimeraTK but not in write()!
+     *  Thus set it by hand here!
+     */
+    boost::this_thread::interruption_point();
+    trigger = trigger + 1;
+    trigger.write();
+    sleep(2);
+  }
+}
+
 WatchdogServer::WatchdogServer(): Application("WatchdogServer") {
 	std::string fileName("watchdog_server_processes.xml");
 	// parse the file into a DOM structure
@@ -61,21 +74,10 @@ void WatchdogServer::defineConnections(){
 		std::cout << "Adding system info: " << space2underscore(it->first) << std::endl;
 		it->second >> cs["SYS"](space2underscore(it->first));
 	}
-	systemInfo.maxMem >> cs["SYS"]("maxMem");
-	systemInfo.freeMem >> cs["SYS"]("freeMem");
-	systemInfo.cachedMem >> cs["SYS"]("cachedMem");
-	systemInfo.usedMem >> cs["SYS"]("usedMem");
-	systemInfo.maxSwap >> cs["SYS"]("maxSwap");
-	systemInfo.freeSwap >> cs["SYS"]("freeSwap");
-	systemInfo.usedSwap >> cs["SYS"]("usedSwap");
-	systemInfo.uptime_sec >> cs["SYS"]("uptime_s");
-	systemInfo.uptime_days >> cs["SYS"]("uptime_d");
-	systemInfo.uptime_day_hour >> cs["SYS"]("uptime_h");
-	systemInfo.uptime_day_mins >> cs["SYS"]("uptime_min");
-	systemInfo.loadAvg >> cs["SYS"]("loadAvg");
-	systemInfo.loadAvg5 >> cs["SYS"]("loadAvg5");
-	systemInfo.loadAvg15 >> cs["SYS"]("loadAvg15");
-	systemInfo.ticksPerSecond >> cs["SYS"]("ticksPerSecond");
+	systemInfo.findTag("CS").connectTo(cs["SYS"]);
+//	timer.trigger >> systemInfo.trigger;
+	timer.connectTo(systemInfo);
+
 //	systemInfo.cpu_use >> cs["SYS"]("cpuUsage");
 
 	std::cout << "Adding " << processes.size() << " processes..." << std::endl;
@@ -85,25 +87,10 @@ void WatchdogServer::defineConnections(){
 		cs[item.first]("Path") >> item.second->processPath;
 		cs[item.first]("killSig") >> item.second->killSig;
 		cs[item.first]("pidOffset") >> item.second->pidOffset;
-		item.second->processRunning  >> cs[item.first]("Status");
-		item.second->processNFailed  >> cs[item.first]("NFails");
-		item.second->processPID      >> cs[item.first]("PID");
-		item.second->processNChilds  >> cs[item.first]("NChilds");
-		item.second->processRestarts >> cs[item.first]("Restarts Number of unexpected restarts.");
-		item.second->runtime         >> cs[item.first]("Runtime Time the process is running.");
-
-		item.second->utime     >> cs[item.first]("utime");
-		item.second->stime     >> cs[item.first]("stime");
-		item.second->cutime    >> cs[item.first]("cutime");
-		item.second->cstime    >> cs[item.first]("cstime");
-		item.second->startTime >> cs[item.first]("startTime");
-		item.second->priority  >> cs[item.first]("priority");
-		item.second->nice      >> cs[item.first]("nice");
-		item.second->rss       >> cs[item.first]("rss");
-		item.second->pcpu      >> cs[item.first]("pcpu");
-		item.second->avpcpu    >> cs[item.first]("avpcpu");
+		item.second->findTag("CS").connectTo(cs[item.first]);
 		systemInfo.ticksPerSecond >> item.second->ticksPerSecond;
 		systemInfo.uptime_sec >> item.second->uptime;
+		timer.trigger >> item.second->trigger;
 	}
 	dumpConnections();
 }

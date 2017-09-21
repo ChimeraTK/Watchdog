@@ -18,11 +18,36 @@
 
 namespace ctk = ChimeraTK;
 
+/**
+ * This module is used to trigger the mainloops of the modules to go on.
+ */
+struct TimerModule : public ctk::ApplicationModule{
+  using ctk::ApplicationModule::ApplicationModule;
+  ctk::ScalarOutput<int> trigger{this, "trigger", "" , "Trigger counter"}; ///< Observe this vaiable by other modules to obtain a trigger
+
+  /**
+   * Application core main loop.
+   */
+  void mainLoop();
+};
+
+/**
+ * So far from the watchdog_server_processes.xml file only the process name is used.
+ * The initial values are not used so far, since these values can not be set in the constructor.
+ * They need to be set at a later stage, which requires rephrasing the xml.
+ * \todo Check if initial vales are needed?
+ */
 struct WatchdogServer : public ctk::Application {
 	WatchdogServer();
 	~WatchdogServer() { shutdown(); }
 
 	SystemInfoModule systemInfo{this, "systeminfo", "Module reading system information"};
+	/**
+	 * map storing the process names and the processes
+	 * The map is filled during construction using information from the input xml file called:
+	 * watchdog_server_processes.xml
+	 * If that file is not found only one process named PROCESS is added.
+	 */
 	std::map<std::string, std::shared_ptr<ProcessModule> > processes;
 	/**
 	 * Use either
@@ -39,6 +64,8 @@ struct WatchdogServer : public ctk::Application {
 	 *
 	 */
 	ctk::ControlSystemModule cs;
+
+	TimerModule timer{this, "timer", "Module used to trigger the watchdog update"};
 
 	void defineConnections();
 

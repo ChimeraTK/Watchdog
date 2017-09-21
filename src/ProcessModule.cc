@@ -67,6 +67,7 @@ void ProcessModule::mainLoop(){
   processRestarts = 0;
   processRestarts.write();
   while(true) {
+    trigger.read();
     startProcess.read();
     // reset number of failed tries in case the process is set offline
     if(!startProcess){
@@ -132,7 +133,7 @@ void ProcessModule::mainLoop(){
       }
     }
 //    usleep(200000);
-    sleep(2);
+//    sleep(2);
   }
 }
 
@@ -192,6 +193,7 @@ void ProcessModule::FillProcInfo(const std::shared_ptr<proc_t> &info){
     nice      = 0;
     rss       = 0;
     pcpu      = 0;
+    avpcpu    = 0;
     runtime   = 0;
   }
   utime    .write();
@@ -203,6 +205,7 @@ void ProcessModule::FillProcInfo(const std::shared_ptr<proc_t> &info){
   nice     .write();
   rss      .write();
   pcpu     .write();
+  avpcpu   .write();
   runtime  .write();
 }
 
