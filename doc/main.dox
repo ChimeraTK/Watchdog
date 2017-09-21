@@ -1,0 +1,9 @@
+/**
+\author Klaus Zenker (HZDR)
+\mainpage Watchdog Server
+The watchdog contains two main moudles:
+  - SYS: Monitors system paramters
+  - PROCESS: Start/stop and monitor a process 
+
+  
+*/
