@@ -8,8 +8,67 @@
 #include "ProcessModule.h"
 #include <signal.h>
 
+void ProcessInfoModule::mainLoop(){
+  processPID = getpid();
+  processPID.write();
+  while(true) {
+    trigger.read();
+    FillProcInfo(process.getInfo(processPID));
+  }
+}
+
+void ProcessInfoModule::FillProcInfo(const std::shared_ptr<proc_t> &info){
+  if(info != nullptr){
+    auto now = boost::posix_time::microsec_clock::local_time();
+    int old_time = utime + stime + cutime + cstime;
+    utime     = info->utime;
+    stime     = info->stime;
+    cutime    = info->cutime;
+    cstime    = info->cstime;
+    startTime = info->start_time;
+    priority  = info->priority;
+    nice      = info->nice;
+    rss       = info->rss;
+    uptime.read();
+    ticksPerSecond.read();
+    runtime   = uptime - startTime*1./ticksPerSecond;
+    // check if it is the first call after process is started (time_stamp  == not_a_date_time)
+    if(!time_stamp.is_special()){
+      boost::posix_time::time_duration diff = now - time_stamp;
+      pcpu      = 1.*(utime + stime + cutime + cstime - old_time)/ticksPerSecond / (diff.total_milliseconds() / 1000) * 100;
+      avpcpu    = 1.*(utime + stime + cutime + cstime)/ticksPerSecond / runtime * 100;
+      std::cout << "Percent CPU usage: " << pcpu << std::endl;
+    }
+    time_stamp = now;
+  } else {
+    time_stamp = boost::posix_time::not_a_date_time;
+    utime     = 0;
+    stime     = 0;
+    cutime    = 0;
+    cstime    = 0;
+    startTime = 0;
+    priority  = 0;
+    nice      = 0;
+    rss       = 0;
+    pcpu      = 0;
+    avpcpu    = 0;
+    runtime   = 0;
+  }
+  utime    .write();
+  stime    .write();
+  cutime   .write();
+  cstime   .write();
+  startTime.write();
+  priority .write();
+  nice     .write();
+  rss      .write();
+  pcpu     .write();
+  avpcpu   .write();
+  runtime  .write();
+}
+
 #ifdef BOOST_1_64
-void ProcessModule::mainLoop(){
+void ControlProcessInfoModule::mainLoop(){
   SetOffline();
   processRestarts = 0;
   processRestarts.write();
@@ -62,7 +121,7 @@ void ProcessModule::mainLoop(){
 }
 #else
 
-void ProcessModule::mainLoop(){
+void ProcessControlModule::mainLoop(){
   SetOffline();
   processRestarts = 0;
   processRestarts.write();
@@ -132,19 +191,18 @@ void ProcessModule::mainLoop(){
         }
       }
     }
-//    usleep(200000);
-//    sleep(2);
   }
 }
+#endif
 
-void ProcessModule::SetOnline(const int &pid){
+void ProcessControlModule::SetOnline(const int &pid){
   processPID = pid;
   processPID.write();
   processRunning = 1;
   processRunning.write();
 }
 
-void ProcessModule::SetOffline(){
+void ProcessControlModule::SetOffline(){
   processPID = -1;
   processPID.write();
   processRunning = 0;
@@ -152,63 +210,12 @@ void ProcessModule::SetOffline(){
   FillProcInfo(nullptr);
 }
 
-void ProcessModule::Failed(){
+void ProcessControlModule::Failed(){
   processNFailed = processNFailed + 1;
     processNFailed.write();
     SetOffline();
     sleep(2);
 }
 
-void ProcessModule::FillProcInfo(const std::shared_ptr<proc_t> &info){
-  if(info != nullptr){
-    auto now = boost::posix_time::microsec_clock::local_time();
-    int old_time = utime + stime + cutime + cstime;
-    utime     = info->utime;
-    stime     = info->stime;
-    cutime    = info->cutime;
-    cstime    = info->cstime;
-    startTime = info->start_time;
-    priority  = info->priority;
-    nice      = info->nice;
-    rss       = info->rss;
-    uptime.read();
-    ticksPerSecond.read();
-    runtime   = uptime - startTime*1./ticksPerSecond;
-    // check if it is the first call after process is started (time_stamp  == not_a_date_time)
-    if(!time_stamp.is_special()){
-      boost::posix_time::time_duration diff = now - time_stamp;
-      pcpu      = 1.*(utime + stime + cutime + cstime - old_time)/ticksPerSecond / (diff.total_milliseconds() / 1000) * 100;
-      avpcpu    = 1.*(utime + stime + cutime + cstime)/ticksPerSecond / runtime * 100;
-      std::cout << "Percent CPU usage: " << pcpu << std::endl;
-    }
-    time_stamp = now;
-  } else {
-    time_stamp = boost::posix_time::not_a_date_time;
-    utime     = 0;
-    stime     = 0;
-    cutime    = 0;
-    cstime    = 0;
-    startTime = 0;
-    priority  = 0;
-    nice      = 0;
-    rss       = 0;
-    pcpu      = 0;
-    avpcpu    = 0;
-    runtime   = 0;
-  }
-  utime    .write();
-  stime    .write();
-  cutime   .write();
-  cstime   .write();
-  startTime.write();
-  priority .write();
-  nice     .write();
-  rss      .write();
-  pcpu     .write();
-  avpcpu   .write();
-  runtime  .write();
-}
-
-#endif
 
 

@@ -45,7 +45,7 @@ WatchdogServer::WatchdogServer(): Application("WatchdogServer") {
 			if(!nameAttr) {
 				std::cerr << "Missing name attribute of 'process' tag. Going to skip one the process elements in the xml file: " << fileName << std::endl;
 			} else {
-				processes.emplace_back(new ProcessModule{this, nameAttr->get_value().data(), "process"});
+				processes.emplace_back(new ProcessControlModule{this, nameAttr->get_value().data(), "process"});
 				for(const auto&cchild : element->get_children()){
 					const xmlpp::Element *eelement = dynamic_cast<const xmlpp::Element*>(cchild);
 					if(!eelement) continue;
@@ -64,7 +64,7 @@ WatchdogServer::WatchdogServer(): Application("WatchdogServer") {
 	} catch(xmlpp::exception &e) {
 	  std::cerr << "Error opening the xml file '"+fileName+"': "+e.what() << std::endl;
 	  std::cout << "I will create only one process named PROCESS..." << std::endl;
-	  processes.emplace_back(new ProcessModule{this, "PROCESS", "Test process"});
+	  processes.emplace_back(new ProcessControlModule{this, "PROCESS", "Test process"});
 	}
 }
 
@@ -75,6 +75,7 @@ void WatchdogServer::defineConnections(){
 		it->second >> cs["SYS"](space2underscore(it->first));
 	}
 	systemInfo.findTag("CS").connectTo(cs["SYS"]);
+//	wdProcess.findTag("CS").connectTo(cs["WATCHDOG"]);
 //	timer.trigger >> systemInfo.trigger;
 	timer.connectTo(systemInfo);
 

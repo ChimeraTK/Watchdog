@@ -41,6 +41,8 @@ struct WatchdogServer : public ctk::Application {
 	WatchdogServer();
 	~WatchdogServer() { shutdown(); }
 
+//	ProcessModule wdProcess{this, "watchdog", "Module monitoring the watchdog process"};
+
 	SystemInfoModule systemInfo{this, "systeminfo", "Module reading system information"};
 	/**
 	 * vector storing processes
@@ -48,7 +50,7 @@ struct WatchdogServer : public ctk::Application {
 	 * watchdog_server_processes.xml
 	 * If that file is not found only one process named PROCESS is added.
 	 */
-	std::vector<std::shared_ptr<ProcessModule> > processes;
+	std::vector<std::shared_ptr<ProcessControlModule> > processes;
 	/**
 	 * Use either
 	 * - ctk::ControlSystemModule cs;
