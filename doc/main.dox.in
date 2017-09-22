@@ -1,9 +1,45 @@
 /**
 \author Klaus Zenker (HZDR)
+\version @watchdog_server_VERSION@
 \mainpage Watchdog Server
 The watchdog contains two main moudles:
   - SYS: Monitors system paramters
   - PROCESS: Start/stop and monitor a process 
 
+System parameter are read directly from \c /proc/cpuinfo and \c   /sys/devices/system/cpu/present.
+Information about processes also taken from \c /proc/ using the \c proc library. By default only one Process module
+will be created that can be used to control one process. This is done using the properties:
+  - enableProcess
+  - path
+  - cmd
   
+Here \c cmd can also include arguments to be passed to the program. If \c enableProcess is set true a new
+process is created using \c fork in combination with \c execv. A detailed documentation is given in 
+the documentation of the class ProcessHandler, which is used for the process control. If starting the process fails
+the server will retry to start the process 5 times (Failed shows the number of fails in the control system).
+In order to try again 5 times one has to set enableProcess to flase and true again. 
+
+It might happen that a started process also starts child processes. The number of processes started is given in the control
+system (nChilds). All process statistics are shown for the first child process. If you want to see the statistics for 
+another child process increase the pidOffset paramter (0 for the first process) according to the number of total child
+processes.  
+
+In order to control more than only one process a dedicated \c xml file needs to be provided. 
+Its name is watchdog_server_processes.xml and the contend should look like this:
+\code
+ <?xml version="1.0" encoding="UTF-8" ?>
+<watchdog>
+  <process name="PROCESS_1">
+    <path> "/bin/" </path>
+    <cmd> "ping google.de" </cmd>
+  </process>
+   <process name="PROCESS_2">
+    <path> "/home/zenker/singenerator_server/" </path>
+    <cmd> "singenerator_server" </cmd>
+  </process>
+</watchdog>
+\endcode
+In the example above two processes are created. Each of the processes is required to have a unique name assigned.
+So far \c path and \c cmd are not used by the watchdog, but they are intended to be used as initial values of
+the corresponding \c PROCESS parameters.
 */
