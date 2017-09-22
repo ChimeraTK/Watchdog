@@ -6,8 +6,13 @@
  */
 
 #include "SystemInfoModule.h"
+
+#include <sstream>
+
 #include <proc/readproc.h>
 #include <proc/sysinfo.h>
+
+#include "sys_stat.h"
 
 SystemInfoModule::SystemInfoModule(EntityOwner *owner, const std::string &name, const std::string &description,
         bool eliminateHierarchy, const std::unordered_set<std::string> &tags):
@@ -17,6 +22,19 @@ SystemInfoModule::SystemInfoModule(EntityOwner *owner, const std::string &name, 
 		std::cout << "Adding sysInfor: " << space2underscore(it->first) << std::endl;
 		strInfos[it->first].replace( ctk::ScalarOutput<std::string>{this, space2underscore(it->first), "" ,space2underscore(it->first)});
 	}
+	// add two since nCPU starts counting at 0 and cpuTotal should be added too
+	for(int iCPU = 0; iCPU < (sysInfo.nfo.count + 2); iCPU++){
+	  std::stringstream ss;
+	  ss << "cpu";
+	  if(iCPU != 0){
+	       ss << iCPU;
+	  ss << "Usage";
+	  cpu_use.emplace_back(new ctk::ScalarOutput<double>(this, ss.str(), "%", "CPU usage", {"CS", "SYS"}));
+	  } else {
+	    cpu_use.emplace_back(new ctk::ScalarOutput<double>(this, "cpuUsageTotal", "%", "Total CPU usage", {"CS", "SYS"}));
+	  }
+	  lastInfo.push_back(cpu());
+	}
 }
 
 void SystemInfoModule::mainLoop(){
@@ -24,9 +42,31 @@ void SystemInfoModule::mainLoop(){
 		strInfos.at(it->first) = it->second;
 		strInfos.at(it->first).write();
 	}
+	nCPU = sysInfo.nfo.count;
+	nCPU.write();
 	ticksPerSecond = sysconf(_SC_CLK_TCK);
 	ticksPerSecond.write();
 	double tmp[3] = {0., 0., 0.};
+
+  if(lastInfo.size() != (nCPU+2)){
+    std::cerr << "Size of lastInfo: " << lastInfo.size() << "\t nCPU: " << nCPU << std::endl;
+    throw std::runtime_error("Vector size mismatch in SystemInfoModule::mainLoop.");
+  }
+
+  if(cpu_use.size() != (nCPU+2)){
+    std::cerr << "Size of cpu_use: " << cpu_use.size() << "\t nCPU: " << nCPU << std::endl;
+    throw std::runtime_error("Vector size mismatch in SystemInfoModule::mainLoop.");
+  }
+
+	std::ifstream file("/proc/stat");
+  if(!file.is_open()){
+    std::cerr << "Failed to open system file /proc/stat" << std::endl;
+    file.close();
+    return;
+  }
+
+  readCPUInfo(lastInfo);
+
 	while(true){
 	  trigger.read();
 
@@ -71,6 +111,71 @@ void SystemInfoModule::mainLoop(){
 		loadAvg5.write();
 		loadAvg15.write();
 
-//		usleep(200000);
+		calculatePCPU();
 	}
+}
+
+void SystemInfoModule::calculatePCPU(){
+  unsigned long long total;
+  double tmp;
+  std::vector<std::string> strs;
+  std::vector<cpu> vcpu(nCPU + 2);
+  readCPUInfo(vcpu);
+  auto lastcpu = lastInfo.begin();
+  auto newcpu  = vcpu.begin();
+  for(int iCPU = 0; iCPU < (nCPU + 2); iCPU++){
+    if (newcpu->totalUser < lastcpu->totalUser || newcpu->totalUserLow < lastcpu->totalUserLow ||
+        newcpu->totalSys < lastcpu->totalSys || newcpu->totalIdle < lastcpu->totalIdle){
+        //Overflow detection. Just skip this value.
+      cpu_use.at(iCPU)->operator =(-1.0);
+    }
+    else{
+        total = (newcpu->totalUser - lastcpu->totalUser) + (newcpu->totalUserLow - lastcpu->totalUserLow) +
+            (newcpu->totalSys - lastcpu->totalSys);
+        tmp = total;
+        total += (newcpu->totalIdle - lastcpu->totalIdle);
+        tmp /= total;
+        tmp *= 100.;
+        cpu_use.at(iCPU)->operator =(tmp);
+
+    }
+    *lastcpu = *newcpu;
+    cpu_use.at(iCPU)->write();
+    lastcpu++;
+    newcpu++;
+  }
+}
+
+void SystemInfoModule::readCPUInfo(std::vector<cpu> &vcpu){
+  std::ifstream file("/proc/stat");
+  if(!file.is_open()){
+    std::cerr << "Failed to open system file /proc/stat" << std::endl;
+    file.close();
+    return;
+  }
+  std::string::size_type sz = 0;
+  std::string line;
+  for(auto it = vcpu.begin(); it != vcpu.end(); it++){
+    if(!std::getline(file,line)){
+      std::cerr << "Could not find enough lines in /proc/stat" << std::endl;
+      file.close();
+      return;
+    }
+    auto strs = split_arguments(line);
+    if(strs.size() < 5){
+      std::cerr << "Line seems to contain not enough data. Line: " << line << std::endl;
+    }
+
+    try{
+      it->totalUser = std::stoull(strs.at(1),&sz,0);
+      it->totalUserLow = std::stoull(strs.at(2),&sz,0);
+      it->totalSys = std::stoull(strs.at(3),&sz,0);
+      it->totalIdle = std::stoull(strs.at(4),&sz,0);
+    } catch (std::exception &e){
+      std::cout << "Caught an exception: " << e.what() << std::endl;
+      for(auto s : strs){
+        std::cout << "String token: " << s << std::endl;
+      }
+    }
+  }
 }
