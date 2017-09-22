@@ -49,18 +49,18 @@ void SystemInfoModule::mainLoop(){
 	double tmp[3] = {0., 0., 0.};
 
   if(lastInfo.size() != (nCPU+2)){
-    std::cerr << "Size of lastInfo: " << lastInfo.size() << "\t nCPU: " << nCPU << std::endl;
+    std::cerr << getName() << "Size of lastInfo: " << lastInfo.size() << "\t nCPU: " << nCPU << std::endl;
     throw std::runtime_error("Vector size mismatch in SystemInfoModule::mainLoop.");
   }
 
   if(cpu_use.size() != (nCPU+2)){
-    std::cerr << "Size of cpu_use: " << cpu_use.size() << "\t nCPU: " << nCPU << std::endl;
+    std::cerr << getName() << "Size of cpu_use: " << cpu_use.size() << "\t nCPU: " << nCPU << std::endl;
     throw std::runtime_error("Vector size mismatch in SystemInfoModule::mainLoop.");
   }
 
 	std::ifstream file("/proc/stat");
   if(!file.is_open()){
-    std::cerr << "Failed to open system file /proc/stat" << std::endl;
+    std::cerr << getName() << "Failed to open system file /proc/stat" << std::endl;
     file.close();
     return;
   }
@@ -71,15 +71,17 @@ void SystemInfoModule::mainLoop(){
 	  trigger.read();
 
 	  meminfo ();
-
-		maxMem            = kb_main_total;
-		freeMem           = kb_main_free;
-		cachedMem         = kb_main_cached;
-		usedMem           = maxMem - freeMem;
-		maxSwap           = kb_swap_total;
-		freeSwap          = kb_swap_free;
-		usedSwap          = maxSwap - freeSwap;
-
+	  try{
+      maxMem            = std::stoi(std::to_string(kb_main_total));
+      freeMem           = std::stoi(std::to_string(kb_main_free));
+      cachedMem         = std::stoi(std::to_string(kb_main_cached));
+      usedMem           = std::stoi(std::to_string(maxMem - freeMem));
+      maxSwap           = std::stoi(std::to_string(kb_swap_total));
+      freeSwap          = std::stoi(std::to_string(kb_swap_free));
+      usedSwap          = std::stoi(std::to_string(maxSwap - freeSwap));
+	  } catch (std::exception &e){
+	    std::cerr << getName() << "Conversion failed: " << e.what() << std::endl;
+	  }
 		maxMem.write();
 		freeMem.write();
 		cachedMem.write();
@@ -88,16 +90,20 @@ void SystemInfoModule::mainLoop(){
 		freeSwap.write();
 		usedSwap.write();
 
-//		// get system uptime
-		double    uptime_secs;
-		double    idle_secs;
-		uptime (&uptime_secs, &idle_secs);
-		uptime_sec        = (long) uptime_secs;
-		uptime_days       = uptime_sec / 86400 ;
-		uptime_day_hour   = (uptime_sec - (uptime_days * 86400)) / 3600;
-		uptime_day_mins   = (uptime_sec - (uptime_days * 86400) -
-		                    (uptime_day_hour * 3600)) / 60;
-//		cpu_use =
+    // get system uptime
+		try{
+      double    uptime_secs;
+      double    idle_secs;
+      uptime (&uptime_secs, &idle_secs);
+      uptime_sec        = std::stoi(std::to_string(uptime_secs));
+      uptime_days       = std::stoi(std::to_string(uptime_sec / 86400));
+      uptime_day_hour   = std::stoi(std::to_string((uptime_sec - (uptime_days * 86400)) / 3600));
+      uptime_day_mins   = std::stoi(std::to_string((uptime_sec - (uptime_days * 86400) -
+                          (uptime_day_hour * 3600)) / 60));
+    } catch (std::exception &e){
+      std::cerr << getName() << "Conversion failed: " << e.what() << std::endl;
+    }
+
 		loadavg (&tmp[0], &tmp[1], &tmp[2]);
 		loadAvg = tmp[0];
 		loadAvg5 = tmp[1];
@@ -149,7 +155,7 @@ void SystemInfoModule::calculatePCPU(){
 void SystemInfoModule::readCPUInfo(std::vector<cpu> &vcpu){
   std::ifstream file("/proc/stat");
   if(!file.is_open()){
-    std::cerr << "Failed to open system file /proc/stat" << std::endl;
+    std::cerr << getName() << "Failed to open system file /proc/stat" << std::endl;
     file.close();
     return;
   }
@@ -157,13 +163,13 @@ void SystemInfoModule::readCPUInfo(std::vector<cpu> &vcpu){
   std::string line;
   for(auto it = vcpu.begin(); it != vcpu.end(); it++){
     if(!std::getline(file,line)){
-      std::cerr << "Could not find enough lines in /proc/stat" << std::endl;
+      std::cerr << getName() << "Could not find enough lines in /proc/stat" << std::endl;
       file.close();
       return;
     }
     auto strs = split_arguments(line);
     if(strs.size() < 5){
-      std::cerr << "Line seems to contain not enough data. Line: " << line << std::endl;
+      std::cerr << getName() << "Line seems to contain not enough data. Line: " << line << std::endl;
     }
 
     try{
@@ -172,9 +178,9 @@ void SystemInfoModule::readCPUInfo(std::vector<cpu> &vcpu){
       it->totalSys = std::stoull(strs.at(3),&sz,0);
       it->totalIdle = std::stoull(strs.at(4),&sz,0);
     } catch (std::exception &e){
-      std::cout << "Caught an exception: " << e.what() << std::endl;
+      std::cerr << getName() << "Caught an exception: " << e.what() << std::endl;
       for(auto s : strs){
-        std::cout << "String token: " << s << std::endl;
+        std::cerr << getName() << "String token: " << s << std::endl;
       }
     }
   }

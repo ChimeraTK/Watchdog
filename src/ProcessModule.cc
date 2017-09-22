@@ -162,24 +162,28 @@ void ProcessModule::Failed(){
 void ProcessModule::FillProcInfo(const std::shared_ptr<proc_t> &info){
   if(info != nullptr){
     auto now = boost::posix_time::microsec_clock::local_time();
-    int old_time = utime + stime + cutime + cstime;
-    utime     = info->utime;
-    stime     = info->stime;
-    cutime    = info->cutime;
-    cstime    = info->cstime;
-    startTime = info->start_time;
-    priority  = info->priority;
-    nice      = info->nice;
-    rss       = info->rss;
-    uptime.read();
-    ticksPerSecond.read();
-    runtime   = uptime - startTime*1./ticksPerSecond;
+    int old_time;
+    try{
+      old_time = std::stoi(std::to_string(utime + stime + cutime + cstime));
+      utime     = std::stoi(std::to_string(info->utime));
+      stime     = std::stoi(std::to_string(info->stime));
+      cutime    = std::stoi(std::to_string(info->cutime));
+      cstime    = std::stoi(std::to_string(info->cstime));
+      startTime = std::stoi(std::to_string(info->start_time));
+      priority  = std::stoi(std::to_string(info->priority));
+      nice      = std::stoi(std::to_string(info->nice));
+      rss       = std::stoi(std::to_string(info->rss));
+      uptime.read();
+      ticksPerSecond.read();
+      runtime   = std::stoi(std::to_string(uptime - startTime*1./ticksPerSecond));
+    } catch (std::exception &e){
+      std::cerr << getName() << "FillProcInfo::Conversion failed: " << e.what() << std::endl;
+    }
     // check if it is the first call after process is started (time_stamp  == not_a_date_time)
     if(!time_stamp.is_special()){
       boost::posix_time::time_duration diff = now - time_stamp;
       pcpu      = 1.*(utime + stime + cutime + cstime - old_time)/ticksPerSecond / (diff.total_milliseconds() / 1000) * 100;
       avpcpu    = 1.*(utime + stime + cutime + cstime)/ticksPerSecond / runtime * 100;
-      std::cout << "Percent CPU usage: " << pcpu << std::endl;
     }
     time_stamp = now;
   } else {
