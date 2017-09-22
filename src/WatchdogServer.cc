@@ -12,6 +12,7 @@
 void TimerModule::mainLoop(){
   while(true){
     /**
+     * \internal
      *  Setting an interruption point is included in read() methods of ChimeraTK but not in write()!
      *  Thus set it by hand here!
      */
@@ -75,10 +76,7 @@ void WatchdogServer::defineConnections(){
 		it->second >> cs["SYS"](space2underscore(it->first));
 	}
 	systemInfo.findTag("CS").connectTo(cs["SYS"]);
-//	timer.trigger >> systemInfo.trigger;
 	timer.connectTo(systemInfo);
-
-//	systemInfo.cpu_use >> cs["SYS"]("cpuUsage");
 
 	std::cout << "Adding " << processes.size() << " processes..." << std::endl;
 	for(auto item : processes){
