@@ -21,9 +21,14 @@ namespace ctk = ChimeraTK;
 /**
  * This module is used to trigger the mainloops of the modules to go on.
  */
-struct TimerModule : public ctk::ApplicationModule{
+struct TimerModule: public ctk::ApplicationModule {
   using ctk::ApplicationModule::ApplicationModule;
-  ctk::ScalarOutput<int> trigger{this, "trigger", "" , "Trigger counter"}; ///< Observe this vaiable by other modules to obtain a trigger
+  /**
+   * \remark
+   * Observe this vaiable by other modules to obtain a trigger
+   */
+  ctk::ScalarOutput<int> trigger { this, "trigger", "", "Trigger counter",
+    { "Timer" }};
 
   /**
    * Application core main loop.
@@ -37,37 +42,41 @@ struct TimerModule : public ctk::ApplicationModule{
  * They need to be set at a later stage, which requires rephrasing the xml.
  * \todo Check if initial vales are needed?
  */
-struct WatchdogServer : public ctk::Application {
-	WatchdogServer();
-	~WatchdogServer() { shutdown(); }
+struct WatchdogServer: public ctk::Application {
+  WatchdogServer();
+  ~WatchdogServer() {
+    shutdown();
+  }
 
-	SystemInfoModule systemInfo{this, "systeminfo", "Module reading system information"};
-	/**
-	 * vector storing processes
-	 * The vector is filled during construction using information from the input xml file called:
-	 * watchdog_server_processes.xml
-	 * If that file is not found only one process named PROCESS is added.
-	 */
-	std::vector<std::shared_ptr<ProcessModule> > processes;
-	/**
-	 * Use either
-	 * - ctk::ControlSystemModule cs;
-	 *   in combinartion with
-	 *   cs["SYS"]("val")
-	 * or
-	 * - ctk::ControlSystemModule cs{"SYS"};
-	 *   in combination with
-	 *   cs("val")
-	 * In any case SYS defines the location in DOOCS.
-	 * SYS/TEST would create another hierarchy that would result
-	 * in SYS/TEST.val in DOOCS.
-	 *
-	 */
-	ctk::ControlSystemModule cs;
+  SystemInfoModule systemInfo { this, "systeminfo",
+      "Module reading system information" };
+  /**
+   * vector storing processes
+   * The vector is filled during construction using information from the input xml file called:
+   * watchdog_server_processes.xml
+   * If that file is not found only one process named PROCESS is added.
+   */
+  std::vector<std::shared_ptr<ProcessModule> > processes;
+  /**
+   * Use either
+   * - ctk::ControlSystemModule cs;
+   *   in combinartion with
+   *   cs["SYS"]("val")
+   * or
+   * - ctk::ControlSystemModule cs{"SYS"};
+   *   in combination with
+   *   cs("val")
+   * In any case SYS defines the location in DOOCS.
+   * SYS/TEST would create another hierarchy that would result
+   * in SYS/TEST.val in DOOCS.
+   *
+   */
+  ctk::ControlSystemModule cs;
 
-	TimerModule timer{this, "timer", "Module used to trigger the watchdog update"};
+  TimerModule timer { this, "timer",
+      "Module used to trigger the watchdog update" };
 
-	void defineConnections();
+  void defineConnections();
 
 };
 

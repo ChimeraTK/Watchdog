@@ -9,33 +9,33 @@
 #include <signal.h>
 
 #ifdef BOOST_1_64
-void ProcessModule::mainLoop(){
+void ProcessModule::mainLoop() {
   SetOffline();
   processRestarts = 0;
   processRestarts.write();
   while(true) {
     startProcess.read();
     // reset number of failed tries in case the process is set offline
-    if(!startProcess){
+    if(!startProcess) {
       processNFailed = 0;
       processNFailed.write();
     }
 
     // don't do anything in case failed more than 4 times -> to reset turn off/on the process
-    if(processNFailed > 4){
+    if(processNFailed > 4) {
       usleep(200000);
       continue;
     }
 
-    if(startProcess){
-      if(process.get() == nullptr || !process->running()){
+    if(startProcess) {
+      if(process.get() == nullptr || !process->running()) {
         std::cout << getName() << "::Trying to start the process..." << std::endl;
         processCMD.read();
-        try{
+        try {
           process.reset(new bp::child((std::string)processPath + (std::string)processCMD));
           SetOnline(process->id());
           process->detach();
-        } catch (std::system_error &e){
+        } catch (std::system_error &e) {
           std::cerr << getName() << "::Failed to start the process with cmd: " << (std::string)processPath + (std::string)processCMD << "\n Message: " << e.what() << std::endl;
           Failed();
         }
@@ -44,15 +44,15 @@ void ProcessModule::mainLoop(){
         std::cout << "Process is running..." << std::endl;
       }
     } else {
-      if(process.get() == nullptr || !process->running()){
+      if(process.get() == nullptr || !process->running()) {
         std::cout << getName() << "::Process is not running...OK" << std::endl;
       } else if (process->running()) {
         std::cout << getName() << "::Trying to kill the process..." << std::endl;
-        try{
+        try {
           process->terminate();
           process.reset();
           SetOffline();
-        } catch (std::system_error &e){
+        } catch (std::system_error &e) {
           std::cerr << getName() << "::Failed to kill the process." << std::endl;
         }
       }
@@ -62,7 +62,7 @@ void ProcessModule::mainLoop(){
 }
 #else
 
-void ProcessModule::mainLoop(){
+void ProcessModule::mainLoop() {
   SetOffline();
   processRestarts = 0;
   processRestarts.write();
@@ -70,21 +70,23 @@ void ProcessModule::mainLoop(){
     trigger.read();
     startProcess.read();
     // reset number of failed tries in case the process is set offline
-    if(!startProcess){
+    if(!startProcess) {
       processNFailed = 0;
       processNFailed.write();
     }
 
     // don't do anything in case failed more than 4 times -> to reset turn off/on the process
-    if(processNFailed > 4){
+    if(processNFailed > 4) {
       usleep(200000);
       continue;
     }
 
-    if(processPID > 0 && startProcess){
-      if(!process.isProcessRunning(processPID)){
+    if(processPID > 0 && startProcess) {
+      if(!process.isProcessRunning(processPID)) {
         Failed();
-        std::cerr << getName() << "::Child process not running any more, but it should run!" << std::endl;
+        std::cerr << getName()
+            << "::Child process not running any more, but it should run!"
+            << std::endl;
         processRestarts += 1;
         processRestarts.write();
 
@@ -94,16 +96,19 @@ void ProcessModule::mainLoop(){
       }
     }
 
-    if(startProcess){
-      if(processPID < 0){
-        std::cout << getName() << "::Trying to start the process..." << " PID: " << getpid() <<std::endl;
-        try{
+    if(startProcess) {
+      if(processPID < 0) {
+        std::cout << getName() << "::Trying to start the process..." << " PID: "
+            << getpid() << std::endl;
+        try {
           processPath.read();
           processCMD.read();
-          SetOnline(process.startProcess((std::string)processPath, (std::string)processCMD, getName()));
+          SetOnline(
+              process.startProcess((std::string) processPath,
+                  (std::string) processCMD, getName()));
           processNChilds = process.getNChilds(processPID);
           processNChilds.write();
-        } catch (std::runtime_error &e){
+        } catch(std::runtime_error &e) {
           std::cout << e.what() << std::endl;
           Failed();
         }
@@ -112,21 +117,24 @@ void ProcessModule::mainLoop(){
         std::cout << getName() << "::Process is running..." << processRunning << " PID: " << getpid() << std::endl;
 #endif
         pidOffset.read();
-        FillProcInfo(process.getInfo(processPID+pidOffset));
+        FillProcInfo(process.getInfo(processPID + pidOffset));
       }
     } else {
-      if(processPID < 0 ){
+      if(processPID < 0) {
 #ifdef DEBUG
         std::cout << getName() << "::Process Running: " << processRunning << std::endl;
         std::cout << getName() << "::Process is not running...OK" << " PID: " << getpid() <<std::endl;
 #endif
       } else {
-        std::cout << getName() << "::Trying to kill the process..." << " PID: " << getpid() <<std::endl;
+        std::cout << getName() << "::Trying to kill the process..." << " PID: "
+            << getpid() << std::endl;
         killSig.read();
         process.killProcess(processPID, killSig);
         usleep(200000);
-        if(process.isProcessRunning(processPID)){
-          std::cerr << getName() << "::Failed to kill the process. Try another signal, e.g. SIGKILL (9)." << std::endl;
+        if(process.isProcessRunning(processPID)) {
+          std::cerr << getName()
+              << "::Failed to kill the process. Try another signal, e.g. SIGKILL (9)."
+              << std::endl;
         } else {
           SetOffline();
         }
@@ -137,14 +145,14 @@ void ProcessModule::mainLoop(){
   }
 }
 
-void ProcessModule::SetOnline(const int &pid){
+void ProcessModule::SetOnline(const int &pid) {
   processPID = pid;
   processPID.write();
   processRunning = 1;
   processRunning.write();
 }
 
-void ProcessModule::SetOffline(){
+void ProcessModule::SetOffline() {
   processPID = -1;
   processPID.write();
   processRunning = 0;
@@ -152,38 +160,41 @@ void ProcessModule::SetOffline(){
   FillProcInfo(nullptr);
 }
 
-void ProcessModule::Failed(){
+void ProcessModule::Failed() {
   processNFailed = processNFailed + 1;
-    processNFailed.write();
-    SetOffline();
-    sleep(2);
+  processNFailed.write();
+  SetOffline();
+  sleep(2);
 }
 
-void ProcessModule::FillProcInfo(const std::shared_ptr<proc_t> &info){
-  if(info != nullptr){
+void ProcessModule::FillProcInfo(const std::shared_ptr<proc_t> &info) {
+  if(info != nullptr) {
     auto now = boost::posix_time::microsec_clock::local_time();
     int old_time;
-    try{
+    try {
       old_time = std::stoi(std::to_string(utime + stime + cutime + cstime));
-      utime     = std::stoi(std::to_string(info->utime));
-      stime     = std::stoi(std::to_string(info->stime));
-      cutime    = std::stoi(std::to_string(info->cutime));
-      cstime    = std::stoi(std::to_string(info->cstime));
+      utime = std::stoi(std::to_string(info->utime));
+      stime = std::stoi(std::to_string(info->stime));
+      cutime = std::stoi(std::to_string(info->cutime));
+      cstime = std::stoi(std::to_string(info->cstime));
       startTime = std::stoi(std::to_string(info->start_time));
-      priority  = std::stoi(std::to_string(info->priority));
-      nice      = std::stoi(std::to_string(info->nice));
-      rss       = std::stoi(std::to_string(info->rss));
+      priority = std::stoi(std::to_string(info->priority));
+      nice = std::stoi(std::to_string(info->nice));
+      rss = std::stoi(std::to_string(info->rss));
       uptime.read();
       ticksPerSecond.read();
-      runtime   = std::stoi(std::to_string(uptime - startTime*1./ticksPerSecond));
-    } catch (std::exception &e){
-      std::cerr << getName() << "FillProcInfo::Conversion failed: " << e.what() << std::endl;
+      runtime = std::stoi(std::to_string(uptime - startTime * 1. / ticksPerSecond));
+    } catch(std::exception &e) {
+      std::cerr << getName() << "FillProcInfo::Conversion failed: " << e.what()
+          << std::endl;
     }
     // check if it is the first call after process is started (time_stamp  == not_a_date_time)
-    if(!time_stamp.is_special()){
+    if(!time_stamp.is_special()) {
       boost::posix_time::time_duration diff = now - time_stamp;
-      pcpu      = 1.*(utime + stime + cutime + cstime - old_time)/ticksPerSecond / (diff.total_milliseconds() / 1000) * 100;
-      avpcpu    = 1.*(utime + stime + cutime + cstime)/ticksPerSecond / runtime * 100;
+      pcpu = 1. * (utime + stime + cutime + cstime - old_time) / ticksPerSecond
+          / (diff.total_milliseconds() / 1000) * 100;
+      avpcpu = 1. * (utime + stime + cutime + cstime) / ticksPerSecond / runtime
+          * 100;
     }
     time_stamp = now;
   } else {
@@ -214,5 +225,4 @@ void ProcessModule::FillProcInfo(const std::shared_ptr<proc_t> &info){
 }
 
 #endif
-
 
