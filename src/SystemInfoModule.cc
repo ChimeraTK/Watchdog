@@ -48,12 +48,12 @@ void SystemInfoModule::mainLoop(){
 	ticksPerSecond.write();
 	double tmp[3] = {0., 0., 0.};
 
-  if(lastInfo.size() != (nCPU+2)){
+  if(lastInfo.size() != (unsigned)(nCPU+2)){
     std::cerr << getName() << "Size of lastInfo: " << lastInfo.size() << "\t nCPU: " << nCPU << std::endl;
     throw std::runtime_error("Vector size mismatch in SystemInfoModule::mainLoop.");
   }
 
-  if(cpu_use.size() != (nCPU+2)){
+  if(cpu_use.size() != (unsigned)(nCPU+2)){
     std::cerr << getName() << "Size of cpu_use: " << cpu_use.size() << "\t nCPU: " << nCPU << std::endl;
     throw std::runtime_error("Vector size mismatch in SystemInfoModule::mainLoop.");
   }

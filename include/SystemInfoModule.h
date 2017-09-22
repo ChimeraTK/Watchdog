@@ -24,7 +24,11 @@ namespace ctk = ChimeraTK;
 class SystemInfoModule: public ctk::ApplicationModule {
 private:
   SysInfo sysInfo;
-  // needed for cpu usage calculation
+
+  /**
+   * CPU usage parameters needed to calculate the cpu usage.
+   * These vales are read from \c /proc/stat
+   */
   struct cpu{
     unsigned long long totalUser;
     unsigned long long totalUserLow;
@@ -38,7 +42,25 @@ private:
       totalIdle = TotIdle;
     }
   };
+
+  /**
+   * CPU usage parameters (see cpu) for the total system and the individual cores.
+   * Therefore, the size of this vector is nCores + 1
+   */
   std::vector<cpu> lastInfo;
+
+  /**
+   * Calculates the percentage of cpu usage.
+   * This is done in total and for core found on the system.
+   * If cpu usage is set to -1 there was an overflow in the \c /proc/stat file.
+   */
+  void calculatePCPU();
+
+  /**
+   * Read values from the \c /proc/stat for all cpu cores (cpux) and overall values (cpu).
+   */
+  void readCPUInfo(std::vector<cpu> &vcpu);
+
 public:
   SystemInfoModule(EntityOwner *owner, const std::string &name,
       const std::string &description, bool eliminateHierarchy = false,
@@ -80,11 +102,13 @@ public:
   ctk::ScalarOutput<double> loadAvg15 { this, "loadAvg15", "",
       "Average load within last 15min" , {"CS", "SYS"}};
   /** @} */
+
+  /**
+   * Main loop function.
+   * Reads number of cores and system clock ticks and other static parameter only once before the loop.
+   */
   void mainLoop();
 
-  void calculatePCPU();
-
-  void readCPUInfo(std::vector<cpu> &vcpu);
 };
 
 #endif /* INCLUDE_SYSTEMINFOMODULE_H_ */

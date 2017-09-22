@@ -158,7 +158,7 @@ bool ProcessHandler::isProcessRunning(const size_t &PID) {
   PROCTAB* proc = openproc(PROC_FILLMEM | PROC_FILLSTAT | PROC_FILLSTATUS);
   proc_t* proc_info;
   while ((proc_info = readproc(proc, NULL))) {
-    if (PID == proc_info->tid) {
+    if (PID == (unsigned)proc_info->tid) {
       freeproc(proc_info);
       return true;
     }
@@ -172,7 +172,7 @@ size_t ProcessHandler::getNChilds(const size_t &PGID) {
   proc_t* proc_info;
   size_t nChild = 0;
   while ((proc_info = readproc(proc, NULL))) {
-    if (PGID == proc_info->pgrp) {
+    if (PGID == (unsigned)proc_info->pgrp) {
 #ifdef DEBUG
       std::cout << "Found child for PGID: " << PGID << std::endl;
       std::cout << "Childs for PID: " << proc_info->tid << std::endl;
@@ -190,7 +190,7 @@ std::shared_ptr<proc_t> ProcessHandler::getInfo(const size_t &PID) {
   std::shared_ptr<proc_t> result(nullptr);
   while (proc_t* proc_info = readproc(proc, NULL)) {
     std::string tmp(proc_info->cmd);
-    if (proc_info->tid == PID) {
+    if (PID == (unsigned)proc_info->tid) {
       result.reset(new proc_t(*proc_info));
     }
     freeproc(proc_info);
