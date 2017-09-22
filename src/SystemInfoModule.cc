@@ -26,7 +26,7 @@ SystemInfoModule::SystemInfoModule(EntityOwner *owner, const std::string &name,
         space2underscore(it->first), "", space2underscore(it->first) });
   }
   // add two since nCPU starts counting at 0 and cpuTotal should be added too
-  for(int iCPU = 0; iCPU < (sysInfo.getNCpu() + 2); iCPU++) {
+  for(size_t iCPU = 0; iCPU < (sysInfo.getNCpu() + 2); iCPU++) {
     std::stringstream ss;
     ss << "cpu";
     if(iCPU != 0) {
