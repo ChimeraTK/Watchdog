@@ -199,28 +199,21 @@ std::shared_ptr<proc_t> ProcessHandler::getInfo(const size_t &PID) {
   return result;
 }
 
-SysInfo::SysInfo() {
-  cpu_info_read();
-}
-
-bool SysInfo::lookup(const std::string &line, const std::string &pattern) {
-  std::size_t found = line.find(pattern);
-  if (found == std::string::npos)
-    return false;
-
-  std::string pat = line.substr(0, line.find(":"));
-  std::string val = line.substr(line.find(":") + 1, line.length() - 1);
-
-  nfo.fill(val, pattern);
-  return true;
-}
-
-void SysInfo::cpu_info_read() {
+SysInfo::SysInfo() :
+  sysData{std::make_pair("vendor",""),
+          std::make_pair("family", ""),
+          std::make_pair("cpu family", ""),
+          std::make_pair("model", ""),
+          std::make_pair("model name", ""),
+          std::make_pair("stepping", ""),
+          std::make_pair("cpu MHz", ""),
+          std::make_pair("bogomips", "")},
+          ibegin(sysData.begin()), iend(sysData.end()){
   std::ifstream procfile("/proc/cpuinfo");
   if (!procfile.is_open())
     throw std::runtime_error("Failed to open /proc/cpuinfo");
   std::string line;
-  for (auto pat = nfo.ibegin; pat != nfo.iend; pat++) {
+  for (auto pat = ibegin; pat != iend; pat++) {
     while (std::getline(procfile, line)) {
       if (lookup(line, pat->first))
         break;
@@ -233,5 +226,18 @@ void SysInfo::cpu_info_read() {
   if (!cpufile.is_open())
     throw std::runtime_error("Failed to open /sys/devices/system/cpu/present");
   std::getline(cpufile, line);
-  nfo.count = std::atoi(line.substr(2, 2).c_str());
+  CPUcount = std::atoi(line.substr(2, 2).c_str());
 }
+
+bool SysInfo::lookup(const std::string &line, const std::string &pattern) {
+  std::size_t found = line.find(pattern);
+  if (found == std::string::npos)
+    return false;
+
+  std::string pat = line.substr(0, line.find(":"));
+  std::string val = line.substr(line.find(":") + 1, line.length() - 1);
+
+  fill(val, pattern);
+  return true;
+}
+

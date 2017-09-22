@@ -17,13 +17,14 @@
 SystemInfoModule::SystemInfoModule(EntityOwner *owner, const std::string &name, const std::string &description,
         bool eliminateHierarchy, const std::unordered_set<std::string> &tags):
 		ctk::ApplicationModule(owner, name, description, eliminateHierarchy, tags){
-	std::cout << "Init SystemInfoModule" << std::endl;
-	for(auto it = sysInfo.nfo.ibegin; it != sysInfo.nfo.iend; it++){
+	for(auto it = sysInfo.ibegin; it != sysInfo.iend; it++){
+#ifdef DEBUG
 		std::cout << "Adding sysInfor: " << space2underscore(it->first) << std::endl;
+#endif
 		strInfos[it->first].replace( ctk::ScalarOutput<std::string>{this, space2underscore(it->first), "" ,space2underscore(it->first)});
 	}
 	// add two since nCPU starts counting at 0 and cpuTotal should be added too
-	for(int iCPU = 0; iCPU < (sysInfo.nfo.count + 2); iCPU++){
+	for(int iCPU = 0; iCPU < (sysInfo.getNCpu() + 2); iCPU++){
 	  std::stringstream ss;
 	  ss << "cpu";
 	  if(iCPU != 0){
@@ -38,11 +39,11 @@ SystemInfoModule::SystemInfoModule(EntityOwner *owner, const std::string &name, 
 }
 
 void SystemInfoModule::mainLoop(){
-	for(auto it = sysInfo.nfo.ibegin; it != sysInfo.nfo.iend; it++){
+	for(auto it = sysInfo.ibegin; it != sysInfo.iend; it++){
 		strInfos.at(it->first) = it->second;
 		strInfos.at(it->first).write();
 	}
-	nCPU = sysInfo.nfo.count;
+	nCPU = sysInfo.getNCpu();
 	nCPU.write();
 	ticksPerSecond = sysconf(_SC_CLK_TCK);
 	ticksPerSecond.write();

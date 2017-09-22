@@ -97,54 +97,74 @@ public:
 	size_t getNChilds(const size_t &PGID);
 };
 
+/**
+ * \return New string where spaces are replaced by underscores.
+ */
 std::string space2underscore(std::string text);
+
+/**
+ * Split a string in tokens. Considered delimiters are tabs and spaces.
+ * If there is a sequence of delimiters they are treated as one delimiter.
+ * \return Tokens of the split string.
+ */
 std::vector<std::string> split_arguments(const std::string &arguments);
 
 /**
- * Struct used to store static system information that should not change
- * during runtime.
+ * Class that reads static system information from the system by reading
+ * \c /proc/cpuinfo and \c /sys/devices/system/cpu/present.
+ * \throws runtime_error Exception is thrown in case one of the /proc/ files could not be read.
  */
-struct cpu_info {
-	std::map<std::string,std::string> sysData;
-	std::map<std::string,std::string>::iterator ibegin;
-	std::map<std::string,std::string>::iterator iend;
-	int count;
-	cpu_info(){
-		sysData["vendor"] = "";
-		sysData["family"] = "";
-		sysData["cpu family"] = "";
-		sysData["model"] = "";
-		sysData["model name"] = "";
-		sysData["stepping"] = "";
-		sysData["cpu MHz"] = "";
-		sysData["bogomips"] = "";
-		ibegin = sysData.begin();
-		iend = sysData.end();
-		count = -1;
-	};
-	void fill(const std::string &val, const std::string &pattern){
-		if(sysData.count(pattern))
-			sysData.at(pattern) = val;
-	}
-	std::string getInfo(const std::string &pattern){
-		return sysData.at(pattern);
-	}
-
-};
-
 class SysInfo{
 private:
+  /**
+   * System data are stored in this map. The keys are equivalent to the keys found
+   * in \c /proc/cpuinfo.
+   */
+  std::map<std::string,std::string> sysData;
+
+  unsigned int CPUcount; ///< Number of cpu cores.
+
+  /**
+   * Check if the given pattern is included in the given line.
+   * In case the patter is found the data is filled into the map sysData by
+   * calling fill(...).
+   */
 	bool lookup(const std::string &line, const std::string &pattern);
+
 	/**
-	 * Read information about the system.
-	 * \throws runtime_error Exception is thrown in case one of the /proc/ files could not be read.
+	 * Fill a value into the map sysData using the pattern string as map key.
 	 */
-	void cpu_info_read();
+  void fill(const std::string &val, const std::string &pattern){
+    if(sysData.count(pattern))
+      sysData.at(pattern) = val;
+  }
 
 public:
-	cpu_info nfo;
+  /** Iterator pointing to the beginning of the system data map */
+  const std::map<std::string,std::string>::iterator ibegin;
+  /** Iterator pointing to the end of the system data map */
+  const std::map<std::string,std::string>::iterator iend;
 
+  /**
+   * Read information about the system.
+   * \throws runtime_error Exception is thrown in case one of the /proc/ files could not be read.
+   */
 	SysInfo();
+
+	/**
+	 * Get a system parameter stored in \c/proc/cpuinfo
+	 * \remark Not all parameter found in  \c/proc/cpuinfo are available.
+	 * \param pattern The key used in \c /proc/cpuinfo and the internal map sysData.
+	 */
+  std::string getInfo(const std::string &pattern){
+    return sysData.at(pattern);
+  }
+
+  /**
+   * \return Number cpu cores of the system
+   */
+  unsigned int getNCpu(){return CPUcount;}
+
 };
 
 
