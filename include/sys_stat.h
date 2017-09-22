@@ -98,6 +98,7 @@ public:
 };
 
 std::string space2underscore(std::string text);
+std::vector<std::string> split_arguments(const std::string &arguments);
 
 /**
  * Struct used to store static system information that should not change
