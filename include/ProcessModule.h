@@ -115,7 +115,10 @@ struct ProcessInfoModule : public ctk::ApplicationModule {
 };
 
 struct ProcessControlModule : public ProcessInfoModule{
-  using ctk::ApplicationModule::ApplicationModule;
+  ProcessControlModule(EntityOwner *owner, const std::string &name,
+      const std::string &description, bool eliminateHierarchy = false,
+      const std::unordered_set<std::string> &tags = { });
+
   /**
    * \name Process control parameter and status
    * @{
@@ -161,8 +164,7 @@ struct ProcessControlModule : public ProcessInfoModule{
   /**
    * Application core main loop.
    */
-  void mainLoop();
+  virtual void mainLoop();
 };
-
 
 #endif /* INCLUDE_PROCESSMODULE_H_ */

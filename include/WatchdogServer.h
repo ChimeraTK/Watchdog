@@ -50,7 +50,7 @@ struct WatchdogServer : public ctk::Application {
 	 * watchdog_server_processes.xml
 	 * If that file is not found only one process named PROCESS is added.
 	 */
-	std::vector<std::shared_ptr<ProcessControlModule> > processes;
+	std::vector<ProcessControlModule> processes;
 	/**
 	 * Use either
 	 * - ctk::ControlSystemModule cs;

@@ -121,6 +121,11 @@ void ControlProcessInfoModule::mainLoop(){
 }
 #else
 
+ProcessControlModule::ProcessControlModule(EntityOwner *owner, const std::string &name, const std::string &description,
+        bool eliminateHierarchy, const std::unordered_set<std::string> &tags):
+    ctk::ApplicationModule(owner, name, description, eliminateHierarchy, tags){
+}
+
 void ProcessControlModule::mainLoop(){
   SetOffline();
   processRestarts = 0;
