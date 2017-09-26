@@ -37,7 +37,7 @@ void ProcessInfoModule::FillProcInfo(const std::shared_ptr<proc_t> &info){
       boost::posix_time::time_duration diff = now - time_stamp;
       pcpu      = 1.*(utime + stime + cutime + cstime - old_time)/ticksPerSecond / (diff.total_milliseconds() / 1000) * 100;
       avpcpu    = 1.*(utime + stime + cutime + cstime)/ticksPerSecond / runtime * 100;
-      std::cout << "Percent CPU usage: " << pcpu << std::endl;
+      std::cout << getName() << "::Percent CPU usage: " << pcpu << std::endl;
     }
     time_stamp = now;
   } else {
@@ -120,11 +120,6 @@ void ControlProcessInfoModule::mainLoop(){
   }
 }
 #else
-
-ProcessControlModule::ProcessControlModule(EntityOwner *owner, const std::string &name, const std::string &description,
-        bool eliminateHierarchy, const std::unordered_set<std::string> &tags):
-    ctk::ApplicationModule(owner, name, description, eliminateHierarchy, tags){
-}
 
 void ProcessControlModule::mainLoop(){
   SetOffline();

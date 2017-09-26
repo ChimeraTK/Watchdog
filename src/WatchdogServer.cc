@@ -45,7 +45,7 @@ WatchdogServer::WatchdogServer(): Application("WatchdogServer") {
 			if(!nameAttr) {
 				std::cerr << "Missing name attribute of 'process' tag. Going to skip one the process elements in the xml file: " << fileName << std::endl;
 			} else {
-				processes.emplace_back(this, nameAttr->get_value().data(), "process");
+				processes.emplace_back(new ProcessControlModule{this, nameAttr->get_value().data(), "process"});
 				for(const auto&cchild : element->get_children()){
 					const xmlpp::Element *eelement = dynamic_cast<const xmlpp::Element*>(cchild);
 					if(!eelement) continue;
@@ -64,7 +64,7 @@ WatchdogServer::WatchdogServer(): Application("WatchdogServer") {
 	} catch(xmlpp::exception &e) {
 	  std::cerr << "Error opening the xml file '"+fileName+"': "+e.what() << std::endl;
 	  std::cout << "I will create only one process named PROCESS..." << std::endl;
-	  processes.emplace_back(this, "PROCESS", "Test process");
+	  processes.emplace_back(new ProcessControlModule{this, "PROCESS", "Test process"});
 	}
 }
 
@@ -81,22 +81,23 @@ void WatchdogServer::defineConnections(){
 
 //	systemInfo.cpu_use >> cs["SYS"]("cpuUsage");
 
+	watchdog.findTag("CS").connectTo(cs[watchdog.getName()]);
+	systemInfo.ticksPerSecond >> watchdog.ticksPerSecond;
+  systemInfo.uptime_sec >> watchdog.uptime;
+  timer.trigger >> watchdog.trigger;
+
 	std::cout << "Adding " << processes.size() << " processes..." << std::endl;
-	for(auto processMod = processes.begin(); processMod != processes.end(); processMod++){
-		cs[processMod->getName()]("enableProcess") >> processMod->startProcess;
-		cs[processMod->getName()]("CMD") >> processMod->processCMD;
-		cs[processMod->getName()]("Path") >> processMod->processPath;
-		cs[processMod->getName()]("killSig") >> processMod->killSig;
-		cs[processMod->getName()]("pidOffset") >> processMod->pidOffset;
-		std::cout << "Adding CS item: " << processMod->getName() << std::endl;
-		processMod->findTag("CS").dump();
-		processMod->findTag("CS").connectTo(cs[processMod->getName()]);
-		std::cout << "Connecting done." << std::endl;
-		systemInfo.ticksPerSecond >> processMod->ticksPerSecond;
-		systemInfo.uptime_sec >> processMod->uptime;
-		timer.trigger >> processMod->trigger;
+	for(auto item : processes){
+    cs[item->getName()]("enableProcess") >> item->startProcess;
+    cs[item->getName()]("CMD") >> item->processCMD;
+    cs[item->getName()]("Path") >> item->processPath;
+    cs[item->getName()]("killSig") >> item->killSig;
+    cs[item->getName()]("pidOffset") >> item->pidOffset;
+		item->findTag("CS").connectTo(cs[item->getName()]);
+		systemInfo.ticksPerSecond >> item->ticksPerSecond;
+		systemInfo.uptime_sec >> item->uptime;
+		timer.trigger >> item->trigger;
 	}
 	dumpConnections();
-	dumpGraph("watchdog_server.dot");
 }
 
