@@ -45,7 +45,7 @@ WatchdogServer::WatchdogServer(): Application("WatchdogServer") {
 			if(!nameAttr) {
 				std::cerr << "Missing name attribute of 'process' tag. Going to skip one the process elements in the xml file: " << fileName << std::endl;
 			} else {
-				processes.emplace_back(new ProcessControlModule{this, nameAttr->get_value().data(), "process"});
+				processes.emplace_back(this, nameAttr->get_value().data(), "process");
 				for(const auto&cchild : element->get_children()){
 					const xmlpp::Element *eelement = dynamic_cast<const xmlpp::Element*>(cchild);
 					if(!eelement) continue;
@@ -64,7 +64,7 @@ WatchdogServer::WatchdogServer(): Application("WatchdogServer") {
 	} catch(xmlpp::exception &e) {
 	  std::cerr << "Error opening the xml file '"+fileName+"': "+e.what() << std::endl;
 	  std::cout << "I will create only one process named PROCESS..." << std::endl;
-	  processes.emplace_back(new ProcessControlModule{this, "PROCESS", "Test process"});
+	  processes.emplace_back(this, "PROCESS", "Test process");
 	}
 }
 
@@ -87,7 +87,7 @@ void WatchdogServer::defineConnections(){
   timer.trigger >> watchdog.trigger;
 
 	std::cout << "Adding " << processes.size() << " processes..." << std::endl;
-	for(auto item : processes){
+	for(auto &item : processes){
     cs[item->getName()]("enableProcess") >> item->startProcess;
     cs[item->getName()]("CMD") >> item->processCMD;
     cs[item->getName()]("Path") >> item->processPath;

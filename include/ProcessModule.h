@@ -32,12 +32,10 @@ namespace bp = boost_process;
  * \todo Implement proper data types instead of using int for all of them!
  */
 struct ProcessInfoModule : public ctk::ApplicationModule {
-  ProcessInfoModule(EntityOwner *owner, const std::string &name,
-      const std::string &description, bool eliminateHierarchy = false,
-      const std::unordered_set<std::string> &tags = { }):
-        ctk::ApplicationModule(owner, name, description, eliminateHierarchy, tags){
-    std::cout << "Construnctor call name is: " << name << std::endl;
-  };
+  using ctk::ApplicationModule::ApplicationModule;
+
+  ProcessInfoModule(ProcessInfoModule &&rhs) : ctk::ApplicationModule(std::move(rhs)){};
+
 #ifdef BOOST_1_64
     std::shared_ptr<boost_process::process::child> process;
 #else
@@ -120,12 +118,11 @@ struct ProcessInfoModule : public ctk::ApplicationModule {
 };
 
 struct ProcessControlModule : public ProcessInfoModule{
-  ProcessControlModule(EntityOwner *owner, const std::string &name,
-      const std::string &description, bool eliminateHierarchy = false,
-      const std::unordered_set<std::string> &tags = { }):
-        ProcessInfoModule(owner, name, description, eliminateHierarchy, tags){
-    std::cout << "Construnctor call name is: " << name << std::endl;
-  };
+
+  using ProcessInfoModule::ProcessInfoModule;
+
+  ProcessControlModule(ProcessControlModule &&rhs) : ProcessInfoModule(std::move(rhs)){};
+
   /**
    * \name Process control parameter and status
    * @{
