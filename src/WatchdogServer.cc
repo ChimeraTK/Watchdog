@@ -88,15 +88,15 @@ void WatchdogServer::defineConnections(){
 
 	std::cout << "Adding " << processes.size() << " processes..." << std::endl;
 	for(auto &item : processes){
-    cs[item->getName()]("enableProcess") >> item->startProcess;
-    cs[item->getName()]("CMD") >> item->processCMD;
-    cs[item->getName()]("Path") >> item->processPath;
-    cs[item->getName()]("killSig") >> item->killSig;
-    cs[item->getName()]("pidOffset") >> item->pidOffset;
-		item->findTag("CS").connectTo(cs[item->getName()]);
-		systemInfo.ticksPerSecond >> item->ticksPerSecond;
-		systemInfo.uptime_sec >> item->uptime;
-		timer.trigger >> item->trigger;
+    cs[item.getName()]("enableProcess") >> item.startProcess;
+    cs[item.getName()]("CMD") >> item.processCMD;
+    cs[item.getName()]("Path") >> item.processPath;
+    cs[item.getName()]("killSig") >> item.killSig;
+    cs[item.getName()]("pidOffset") >> item.pidOffset;
+		item.findTag("CS").connectTo(cs[item.getName()]);
+		systemInfo.ticksPerSecond >> item.ticksPerSecond;
+		systemInfo.uptime_sec >> item.uptime;
+		timer.trigger >> item.trigger;
 	}
 	dumpConnections();
 }
