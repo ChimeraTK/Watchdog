@@ -106,7 +106,7 @@ public:
     { "CS", "SYS" } };
   ctk::ScalarOutput<int> uptime_day_mins { this, "uptimeMin", "min", "Minutes up",
     { "CS", "SYS" } };
-  std::vector<std::unique_ptr<ctk::ScalarOutput<double> > > cpu_use;
+  std::vector<ctk::ScalarOutput<double> > cpu_use;
   ctk::ScalarOutput<double> loadAvg { this, "loadAvg", "", "Average load within last min",
     { "CS", "SYS" } };
   ctk::ScalarOutput<double> loadAvg5 { this, "loadAvg5", "", "Average load within last 5min",

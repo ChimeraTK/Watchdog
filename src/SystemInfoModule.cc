@@ -32,13 +32,16 @@ SystemInfoModule::SystemInfoModule(EntityOwner *owner, const std::string &name,
     if(iCPU != 0) {
       ss << iCPU;
       ss << "Usage";
-      cpu_use.emplace_back(
-          new ctk::ScalarOutput<double>(this, ss.str(), "%", "CPU usage",
+      cpu_use.push_back(ctk::ScalarOutput<double>(this, ss.str().c_str(), "%", "CPU usage",
               { "CS", "SYS" }));
+//      cpu_use.emplace_back(this, ss.str().c_str(), "%", "CPU usage",
+//              { "CS", "SYS" });
     } else {
-      cpu_use.emplace_back(
-          new ctk::ScalarOutput<double>(this, "cpuUsageTotal", "%", "Total CPU usage",
+      cpu_use.push_back(ctk::ScalarOutput<double>(this, "cpuUsageTotal", "%", "Total CPU usage",
               { "CS", "SYS" }));
+
+//      cpu_use.emplace_back(this, "cpuUsageTotal", "%", "Total CPU usage",
+//              { "CS", "SYS" });
     }
     lastInfo.push_back(cpu());
   }
@@ -149,7 +152,7 @@ void SystemInfoModule::calculatePCPU() {
         || newcpu->totalSys < lastcpu->totalSys
         || newcpu->totalIdle < lastcpu->totalIdle) {
       //Overflow detection. Just skip this value.
-      cpu_use.at(iCPU)->operator =(-1.0);
+      cpu_use.at(iCPU) =(-1.0);
     } else {
       total = (newcpu->totalUser - lastcpu->totalUser)
           + (newcpu->totalUserLow - lastcpu->totalUserLow)
@@ -158,11 +161,11 @@ void SystemInfoModule::calculatePCPU() {
       total += (newcpu->totalIdle - lastcpu->totalIdle);
       tmp /= total;
       tmp *= 100.;
-      cpu_use.at(iCPU)->operator =(tmp);
+      cpu_use.at(iCPU) = tmp;
 
     }
     *lastcpu = *newcpu;
-    cpu_use.at(iCPU)->write();
+    cpu_use.at(iCPU).write();
     lastcpu++;
     newcpu++;
   }
