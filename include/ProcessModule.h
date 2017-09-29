@@ -34,8 +34,6 @@ namespace bp = boost_process;
 struct ProcessInfoModule : public ctk::ApplicationModule {
   using ctk::ApplicationModule::ApplicationModule;
 
-  ProcessInfoModule(ProcessInfoModule &&rhs) : ctk::ApplicationModule(std::move(rhs)){};
-
 #ifdef BOOST_1_64
     std::shared_ptr<boost_process::process::child> process;
 #else
@@ -120,8 +118,6 @@ struct ProcessInfoModule : public ctk::ApplicationModule {
 struct ProcessControlModule : public ProcessInfoModule{
 
   using ProcessInfoModule::ProcessInfoModule;
-
-  ProcessControlModule(ProcessControlModule &&rhs) : ProcessInfoModule(std::move(rhs)){};
 
   /**
    * \name Process control parameter and status
