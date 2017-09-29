@@ -8,12 +8,79 @@
 #include "ProcessModule.h"
 #include <signal.h>
 
+void ProcessInfoModule::mainLoop(){
+  processPID = getpid();
+  processPID.write();
+  while(true) {
+    trigger.read();
+    FillProcInfo(process.getInfo(processPID));
+  }
+}
+
+void ProcessInfoModule::FillProcInfo(const std::shared_ptr<proc_t> &info){
+  if(info != nullptr) {
+    auto now = boost::posix_time::microsec_clock::local_time();
+    int old_time;
+    try {
+      old_time = std::stoi(std::to_string(utime + stime + cutime + cstime));
+      utime = std::stoi(std::to_string(info->utime));
+      stime = std::stoi(std::to_string(info->stime));
+      cutime = std::stoi(std::to_string(info->cutime));
+      cstime = std::stoi(std::to_string(info->cstime));
+      startTime = std::stoi(std::to_string(info->start_time));
+      priority = std::stoi(std::to_string(info->priority));
+      nice = std::stoi(std::to_string(info->nice));
+      rss = std::stoi(std::to_string(info->rss));
+      uptime.read();
+      ticksPerSecond.read();
+      runtime = std::stoi(std::to_string(uptime - startTime * 1. / ticksPerSecond));
+    } catch(std::exception &e) {
+      std::cerr << getName() << "FillProcInfo::Conversion failed: " << e.what()
+          << std::endl;
+    }
+    // check if it is the first call after process is started (time_stamp  == not_a_date_time)
+    if(!time_stamp.is_special()) {
+      boost::posix_time::time_duration diff = now - time_stamp;
+      pcpu = 1. * (utime + stime + cutime + cstime - old_time) / ticksPerSecond
+          / (diff.total_milliseconds() / 1000) * 100;
+      avpcpu = 1. * (utime + stime + cutime + cstime) / ticksPerSecond / runtime
+          * 100;
+    }
+    time_stamp = now;
+  } else {
+    time_stamp = boost::posix_time::not_a_date_time;
+    utime     = 0;
+    stime     = 0;
+    cutime    = 0;
+    cstime    = 0;
+    startTime = 0;
+    priority  = 0;
+    nice      = 0;
+    rss       = 0;
+    pcpu      = 0;
+    avpcpu    = 0;
+    runtime   = 0;
+  }
+  utime    .write();
+  stime    .write();
+  cutime   .write();
+  cstime   .write();
+  startTime.write();
+  priority .write();
+  nice     .write();
+  rss      .write();
+  pcpu     .write();
+  avpcpu   .write();
+  runtime  .write();
+}
+
 #ifdef BOOST_1_64
-void ProcessModule::mainLoop() {
+void ProcessControlModule::mainLoop() {
   SetOffline();
   processRestarts = 0;
   processRestarts.write();
   while(true) {
+    trigger.read();
     startProcess.read();
     // reset number of failed tries in case the process is set offline
     if(!startProcess) {
@@ -57,12 +124,11 @@ void ProcessModule::mainLoop() {
         }
       }
     }
-    usleep(200000);
   }
 }
 #else
 
-void ProcessModule::mainLoop() {
+void ProcessControlModule::mainLoop() {
   SetOffline();
   processRestarts = 0;
   processRestarts.write();
@@ -140,19 +206,18 @@ void ProcessModule::mainLoop() {
         }
       }
     }
-//    usleep(200000);
-//    sleep(2);
   }
 }
+#endif
 
-void ProcessModule::SetOnline(const int &pid) {
+void ProcessControlModule::SetOnline(const int &pid){
   processPID = pid;
   processPID.write();
   processRunning = 1;
   processRunning.write();
 }
 
-void ProcessModule::SetOffline() {
+void ProcessControlModule::SetOffline(){
   processPID = -1;
   processPID.write();
   processRunning = 0;
@@ -160,69 +225,10 @@ void ProcessModule::SetOffline() {
   FillProcInfo(nullptr);
 }
 
-void ProcessModule::Failed() {
+void ProcessControlModule::Failed(){
   processNFailed = processNFailed + 1;
   processNFailed.write();
   SetOffline();
   sleep(2);
 }
-
-void ProcessModule::FillProcInfo(const std::shared_ptr<proc_t> &info) {
-  if(info != nullptr) {
-    auto now = boost::posix_time::microsec_clock::local_time();
-    int old_time;
-    try {
-      old_time = std::stoi(std::to_string(utime + stime + cutime + cstime));
-      utime = std::stoi(std::to_string(info->utime));
-      stime = std::stoi(std::to_string(info->stime));
-      cutime = std::stoi(std::to_string(info->cutime));
-      cstime = std::stoi(std::to_string(info->cstime));
-      startTime = std::stoi(std::to_string(info->start_time));
-      priority = std::stoi(std::to_string(info->priority));
-      nice = std::stoi(std::to_string(info->nice));
-      rss = std::stoi(std::to_string(info->rss));
-      uptime.read();
-      ticksPerSecond.read();
-      runtime = std::stoi(std::to_string(uptime - startTime * 1. / ticksPerSecond));
-    } catch(std::exception &e) {
-      std::cerr << getName() << "FillProcInfo::Conversion failed: " << e.what()
-          << std::endl;
-    }
-    // check if it is the first call after process is started (time_stamp  == not_a_date_time)
-    if(!time_stamp.is_special()) {
-      boost::posix_time::time_duration diff = now - time_stamp;
-      pcpu = 1. * (utime + stime + cutime + cstime - old_time) / ticksPerSecond
-          / (diff.total_milliseconds() / 1000) * 100;
-      avpcpu = 1. * (utime + stime + cutime + cstime) / ticksPerSecond / runtime
-          * 100;
-    }
-    time_stamp = now;
-  } else {
-    time_stamp = boost::posix_time::not_a_date_time;
-    utime     = 0;
-    stime     = 0;
-    cutime    = 0;
-    cstime    = 0;
-    startTime = 0;
-    priority  = 0;
-    nice      = 0;
-    rss       = 0;
-    pcpu      = 0;
-    avpcpu    = 0;
-    runtime   = 0;
-  }
-  utime    .write();
-  stime    .write();
-  cutime   .write();
-  cstime   .write();
-  startTime.write();
-  priority .write();
-  nice     .write();
-  rss      .write();
-  pcpu     .write();
-  avpcpu   .write();
-  runtime  .write();
-}
-
-#endif
 

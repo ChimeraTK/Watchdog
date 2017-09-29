@@ -45,6 +45,7 @@ private:
   std::string pidFile; ///< Name of the temporary file that holds the child PID
 
 public:
+  ProcessHandler(): pid(-1){ };
   ~ProcessHandler();
   /**
    * Start a process.

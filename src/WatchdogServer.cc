@@ -51,8 +51,7 @@ WatchdogServer::WatchdogServer() :
               << "Missing name attribute of 'process' tag. Going to skip one the process elements in the xml file: "
               << fileName << std::endl;
         } else {
-          processes.emplace_back(
-              new ProcessModule { this, nameAttr->get_value().data(), "process" });
+          processes.emplace_back(this, nameAttr->get_value().data(), "process");
           for(const auto&cchild : element->get_children()) {
             const xmlpp::Element *eelement =
                 dynamic_cast<const xmlpp::Element*>(cchild);
@@ -78,8 +77,7 @@ WatchdogServer::WatchdogServer() :
     std::cerr << "Error opening the xml file '" + fileName + "': " + e.what()
         << std::endl;
     std::cout << "I will create only one process named PROCESS..." << std::endl;
-    processes.emplace_back(
-        new ProcessModule { this, "PROCESS", "Test process" });
+    processes.emplace_back(this, "PROCESS", "Test process");
   }
 }
 
@@ -94,17 +92,22 @@ void WatchdogServer::defineConnections() {
   systemInfo.findTag("CS").connectTo(cs["SYS"]);
   timer.connectTo(systemInfo);
 
+	watchdog.findTag("CS").connectTo(cs[watchdog.getName()]);
+	systemInfo.ticksPerSecond >> watchdog.ticksPerSecond;
+  systemInfo.uptime_sec >> watchdog.uptime;
+  timer.trigger >> watchdog.trigger;
+
   std::cout << "Adding " << processes.size() << " processes..." << std::endl;
-  for(auto item : processes) {
-    cs[item->getName()]("enableProcess") >> item->startProcess;
-    cs[item->getName()]("CMD") >> item->processCMD;
-    cs[item->getName()]("Path") >> item->processPath;
-    cs[item->getName()]("killSig") >> item->killSig;
-    cs[item->getName()]("pidOffset") >> item->pidOffset;
-    item->findTag("CS").connectTo(cs[item->getName()]);
-    systemInfo.ticksPerSecond >> item->ticksPerSecond;
-    systemInfo.uptime_sec >> item->uptime;
-    timer.trigger >> item->trigger;
+  for(auto &item : processes) {
+    cs[item.getName()]("enableProcess") >> item.startProcess;
+    cs[item.getName()]("CMD") >> item.processCMD;
+    cs[item.getName()]("Path") >> item.processPath;
+    cs[item.getName()]("killSig") >> item.killSig;
+    cs[item.getName()]("pidOffset") >> item.pidOffset;
+    item.findTag("CS").connectTo(cs[item.getName()]);
+    systemInfo.ticksPerSecond >> item.ticksPerSecond;
+    systemInfo.uptime_sec >> item.uptime;
+    timer.trigger >> item.trigger;
   }
   dumpConnections();
 }

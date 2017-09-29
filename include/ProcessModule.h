@@ -30,8 +30,9 @@ namespace bp = boost_process;
  * It also collects information about the running job.
  * \todo Implement proper data types instead of using int for all of them!
  */
-struct ProcessModule: public ctk::ApplicationModule {
+struct ProcessInfoModule : public ctk::ApplicationModule {
   using ctk::ApplicationModule::ApplicationModule;
+
 #ifdef BOOST_1_64
   std::shared_ptr<boost_process::process::child> process;
 #else
@@ -43,37 +44,8 @@ struct ProcessModule: public ctk::ApplicationModule {
    * \name Process parameter and status
    * @{
    */
-  /** Path where to execute the command used to start the process */
-  ctk::ScalarPollInput<std::string> processPath { this, "path", "",
-      "Path where to execute the command used to start the process",
-      { "PROCESS", getName() } };
-  /** Start the process */
-  ctk::ScalarPollInput<int> startProcess { this, "startProcess", "", "Start the process",
-    { "PROCESS", getName() } };
-  /** Command used to start the process */
-  ctk::ScalarPollInput<std::string> processCMD { this, "cmd", "", "Command used to start the process",
-    { "PROCESS", getName() } };
-  /** Signal used to kill the process (2: SIGINT, 9: SIGKILL) */
-  ctk::ScalarPollInput<int> killSig { this, "killSig", "", "Signal used to kill the process (2: SIGINT, 9: SIGKILL)",
-    { "PROCESS", getName() } };
-  /** PID offset used when monitoring the started process */
-  ctk::ScalarPollInput<int> pidOffset { this, "pidOffset", "", "PID offset used when monitoring the started process",
-    { "PROCESS", getName() } };
-  /** Process status 0: not running, 1: running */
-  ctk::ScalarOutput<int> processRunning { this, "Status", "", "Process status 0: not running, 1: running",
-      { "CS", "PROCESS", getName() } };
-  /** Number of failed restarts */
-  ctk::ScalarOutput<int> processNFailed { this, "Failed", "", "Number of failed restarts",
-    { "CS", "PROCESS", getName() } };
   /** PID of the process */
   ctk::ScalarOutput<int> processPID { this, "PID", "", "PID of the process",
-    { "CS", "PROCESS", getName() } };
-  /** Number of started processes */
-  ctk::ScalarOutput<int> processNChilds { this, "nChilds", "", "Number of started processes",
-    { "CS", "PROCESS", getName() } };
-  /** Number of time the process was automatically */
-  ctk::ScalarOutput<int> processRestarts { this, "Restarts", "", "Number of time the process was automatically "
-          "restarted by the watchdog since server start.",
     { "CS", "PROCESS", getName() } };
   /** Time since process is running */
   ctk::ScalarOutput<int> runtime { this, "runtime", "s", "Time since process is running",
@@ -145,6 +117,58 @@ struct ProcessModule: public ctk::ApplicationModule {
   /** @} */
 
   /**
+   * Application core main loop.
+   */
+  virtual void mainLoop();
+
+  /**
+   * Fill process information read via proc interface.
+   * \remark When changing the pidOffset to get information of another child the
+   * cpu usage value will be wrong for the first reading!
+   */
+  void FillProcInfo(const std::shared_ptr<proc_t> &info);
+};
+
+struct ProcessControlModule : public ProcessInfoModule{
+
+  using ProcessInfoModule::ProcessInfoModule;
+
+  /**
+   * \name Process control parameter and status
+   * @{
+   */
+  /** Path where to execute the command used to start the process */
+  ctk::ScalarPollInput<std::string> processPath { this, "path", "",
+      "Path where to execute the command used to start the process",
+      { "PROCESS", getName() } };
+  /** Start the process */
+  ctk::ScalarPollInput<int> startProcess { this, "startProcess", "", "Start the process",
+    { "PROCESS", getName() } };
+  /** Command used to start the process */
+  ctk::ScalarPollInput<std::string> processCMD { this, "cmd", "", "Command used to start the process",
+    { "PROCESS", getName() } };
+  /** Signal used to kill the process (2: SIGINT, 9: SIGKILL) */
+  ctk::ScalarPollInput<int> killSig { this, "killSig", "", "Signal used to kill the process (2: SIGINT, 9: SIGKILL)",
+    { "PROCESS", getName() } };
+  /** PID offset used when monitoring the started process */
+  ctk::ScalarPollInput<int> pidOffset { this, "pidOffset", "", "PID offset used when monitoring the started process",
+    { "PROCESS", getName() } };
+  /** Process status 0: not running, 1: running */
+  ctk::ScalarOutput<int> processRunning { this, "Status", "", "Process status 0: not running, 1: running",
+      { "CS", "PROCESS", getName() } };
+  /** Number of failed restarts */
+  ctk::ScalarOutput<int> processNFailed { this, "Failed", "", "Number of failed restarts",
+    { "CS", "PROCESS", getName() } };   
+  /** Number of started processes */
+  ctk::ScalarOutput<int> processNChilds { this, "nChilds", "", "Number of started processes",
+    { "CS", "PROCESS", getName() } };
+  /** Number of time the process was automatically */
+  ctk::ScalarOutput<int> processRestarts { this, "Restarts", "", "Number of time the process was automatically "
+          "restarted by the watchdog since server start.",
+    { "CS", "PROCESS", getName() } };
+  /** @} */
+
+  /**
    * Set the PID and set status to running.
    * \param pid PID of the process that was started.
    */
@@ -165,13 +189,6 @@ struct ProcessModule: public ctk::ApplicationModule {
    * Application core main loop.
    */
   void mainLoop();
-
-  /**
-   * Fill process information read via proc interface.
-   * \remark When changing the pidOffset to get information of another child the
-   * cpu usage value will be wrong for the first reading!
-   */
-  void FillProcInfo(const std::shared_ptr<proc_t> &info);
 };
 
 #endif /* INCLUDE_PROCESSMODULE_H_ */
