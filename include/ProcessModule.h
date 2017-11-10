@@ -13,8 +13,6 @@
 
 #include <memory>
 
-//#include "sys_stat.h"
-
 namespace ctk = ChimeraTK;
 
 #ifdef BOOST_1_64
