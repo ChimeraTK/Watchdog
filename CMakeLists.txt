@@ -39,6 +39,30 @@ ELSE()
                       "   -DADAPTER=OPCUA to use OPC-UA")
 ENDIF()
 
+##################RPATH handling ##################################
+#RPATH handling
+# use, i.e. don't skip the full RPATH for the build tree
+SET(CMAKE_SKIP_BUILD_RPATH  FALSE)
+
+# when building, don't use the install RPATH already
+# (but later on when installing)
+SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
+
+# add the automatically determined parts of the RPATH
+# which point to directories outside the build tree to the install RPATH
+SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+
+
+# the RPATH to be used when installing, but only if it's not a system directory
+LIST(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/lib" isSystemDir)
+IF("${isSystemDir}" STREQUAL "-1")
+  if("${CMAKE_INSTALL_PREFIX}" STREQUAL "/export/doocs/server")
+    SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${PROJECT_NAME}/lib")
+  else()
+    SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+  endif()
+ENDIF("${isSystemDir}" STREQUAL "-1")
+
 ##################FIX THIS#########################################
 #check boost version that includes boost.process
 FIND_PACKAGE(Boost 1.64 COMPONENTS thread system filesystem unit_test_framework)
@@ -78,14 +102,6 @@ set(server_sources ${CMAKE_SOURCE_DIR}/src/applicationInstance.cc)
 configure_file(include/version.h.in ${PROJECT_BINARY_DIR}/version/version.h)
 include_directories(${PROJECT_BINARY_DIR}/version)
 
-# keep the rpath in the installed executable and library to correctly find the dependencies
-if("${CMAKE_INSTALL_PREFIX}" STREQUAL "/export/doocs/server")
-  SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${PROJECT_NAME}/lib")
-else()
-  SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
-endif()
-SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-
 # server library (to avoid compiling everyting multiple times)
 add_library(${PROJECT_NAME}lib SHARED ${library_sources} )
 set_target_properties(${PROJECT_NAME}lib PROPERTIES VERSION ${${PROJECT_NAME}_FULL_LIBRARY_VERSION}
@@ -102,7 +118,7 @@ target_link_libraries(${PROJECT_NAME} ${PROJECT_NAME}lib ${ChimeraTK-ControlSyst
 # XML file generation
 add_executable(${PROJECT_NAME}-xmlGenerator ${server_sources})
 set_target_properties(${PROJECT_NAME}-xmlGenerator PROPERTIES COMPILE_FLAGS "-DGENERATE_XML")
-target_link_libraries(${PROJECT_NAME}-xmlGenerator ${PROJECT_NAME}lib)
+target_link_libraries(${PROJECT_NAME}-xmlGenerator ${PROJECT_NAME}lib )
 
 add_custom_target(${PROJECT_NAME}-xml ALL DEPENDS ${PROJECT_NAME}-xmlGenerator COMMAND ${PROJECT_BINARY_DIR}/${PROJECT_NAME}-xmlGenerator WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
 
@@ -113,16 +129,6 @@ include_directories(${CMAKE_SOURCE_DIR}/test)
 add_executable(test_${PROJECT_NAME} ${test_sources})
 target_link_libraries(test_${PROJECT_NAME} ${PROJECT_NAME}lib ${Boost_LIBRARIES}  )
 add_test(test_${PROJECT_NAME} test_${PROJECT_NAME})
-
-# The make coverage command is only available in debug mode
-IF(CMAKE_BUILD_TYPE STREQUAL "Debug")
-  #configure_file(cmake/Makefile.coverage.in ${PROJECT_BINARY_DIR}/Makefile.coverage @ONLY)
-  #add_custom_target(coverage
-  #  make -f Makefile.coverage
-  #  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-  #  COMMENT "Generating test coverage documentation" VERBATIM
-  #)
-ENDIF(CMAKE_BUILD_TYPE STREQUAL "Debug")
 
 # copy config file for running in virtuallab environment
 FILE( COPY ${CMAKE_SOURCE_DIR}/configs/devMapFile.dmap DESTINATION ${PROJECT_BINARY_DIR})
