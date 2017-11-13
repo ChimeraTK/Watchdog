@@ -82,6 +82,16 @@ void SystemInfoModule::mainLoop() {
 
   readCPUInfo(lastInfo);
 
+  // read the system start time (uncertainty in the order of seconds...)
+  double uptime_secs;
+  double idle_secs;
+  uptime(&uptime_secs, &idle_secs);
+  auto now = boost::posix_time::second_clock::local_time();
+  startTime = boost::posix_time::to_time_t(now) - std::stoi(std::to_string(uptime_secs));
+  startTimeStr = boost::posix_time::to_simple_string(boost::posix_time::from_time_t(startTime));
+  startTime.write();
+  startTimeStr.write();
+
   while(true) {
     trigger.read();
 
@@ -107,9 +117,8 @@ void SystemInfoModule::mainLoop() {
 
     // get system uptime
     try {
-      double uptime_secs;
-      double idle_secs;
       uptime(&uptime_secs, &idle_secs);
+
       uptime_sec      = std::stoi(std::to_string(uptime_secs));
       uptime_days     = std::stoi(std::to_string(uptime_sec / 86400));
       uptime_day_hour = std::stoi(

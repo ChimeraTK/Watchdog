@@ -27,13 +27,20 @@ void ProcessInfoModule::FillProcInfo(const std::shared_ptr<proc_t> &info){
       stime = std::stoi(std::to_string(info->stime));
       cutime = std::stoi(std::to_string(info->cutime));
       cstime = std::stoi(std::to_string(info->cstime));
-      startTime = std::stoi(std::to_string(info->start_time));
+
+
+      // info->start_time reads s since system was started
+      sysStartTime.read();
+      int relativeStartTime = 1. * std::stoi(std::to_string(info->start_time)) / ticksPerSecond;
+      startTime = sysStartTime + relativeStartTime;
+      startTimeStr = boost::posix_time::to_simple_string(boost::posix_time::from_time_t(startTime));
       priority = std::stoi(std::to_string(info->priority));
       nice = std::stoi(std::to_string(info->nice));
       rss = std::stoi(std::to_string(info->rss));
-      uptime.read();
+
+      sysUpTime.read();
       ticksPerSecond.read();
-      runtime = std::stoi(std::to_string(uptime - startTime * 1. / ticksPerSecond));
+      runtime = std::stoi(std::to_string(sysUpTime - std::stoi(std::to_string(info->start_time)) * 1. / ticksPerSecond));
     } catch(std::exception &e) {
       std::cerr << getName() << "FillProcInfo::Conversion failed: " << e.what()
           << std::endl;
@@ -66,6 +73,7 @@ void ProcessInfoModule::FillProcInfo(const std::shared_ptr<proc_t> &info){
   cutime   .write();
   cstime   .write();
   startTime.write();
+  startTimeStr.write();
   priority .write();
   nice     .write();
   rss      .write();
@@ -81,9 +89,9 @@ void ProcessControlModule::mainLoop() {
   processRestarts.write();
   while(true) {
     trigger.read();
-    startProcess.read();
+    enableProcess.read();
     // reset number of failed tries in case the process is set offline
-    if(!startProcess) {
+    if(!enableProcess) {
       processNFailed = 0;
       processNFailed.write();
     }
@@ -94,7 +102,7 @@ void ProcessControlModule::mainLoop() {
       continue;
     }
 
-    if(startProcess) {
+    if(enableProcess) {
       if(process.get() == nullptr || !process->running()) {
         std::cout << getName() << "::Trying to start the process..." << std::endl;
         processCMD.read();
@@ -134,11 +142,13 @@ void ProcessControlModule::mainLoop() {
   processRestarts.write();
   while(true) {
     trigger.read();
-    startProcess.read();
-    // reset number of failed tries in case the process is set offline
-    if(!startProcess) {
+    enableProcess.read();
+    // reset number of failed tries and restarts in case the process is set offline
+    if(!enableProcess) {
       processNFailed = 0;
       processNFailed.write();
+      processRestarts = 0;
+      processRestarts.write();
     }
 
     // don't do anything in case failed more than 4 times -> to reset turn off/on the process
@@ -147,7 +157,7 @@ void ProcessControlModule::mainLoop() {
       continue;
     }
 
-    if(processPID > 0 && startProcess) {
+    if(processPID > 0 && enableProcess) {
       if(!proc_util::isProcessRunning(processPID)) {
         Failed();
         std::cerr << getName()
@@ -157,12 +167,12 @@ void ProcessControlModule::mainLoop() {
         processRestarts.write();
 
       } else {
-        processRunning = 1;
-        processRunning.write();
+        processIsRunning = 1;
+        processIsRunning.write();
       }
     }
 
-    if(startProcess) {
+    if(enableProcess) {
       if(processPID < 0) {
         std::cout << getName() << "::Trying to start the process..." << " PID: "
             << getpid() << std::endl;
@@ -180,15 +190,17 @@ void ProcessControlModule::mainLoop() {
         }
       } else {
 #ifdef DEBUG
-        std::cout << getName() << "::Process is running..." << processRunning << " PID: " << getpid() << std::endl;
+        std::cout << getName() << "::Process is running..." << processIsRunning << " PID: " << getpid() << std::endl;
 #endif
         pidOffset.read();
         FillProcInfo(proc_util::getInfo(processPID + pidOffset));
       }
     } else {
       if(processPID < 0) {
+        processIsRunning = 0;
+        processIsRunning.write();
 #ifdef DEBUG
-        std::cout << getName() << "::Process Running: " << processRunning << std::endl;
+        std::cout << getName() << "::Process Running: " << processIsRunning << std::endl;
         std::cout << getName() << "::Process is not running...OK" << " PID: " << getpid() <<std::endl;
 #endif
       } else {
@@ -213,15 +225,15 @@ void ProcessControlModule::mainLoop() {
 void ProcessControlModule::SetOnline(const int &pid){
   processPID = pid;
   processPID.write();
-  processRunning = 1;
-  processRunning.write();
+  processIsRunning = 1;
+  processIsRunning.write();
 }
 
 void ProcessControlModule::SetOffline(){
   processPID = -1;
   processPID.write();
-  processRunning = 0;
-  processRunning.write();
+  processIsRunning = 0;
+  processIsRunning.write();
   FillProcInfo(nullptr);
 }
 

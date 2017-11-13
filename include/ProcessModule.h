@@ -63,7 +63,8 @@ struct ProcessInfoModule : public ctk::ApplicationModule {
   ctk::ScalarPollInput<int> ticksPerSecond { this, "tickPerSecond", "Hz",
       "Number of clock ticks per second" };
   /** Uptime of the system */
-  ctk::ScalarPollInput<int> uptime { this, "uptime", "s", "Uptime of the system" };
+  ctk::ScalarPollInput<int> sysUpTime { this, "sysUpTime", "s", "Uptime of the system" };
+  ctk::ScalarPollInput<int> sysStartTime { this, "sysStartTime", "s", "System start time of the system since EPOCH" };
   /** @} */
 
   /**
@@ -86,8 +87,11 @@ struct ProcessInfoModule : public ctk::ApplicationModule {
   ctk::ScalarOutput<int> cstime { this, "cstime", "clock ticks", "cumulative stime of process and reaped children",
     { "CS", "PROCESS", getName() } };
   /** start time of process -- seconds since 1-1-70 */
-  ctk::ScalarOutput<int> startTime { this, "startTime", "clock ticks", "start time of process -- seconds since 1-1-70",
+  ctk::ScalarOutput<int> startTime { this, "startTime", "s", "start time of process with respect to system start [s]",
     { "CS", "PROCESS", getName() } };
+
+  ctk::ScalarOutput<std::string> startTimeStr { this, "startTimeStr", "", "start time string",
+      { "CS", "PROCESS", getName() } };
 
   //\todo Use long
   /** kernel scheduling priority */
@@ -140,7 +144,7 @@ struct ProcessControlModule : public ProcessInfoModule{
       "Path where to execute the command used to start the process",
       { "PROCESS", getName() } };
   /** Start the process */
-  ctk::ScalarPollInput<int> startProcess { this, "startProcess", "", "Start the process",
+  ctk::ScalarPollInput<int> enableProcess { this, "startProcess", "", "Start the process",
     { "PROCESS", getName() } };
   /** Command used to start the process */
   ctk::ScalarPollInput<std::string> processCMD { this, "cmd", "", "Command used to start the process",
@@ -152,7 +156,7 @@ struct ProcessControlModule : public ProcessInfoModule{
   ctk::ScalarPollInput<int> pidOffset { this, "pidOffset", "", "PID offset used when monitoring the started process",
     { "PROCESS", getName() } };
   /** Process status 0: not running, 1: running */
-  ctk::ScalarOutput<int> processRunning { this, "Status", "", "Process status 0: not running, 1: running",
+  ctk::ScalarOutput<int> processIsRunning { this, "IsRunning", "", "Process status 0: not running, 1: running",
       { "CS", "PROCESS", getName() } };
   /** Number of failed restarts */
   ctk::ScalarOutput<int> processNFailed { this, "Failed", "", "Number of failed restarts",

@@ -98,6 +98,10 @@ public:
   ctk::ScalarOutput<int> usedSwap { this, "usedSwap", "kB", "Used swap",
     { "CS", "SYS" } };
   //\todo: Implement the following as long!
+  ctk::ScalarOutput<int> startTime { this, "startTimeS", "s", "startTimeS",
+      { "CS", "SYS" } };
+  ctk::ScalarOutput<std::string> startTimeStr { this, "startTimeStr", "s", "startTimeStr",
+        { "CS", "SYS" } };
   ctk::ScalarOutput<int> uptime_sec { this, "uptimeSec", "s", "Uptime",
     { "CS", "SYS" } };
   ctk::ScalarOutput<int> uptime_days { this, "uptimeDays", "day", "Days up",
