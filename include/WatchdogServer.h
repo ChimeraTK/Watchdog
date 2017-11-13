@@ -52,13 +52,6 @@ struct WatchdogServer: public ctk::Application {
       "Module reading system information" };
 
   /**
-   * The proc reader used to read system information.
-   */
-  ProcReader proc;
-
-  std::mutex proc_mutex;  // protects proc
-
-  /**
    * vector storing processes
    * The vector is filled during construction using information from the input xml file called:
    * watchdog_server_processes.xml
@@ -66,7 +59,7 @@ struct WatchdogServer: public ctk::Application {
    */
   std::vector<ProcessControlModule> processes;
   
-  ProcessInfoModule watchdog{&proc,this, "watchdog", "Module monitoring the watchdog process"};
+  ProcessInfoModule watchdog{this, "watchdog", "Module monitoring the watchdog process"};
   /**
    * Use either
    * - ctk::ControlSystemModule cs;

@@ -16,9 +16,7 @@ using namespace boost::unit_test_framework;
 using namespace std;
 
 BOOST_AUTO_TEST_CASE( testProcessHelper){
-  std::mutex lock;
-  ProcReader proc(&lock);
-	ProcessHandler p(&proc);
+	ProcessHandler p;
 	size_t pid;
 	try{
 		pid = p.startProcess("/bin","ping google.de");
@@ -27,15 +25,13 @@ BOOST_AUTO_TEST_CASE( testProcessHelper){
 		cout << e.what() << endl;
 	}
 	sleep(2);
-	BOOST_CHECK_EQUAL(proc.isProcessRunning(pid), true);
+	BOOST_CHECK_EQUAL(proc_util::isProcessRunning(pid), true);
 	p.killProcess(pid,SIGINT);
 	sleep(2);
-	BOOST_CHECK_EQUAL(proc.isProcessRunning(pid), false);
+	BOOST_CHECK_EQUAL(proc_util::isProcessRunning(pid), false);
 }
 
 BOOST_AUTO_TEST_CASE( testPIDTest){
-  std::mutex lock;
-  ProcReader proc(&lock);
   size_t pid = -1;
-  BOOST_CHECK_EQUAL(proc.isProcessRunning(pid), false);
+  BOOST_CHECK_EQUAL(proc_util::isProcessRunning(pid), false);
 }

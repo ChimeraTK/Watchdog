@@ -30,11 +30,6 @@ namespace bp = boost_process;
  */
 struct ProcessInfoModule : public ctk::ApplicationModule {
   using ctk::ApplicationModule::ApplicationModule;
-  ProcessInfoModule(ProcReader* proc, EntityOwner *owner, const std::string &name,
-      const std::string &description, bool eliminateHierarchy = false,
-      const std::unordered_set<std::string> &tags = { });
-
-  ProcReader* proc;
 
 #ifdef BOOST_1_64
   std::shared_ptr<boost_process::process::child> process;

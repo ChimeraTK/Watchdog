@@ -16,22 +16,13 @@
 #undef GENERATE_XML
 #include <ChimeraTK/ApplicationCore/ScalarAccessor.h>
 
-
 /**
  * This class is used to read /proc information via libproc.
  * The libproc library is not thread safe. Therefore only one
  * instance of the ProcReader should be present!
  */
-class ProcReader{
-private:
-  PROCTAB* proc;
-  proc_t* proc_info;
-  std::mutex *mutex;
-  void open();
-  void close();
-public:
-  ProcReader(std::mutex *lock);
-  virtual ~ProcReader(){};
+namespace proc_util{
+  extern std::mutex proc_mutex;
   /**
    * Use system folder \c /proc to search for a process with the given process ID.
    * If a directory with the given PID is found the process is running.
@@ -74,10 +65,9 @@ private:
   void cleanup();
   int pid; ///< The pid of the last process that was started.
   std::string pidFile; ///< Name of the temporary file that holds the child PID
-  ProcReader* proc;
 
 public:
-  ProcessHandler(ProcReader* proc): pid(-1), proc(proc){ };
+  ProcessHandler(): pid(-1){ };
   ~ProcessHandler();
   /**
    * Start a process.

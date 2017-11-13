@@ -23,39 +23,31 @@
 #include <iterator>
 #include <boost/algorithm/string.hpp>
 
-ProcReader::ProcReader(std::mutex *lock):proc(nullptr), proc_info(nullptr), mutex(lock){
-}
+namespace proc_util{
+std::mutex proc_mutex;
 
-void ProcReader::open(){
-  proc = openproc(PROC_FILLMEM | PROC_FILLSTAT | PROC_FILLSTATUS);
-}
-
-void ProcReader::close(){
-  freeproc(proc_info);
-  closeproc(proc);
-}
-
-bool ProcReader::isProcessRunning(const int &PID) {
-  std::lock_guard<std::mutex> lock(*mutex);
-  open();
+bool isProcessRunning(const int &PID) {
+  std::lock_guard<std::mutex> lock(proc_mutex);
+  PROCTAB* proc = openproc(PROC_FILLMEM | PROC_FILLSTAT | PROC_FILLSTATUS);
+  proc_t* proc_info;
   int tmpid;
   while ((proc_info = readproc(proc, NULL)) != NULL) {
     //\ToDo: Check if freeproc needs to be called every time
-    std::cout << "Testing pid: " << proc_info->tid << "\t Searching for: " << PID << std::endl;
     if(PID == proc_info->tid) {
-      std::cout << "Found pid." << std::endl;
-      close();
+      freeproc(proc_info);
+      closeproc(proc);
       return true;
     }
   }
-  std::cout << "Pid not found " << std::endl;
-  close();
+  freeproc(proc_info);
+  closeproc(proc);
   return false;
 }
 
-size_t ProcReader::getNChilds(const size_t &PGID) {
-  std::lock_guard<std::mutex> lock(*mutex);
-  open();
+size_t getNChilds(const size_t &PGID) {
+  std::lock_guard<std::mutex> lock(proc_mutex);
+  PROCTAB* proc = openproc(PROC_FILLMEM | PROC_FILLSTAT | PROC_FILLSTATUS);
+  proc_t* proc_info;
   size_t nChild = 0;
   while((proc_info = readproc(proc, NULL)) != NULL) {
     //\ToDo: Check if freeproc needs to be called every time
@@ -67,14 +59,16 @@ size_t ProcReader::getNChilds(const size_t &PGID) {
       nChild++;
     }
   }
-  close();
+  freeproc(proc_info);
+  closeproc(proc);
   return nChild;
 
 }
 
-std::shared_ptr<proc_t> ProcReader::getInfo(const size_t &PID) {
-  std::lock_guard<std::mutex> lock(*mutex);
-  open();
+std::shared_ptr<proc_t> getInfo(const size_t &PID) {
+  std::lock_guard<std::mutex> lock(proc_mutex);
+  PROCTAB* proc = openproc(PROC_FILLMEM | PROC_FILLSTAT | PROC_FILLSTATUS);
+  proc_t* proc_info;
   std::shared_ptr<proc_t> result(nullptr);
   while((proc_info = readproc(proc, NULL)) != NULL) {
     //\ToDo: Check if freeproc needs to be called every time
@@ -83,8 +77,10 @@ std::shared_ptr<proc_t> ProcReader::getInfo(const size_t &PID) {
       result.reset(new proc_t(*proc_info));
     }
   }
-  close();
+  freeproc(proc_info);
+  closeproc(proc);
   return result;
+}
 }
 
 std::string space2underscore(std::string text) {
@@ -107,7 +103,7 @@ ProcessHandler::~ProcessHandler() {
 }
 
 void ProcessHandler::cleanup() {
-  if(proc->isProcessRunning(pid)) {
+  if(proc_util::isProcessRunning(pid)) {
     std::cout
         << "Going to kill (SIGINT) process in the destructor of ProcessHandler for process: "
         << pid << std::endl;
@@ -116,7 +112,7 @@ void ProcessHandler::cleanup() {
     return;
   }
   usleep(200000);
-  if(proc->isProcessRunning(pid)) {
+  if(proc_util::isProcessRunning(pid)) {
     std::cout
         << "Going to kill (SIGKILL) process in the destructor of ProcessHandler for process: "
         << pid << std::endl;
@@ -211,7 +207,7 @@ bool ProcessHandler::readTempPID(int &PID) {
 }
 
 void ProcessHandler::killProcess(const size_t &PID, const int &sig) {
-  if(!proc->isProcessRunning(PID)) {
+  if(!proc_util::isProcessRunning(PID)) {
     std::cerr << "When trying to kill a process with PID " << PID
         << " no such process was running!" << std::endl;
     return;
