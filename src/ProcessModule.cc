@@ -8,12 +8,19 @@
 #include "ProcessModule.h"
 #include <signal.h>
 
+ProcessInfoModule::ProcessInfoModule(ProcReader* proc, EntityOwner *owner, const std::string &name,
+    const std::string &description, bool eliminateHierarchy,
+    const std::unordered_set<std::string> &tags):
+        ctk::ApplicationModule(owner, name, description, eliminateHierarchy, tags), proc(proc), process(proc){
+
+}
+
 void ProcessInfoModule::mainLoop(){
   processPID = getpid();
   processPID.write();
   while(true) {
     trigger.read();
-    FillProcInfo(process.getInfo(processPID));
+    FillProcInfo(proc->getInfo(processPID));
   }
 }
 
@@ -148,7 +155,7 @@ void ProcessControlModule::mainLoop() {
     }
 
     if(processPID > 0 && startProcess) {
-      if(!process.isProcessRunning(processPID)) {
+      if(!proc->isProcessRunning(processPID)) {
         Failed();
         std::cerr << getName()
             << "::Child process not running any more, but it should run!"
@@ -172,7 +179,7 @@ void ProcessControlModule::mainLoop() {
           SetOnline(
               process.startProcess((std::string) processPath,
                   (std::string) processCMD, getName()));
-          processNChilds = process.getNChilds(processPID);
+          processNChilds = proc->getNChilds(processPID);
           processNChilds.write();
         } catch(std::runtime_error &e) {
           std::cout << e.what() << std::endl;
@@ -183,7 +190,7 @@ void ProcessControlModule::mainLoop() {
         std::cout << getName() << "::Process is running..." << processRunning << " PID: " << getpid() << std::endl;
 #endif
         pidOffset.read();
-        FillProcInfo(process.getInfo(processPID + pidOffset));
+        FillProcInfo(proc->getInfo(processPID + pidOffset));
       }
     } else {
       if(processPID < 0) {
@@ -197,7 +204,7 @@ void ProcessControlModule::mainLoop() {
         killSig.read();
         process.killProcess(processPID, killSig);
         usleep(200000);
-        if(process.isProcessRunning(processPID)) {
+        if(proc->isProcessRunning(processPID)) {
           std::cerr << getName()
               << "::Failed to kill the process. Try another signal, e.g. SIGKILL (9)."
               << std::endl;

@@ -23,6 +23,70 @@
 #include <iterator>
 #include <boost/algorithm/string.hpp>
 
+ProcReader::ProcReader(std::mutex *lock):proc(nullptr), proc_info(nullptr), mutex(lock){
+}
+
+void ProcReader::open(){
+  proc = openproc(PROC_FILLMEM | PROC_FILLSTAT | PROC_FILLSTATUS);
+}
+
+void ProcReader::close(){
+  freeproc(proc_info);
+  closeproc(proc);
+}
+
+bool ProcReader::isProcessRunning(const int &PID) {
+  std::lock_guard<std::mutex> lock(*mutex);
+  open();
+  int tmpid;
+  while ((proc_info = readproc(proc, NULL)) != NULL) {
+    //\ToDo: Check if freeproc needs to be called every time
+    std::cout << "Testing pid: " << proc_info->tid << "\t Searching for: " << PID << std::endl;
+    if(PID == proc_info->tid) {
+      std::cout << "Found pid." << std::endl;
+      close();
+      return true;
+    }
+  }
+  std::cout << "Pid not found " << std::endl;
+  close();
+  return false;
+}
+
+size_t ProcReader::getNChilds(const size_t &PGID) {
+  std::lock_guard<std::mutex> lock(*mutex);
+  open();
+  size_t nChild = 0;
+  while((proc_info = readproc(proc, NULL)) != NULL) {
+    //\ToDo: Check if freeproc needs to be called every time
+    if(PGID == (unsigned) proc_info->pgrp) {
+#ifdef DEBUG
+      std::cout << "Found child for PGID: " << PGID << std::endl;
+      std::cout << "Childs for PID: " << proc_info->tid << std::endl;
+#endif
+      nChild++;
+    }
+  }
+  close();
+  return nChild;
+
+}
+
+std::shared_ptr<proc_t> ProcReader::getInfo(const size_t &PID) {
+  std::lock_guard<std::mutex> lock(*mutex);
+  open();
+  std::shared_ptr<proc_t> result(nullptr);
+  while((proc_info = readproc(proc, NULL)) != NULL) {
+    //\ToDo: Check if freeproc needs to be called every time
+    std::string tmp(proc_info->cmd);
+    if(PID == (unsigned) proc_info->tid) {
+      result.reset(new proc_t(*proc_info));
+    }
+  }
+  close();
+  return result;
+}
+
 std::string space2underscore(std::string text) {
   std::transform(text.begin(), text.end(), text.begin(), [](char ch) {
     return ch == ' ' ? '_' : ch;
@@ -37,12 +101,13 @@ std::vector<std::string> split_arguments(const std::string &arguments) {
   return strs;
 }
 
+
 ProcessHandler::~ProcessHandler() {
   cleanup();
 }
 
 void ProcessHandler::cleanup() {
-  if(isProcessRunning(pid)) {
+  if(proc->isProcessRunning(pid)) {
     std::cout
         << "Going to kill (SIGINT) process in the destructor of ProcessHandler for process: "
         << pid << std::endl;
@@ -51,7 +116,7 @@ void ProcessHandler::cleanup() {
     return;
   }
   usleep(200000);
-  if(isProcessRunning(pid)) {
+  if(proc->isProcessRunning(pid)) {
     std::cout
         << "Going to kill (SIGKILL) process in the destructor of ProcessHandler for process: "
         << pid << std::endl;
@@ -65,12 +130,12 @@ size_t ProcessHandler::startProcess(const std::string &path,
     throw std::runtime_error(
         "Path or command not set before starting a proccess!");
   }
-  if(isProcessRunning(pid)) {
-    std::cerr
-        << "There is still a process running that was not cleaned up! I will do a cleanup now."
-        << std::endl;
-    cleanup();
-  }
+//  if(isProcessRunning(pid)) {
+//    std::cerr
+//        << "There is still a process running that was not cleaned up! I will do a cleanup now."
+//        << std::endl;
+//    cleanup();
+//  }
   pidFile = std::string("pid") + append;
   pid_t p = fork();
   if(p == 0) {
@@ -130,7 +195,7 @@ size_t ProcessHandler::startProcess(const std::string &path,
   return pid;
 }
 
-bool ProcessHandler::readTempPID(size_t &PID) {
+bool ProcessHandler::readTempPID(int &PID) {
   std::ifstream testFile;
   testFile.open(pidFile);
   if(testFile.is_open()) {
@@ -146,7 +211,7 @@ bool ProcessHandler::readTempPID(size_t &PID) {
 }
 
 void ProcessHandler::killProcess(const size_t &PID, const int &sig) {
-  if(!isProcessRunning(PID)) {
+  if(!proc->isProcessRunning(PID)) {
     std::cerr << "When trying to kill a process with PID " << PID
         << " no such process was running!" << std::endl;
     return;
@@ -155,51 +220,6 @@ void ProcessHandler::killProcess(const size_t &PID, const int &sig) {
   std::cout << "Going to kill process: " << PID << std::endl;
 #endif
   kill(-PID, sig);
-}
-
-bool ProcessHandler::isProcessRunning(const size_t &PID) {
-  PROCTAB* proc = openproc(PROC_FILLMEM | PROC_FILLSTAT | PROC_FILLSTATUS);
-  proc_t* proc_info;
-  while((proc_info = readproc(proc, NULL))) {
-    if(PID == (unsigned) proc_info->tid) {
-      freeproc(proc_info);
-      return true;
-    }
-  }
-  freeproc(proc_info);
-  return false;
-}
-
-size_t ProcessHandler::getNChilds(const size_t &PGID) {
-  PROCTAB* proc = openproc(PROC_FILLMEM | PROC_FILLSTAT | PROC_FILLSTATUS);
-  proc_t* proc_info;
-  size_t nChild = 0;
-  while((proc_info = readproc(proc, NULL))) {
-    if(PGID == (unsigned) proc_info->pgrp) {
-#ifdef DEBUG
-      std::cout << "Found child for PGID: " << PGID << std::endl;
-      std::cout << "Childs for PID: " << proc_info->tid << std::endl;
-#endif
-      nChild++;
-    }
-  }
-  freeproc(proc_info);
-  return nChild;
-
-}
-
-std::shared_ptr<proc_t> ProcessHandler::getInfo(const size_t &PID) {
-  PROCTAB* proc = openproc(PROC_FILLMEM | PROC_FILLSTAT | PROC_FILLSTATUS);
-  std::shared_ptr<proc_t> result(nullptr);
-  while(proc_t* proc_info = readproc(proc, NULL)) {
-    std::string tmp(proc_info->cmd);
-    if(PID == (unsigned) proc_info->tid) {
-      result.reset(new proc_t(*proc_info));
-    }
-    freeproc(proc_info);
-  }
-  closeproc(proc);
-  return result;
 }
 
 SysInfo::SysInfo() :

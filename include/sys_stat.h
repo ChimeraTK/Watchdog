@@ -16,6 +16,37 @@
 #undef GENERATE_XML
 #include <ChimeraTK/ApplicationCore/ScalarAccessor.h>
 
+
+/**
+ * This class is used to read /proc information via libproc.
+ * The libproc library is not thread safe. Therefore only one
+ * instance of the ProcReader should be present!
+ */
+class ProcReader{
+private:
+  PROCTAB* proc;
+  proc_t* proc_info;
+  std::mutex *mutex;
+  void open();
+  void close();
+public:
+  ProcReader(std::mutex *lock);
+  virtual ~ProcReader(){};
+  /**
+   * Use system folder \c /proc to search for a process with the given process ID.
+   * If a directory with the given PID is found the process is running.
+   * \param PID Process ID to look for
+   * \return True if the process is running and registered in the \c /proc folder
+   */
+  bool isProcessRunning(const int &PID);
+  std::shared_ptr<proc_t> getInfo(const size_t &PID);
+  /**
+   * Read the number of processes that belong to the same process group id (PGID).
+   * \param PGID The process group id used to look for processes
+   */
+  size_t getNChilds(const size_t &PGID);
+};
+
 /**
  * Handler used to start, stop processes and check their status.
  * When a process is started fork + execv is used. The parent
@@ -33,7 +64,7 @@ private:
   /**
    * Read the PID from a temporary file that is created by the child process.
    */
-  bool readTempPID(size_t &PID);
+  bool readTempPID(int &PID);
   /**
    * If a process was started using the ProcessHandler this method can be used
    * to kill it in case it is still running.
@@ -41,11 +72,12 @@ private:
    * and if that fails SIGKILL is used.
    */
   void cleanup();
-  size_t pid; ///< The pid of the last process that was started.
+  int pid; ///< The pid of the last process that was started.
   std::string pidFile; ///< Name of the temporary file that holds the child PID
+  ProcReader* proc;
 
 public:
-  ProcessHandler(): pid(-1){ };
+  ProcessHandler(ProcReader* proc): pid(-1), proc(proc){ };
   ~ProcessHandler();
   /**
    * Start a process.
@@ -84,19 +116,7 @@ public:
    * \param sig Signal used to kill the process (e.g. SIGINT = 2, SIGKILL = 9)
    */
   void killProcess(const size_t &PID, const int &sig);
-  /**
-   * Use system folder \c /proc to search for a process with the given process ID.
-   * If a directory with the given PID is found the process is running.
-   * \param PID Process ID to look for
-   * \return True if the process is running and registred in the \c /proc folder
-   */
-  bool isProcessRunning(const size_t &PID);
-  std::shared_ptr<proc_t> getInfo(const size_t &PID);
-  /**
-   * Read the number of processes that belong to the same process group id (PGID).
-   * \param PGID The process group id used to look for processes
-   */
-  size_t getNChilds(const size_t &PGID);
+
 };
 
 /**
