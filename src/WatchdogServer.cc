@@ -94,7 +94,7 @@ void WatchdogServer::defineConnections() {
 
 	watchdog.findTag("CS").connectTo(cs[watchdog.getName()]);
 	systemInfo.ticksPerSecond >> watchdog.ticksPerSecond;
-  systemInfo.uptime_sec >> watchdog.sysUpTime;
+  systemInfo.uptime_secTotal >> watchdog.sysUpTime;
   systemInfo.startTime >> watchdog.sysStartTime;
   timer.trigger >> watchdog.trigger;
 
@@ -107,7 +107,7 @@ void WatchdogServer::defineConnections() {
     cs[item.getName()]("pidOffset") >> item.pidOffset;
     item.findTag("CS").connectTo(cs[item.getName()]);
     systemInfo.ticksPerSecond >> item.ticksPerSecond;
-    systemInfo.uptime_sec >> item.sysUpTime;
+    systemInfo.uptime_secTotal >> item.sysUpTime;
     systemInfo.startTime >> item.sysStartTime;
     timer.trigger >> item.trigger;
   }

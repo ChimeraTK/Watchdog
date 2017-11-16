@@ -30,7 +30,6 @@ bool isProcessRunning(const int &PID) {
   std::lock_guard<std::mutex> lock(proc_mutex);
   PROCTAB* proc = openproc(PROC_FILLMEM | PROC_FILLSTAT | PROC_FILLSTATUS);
   proc_t* proc_info;
-  int tmpid;
   while ((proc_info = readproc(proc, NULL)) != NULL) {
     //\ToDo: Check if freeproc needs to be called every time
     if(PID == proc_info->tid) {

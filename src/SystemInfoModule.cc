@@ -119,13 +119,15 @@ void SystemInfoModule::mainLoop() {
     try {
       uptime(&uptime_secs, &idle_secs);
 
-      uptime_sec      = std::stoi(std::to_string(uptime_secs));
-      uptime_days     = std::stoi(std::to_string(uptime_sec / 86400));
-      uptime_day_hour = std::stoi(
-          std::to_string((uptime_sec - (uptime_days * 86400)) / 3600));
-      uptime_day_mins = std::stoi(std::to_string(
-              (uptime_sec - (uptime_days * 86400) - (uptime_day_hour * 3600))
+      uptime_secTotal = std::stoi(std::to_string(uptime_secs));
+      uptime_day     = std::stoi(std::to_string(uptime_secTotal / 86400));
+      uptime_hour = std::stoi(
+          std::to_string((uptime_secTotal - (uptime_day * 86400)) / 3600));
+      uptime_min = std::stoi(std::to_string(
+              (uptime_secTotal - (uptime_day * 86400) - (uptime_hour * 3600))
                   / 60));
+      uptime_sec = std::stoi(std::to_string(
+          uptime_secTotal - (uptime_day * 86400) - (uptime_hour * 3600) - (uptime_min*60)));
     } catch(std::exception &e) {
       std::cerr << getName() << "Conversion failed: " << e.what() << std::endl;
     }
@@ -135,10 +137,11 @@ void SystemInfoModule::mainLoop() {
     loadAvg5 = tmp[1];
     loadAvg15 = tmp[2];
 
+    uptime_secTotal.write();
     uptime_sec.write();
-    uptime_days.write();
-    uptime_day_hour.write();
-    uptime_day_mins.write();
+    uptime_day.write();
+    uptime_hour.write();
+    uptime_min.write();
     loadAvg.write();
     loadAvg5.write();
     loadAvg15.write();

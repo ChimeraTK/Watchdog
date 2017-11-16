@@ -102,13 +102,15 @@ public:
       { "CS", "SYS" } };
   ctk::ScalarOutput<std::string> startTimeStr { this, "startTimeStr", "s", "startTimeStr",
         { "CS", "SYS" } };
-  ctk::ScalarOutput<int> uptime_sec { this, "uptimeSec", "s", "Uptime",
+  ctk::ScalarOutput<int> uptime_secTotal { this, "uptimeSecTotal", "s", "Total uptime",
+      { "CS", "SYS" } };
+  ctk::ScalarOutput<int> uptime_day { this, "uptimeDays", "day", "Days up",
     { "CS", "SYS" } };
-  ctk::ScalarOutput<int> uptime_days { this, "uptimeDays", "day", "Days up",
+  ctk::ScalarOutput<int> uptime_hour { this, "uptimeHours", "h", "Hours up",
     { "CS", "SYS" } };
-  ctk::ScalarOutput<int> uptime_day_hour { this, "uptimeHours", "h", "Hours up",
+  ctk::ScalarOutput<int> uptime_min { this, "uptimeMin", "min", "Minutes up",
     { "CS", "SYS" } };
-  ctk::ScalarOutput<int> uptime_day_mins { this, "uptimeMin", "min", "Minutes up",
+  ctk::ScalarOutput<int> uptime_sec { this, "uptimeSec", "s", "Seconds up",
     { "CS", "SYS" } };
   std::vector<ctk::ScalarOutput<double> > cpu_use;
   ctk::ScalarOutput<double> loadAvg { this, "loadAvg", "", "Average load within last min",

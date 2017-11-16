@@ -61,6 +61,7 @@ void ProcessInfoModule::FillProcInfo(const std::shared_ptr<proc_t> &info){
     cutime    = 0;
     cstime    = 0;
     startTime = 0;
+    startTimeStr = "";
     priority  = 0;
     nice      = 0;
     rss       = 0;
@@ -174,8 +175,7 @@ void ProcessControlModule::mainLoop() {
 
     if(enableProcess) {
       if(processPID < 0) {
-        std::cout << getName() << "::Trying to start the process..." << " PID: "
-            << getpid() << std::endl;
+        std::cout << getName() << "::Trying to start a new process..." << std::endl;
         try {
           processPath.read();
           processCMD.read();
@@ -205,13 +205,13 @@ void ProcessControlModule::mainLoop() {
 #endif
       } else {
         std::cout << getName() << "::Trying to kill the process..." << " PID: "
-            << getpid() << std::endl;
+            << processPID << std::endl;
         killSig.read();
         process.killProcess(processPID, killSig);
         usleep(200000);
         if(proc_util::isProcessRunning(processPID)) {
           std::cerr << getName()
-              << "::Failed to kill the process. Try another signal, e.g. SIGKILL (9)."
+              << "::Failed to kill process with PID: " << processPID << ". Try another signal, e.g. SIGKILL (9)."
               << std::endl;
         } else {
           SetOffline();
