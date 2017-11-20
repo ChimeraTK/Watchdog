@@ -12,6 +12,7 @@
 #include <ChimeraTK/ApplicationCore/ApplicationCore.h>
 
 #include "sys_stat.h"
+#include <unordered_set>
 
 namespace ctk = ChimeraTK;
 
