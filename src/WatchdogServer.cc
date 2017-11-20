@@ -52,22 +52,6 @@ WatchdogServer::WatchdogServer() :
               << fileName << std::endl;
         } else {
           processes.emplace_back(this, nameAttr->get_value().data(), "process");
-          for(const auto&cchild : element->get_children()) {
-            const xmlpp::Element *eelement =
-                dynamic_cast<const xmlpp::Element*>(cchild);
-            if(!eelement)
-              continue;
-            if(eelement->get_name() == "path") {
-              std::cout << "Children path: "
-                  << eelement->get_child_text()->get_content().c_str()
-                  << std::endl;
-            }
-            if(eelement->get_name() == "cmd") {
-              std::cout << "Children cmd: "
-                  << eelement->get_child_text()->get_content().c_str()
-                  << std::endl;
-            }
-          }
         }
       }
 
@@ -111,6 +95,6 @@ void WatchdogServer::defineConnections() {
     systemInfo.startTime >> item.sysStartTime;
     timer.trigger >> item.trigger;
   }
-  dumpConnections();
+//  dumpConnections();
 }
 
