@@ -20,7 +20,7 @@ void ProcessInfoModule::mainLoop(){
 void ProcessInfoModule::FillProcInfo(const std::shared_ptr<proc_t> &info){
   if(info != nullptr) {
     auto now = boost::posix_time::microsec_clock::local_time();
-    int old_time;
+    int old_time = 0;
     try {
       old_time = std::stoi(std::to_string(utime + stime + cutime + cstime));
       utime = std::stoi(std::to_string(info->utime));
