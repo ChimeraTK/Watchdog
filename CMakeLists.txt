@@ -84,11 +84,6 @@ PKG_CHECK_MODULES(glib REQUIRED glib-2.0)
 include_directories(SYSTEM "${LibXML++_INCLUDEDIR}/${LIBXML++_VERSION}")
 include_directories(${LibXML++_INCLUDE_DIRS})
 
-# extend compiler flags with flags from dependencies
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${ChimeraTK-ControlSystemAdapter-DoocsAdapter_CXX_FLAGS} ${ChimeraTK-ControlSystemAdapter-OPCUAAdapter_CXX_FLAGS} ${ChimeraTK-ApplicationCore_CXX_FLAGS}" )
-
-set(CMAKE_EXE_LINKER_FLAGS "-Wl,--no-as-needed ${ChimeraTK-ControlSystemAdapter-DoocsAdapter_LINK_FLAGS} ${ChimeraTK-ControlSystemAdapter-OPCUAAdapter_LINK_FLAGS} ${ChimeraTK-ApplicationCore_LINK_FLAGS}")
-
 # set include directories
 include_directories(${CMAKE_SOURCE_DIR}/include)
 set(${PROJECT_NAME}_INCLUDE_DIRS ${${PROJECT_NAME}_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR}/include/)
@@ -118,7 +113,7 @@ target_link_libraries(${PROJECT_NAME} ${PROJECT_NAME}lib ${ChimeraTK-ControlSyst
 # XML file generation
 add_executable(${PROJECT_NAME}-xmlGenerator ${server_sources})
 set_target_properties(${PROJECT_NAME}-xmlGenerator PROPERTIES COMPILE_FLAGS "-DGENERATE_XML")
-target_link_libraries(${PROJECT_NAME}-xmlGenerator ${PROJECT_NAME}lib )
+target_link_libraries(${PROJECT_NAME}-xmlGenerator ${PROJECT_NAME}lib)
 
 add_custom_target(${PROJECT_NAME}-xml ALL DEPENDS ${PROJECT_NAME}-xmlGenerator COMMAND ${PROJECT_BINARY_DIR}/${PROJECT_NAME}-xmlGenerator WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
 
@@ -129,6 +124,16 @@ include_directories(${CMAKE_SOURCE_DIR}/test)
 add_executable(test_${PROJECT_NAME} ${test_sources})
 target_link_libraries(test_${PROJECT_NAME} ${PROJECT_NAME}lib ${Boost_LIBRARIES}  )
 add_test(test_${PROJECT_NAME} test_${PROJECT_NAME})
+
+# The make coverage command is only available in debug mode
+IF(CMAKE_BUILD_TYPE STREQUAL "Debug")
+  #configure_file(cmake/Makefile.coverage.in ${PROJECT_BINARY_DIR}/Makefile.coverage @ONLY)
+  #add_custom_target(coverage
+  #  make -f Makefile.coverage
+  #  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+  #  COMMENT "Generating test coverage documentation" VERBATIM
+  #)
+ENDIF(CMAKE_BUILD_TYPE STREQUAL "Debug")
 
 # copy config file for running in virtuallab environment
 FILE( COPY ${CMAKE_SOURCE_DIR}/configs/devMapFile.dmap DESTINATION ${PROJECT_BINARY_DIR})
@@ -156,14 +161,15 @@ find_package(Doxygen)
 if(DOXYGEN_FOUND)
   configure_file(${CMAKE_CURRENT_SOURCE_DIR}/doc/Doxyfile.in ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY)
   configure_file(${CMAKE_CURRENT_SOURCE_DIR}/doc/main.dox.in ${CMAKE_CURRENT_BINARY_DIR}/main.dox @ONLY)
-
+  
   add_custom_target(doc ${DOC_DEPENDENCY}
     ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     )
   #note the / after ${CMAKE_BINARY_DIR}/doc/. This causes the directory to be renamed to the destination, not copied into
   install(DIRECTORY ${CMAKE_BINARY_DIR}/doc/ DESTINATION share/doc/${PROJECT_NAME}-${${PROJECT_NAME}_SOVERSION}
-          COMPONENT doc)
+          COMPONENT doc
+          OPTIONAL)
 else(DOXYGEN_FOUND)
   message("Doxygen not found, documentation cannot be build.")
 endif(DOXYGEN_FOUND)
