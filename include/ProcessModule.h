@@ -64,7 +64,7 @@ struct ProcessInfoModule : public ctk::ApplicationModule {
       "Number of clock ticks per second" };
   /** Uptime of the system */
   ctk::ScalarPollInput<int> sysUpTime { this, "sysUpTime", "s", "Uptime of the system" };
-  ctk::ScalarPollInput<int> sysStartTime { this, "sysStartTime", "s", "System start time of the system since EPOCH" };
+  ctk::ScalarPollInput<int> sysStartTime { this, "sysStartTime", "s", "System start time (seconds since EPOCH)" };
   /** @} */
 
   /**
@@ -87,7 +87,7 @@ struct ProcessInfoModule : public ctk::ApplicationModule {
   ctk::ScalarOutput<int> cstime { this, "cstime", "clock ticks", "cumulative stime of process and reaped children",
     { "CS", "PROCESS", getName() } };
   /** start time of process -- seconds since 1-1-70 */
-  ctk::ScalarOutput<int> startTime { this, "startTime", "s", "start time of process with respect to system start [s]",
+  ctk::ScalarOutput<int> startTime { this, "startTime", "s", "start time of process with respect to EPOCH",
     { "CS", "PROCESS", getName() } };
 
   ctk::ScalarOutput<std::string> startTimeStr { this, "startTimeStr", "", "start time string",
