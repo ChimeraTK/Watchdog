@@ -31,11 +31,6 @@ namespace bp = boost_process;
 struct ProcessInfoModule : public ctk::ApplicationModule {
   using ctk::ApplicationModule::ApplicationModule;
 
-#ifdef BOOST_1_64
-  std::shared_ptr<boost_process::process::child> process;
-#else
-  ProcessHandler process; ///< The process handler used to get information about the subprocess
-#endif
   ctk::ScalarPushInput<int> trigger { this, "trigger", "",
       "Trigger used to update the watchdog" };
   /**
@@ -129,9 +124,16 @@ struct ProcessInfoModule : public ctk::ApplicationModule {
    * cpu usage value will be wrong for the first reading!
    */
   void FillProcInfo(const std::shared_ptr<proc_t> &info);
+
+  friend std::ostream& operator<<(std::ostream& os, const ProcessInfoModule* ph);
 };
 
 struct ProcessControlModule : public ProcessInfoModule{
+#ifdef BOOST_1_64
+  std::shared_ptr<boost_process::process::child> process;
+#else
+  std::unique_ptr<ProcessHandler> process; ///< The process handler used to get information about the subprocess
+#endif
 
   using ProcessInfoModule::ProcessInfoModule;
 

@@ -96,42 +96,106 @@ std::vector<std::string> split_arguments(const std::string &arguments) {
   return strs;
 }
 
+ProcessHandler::ProcessHandler(const std::string &path, const std::string &PIDFileName, const bool deletePIDFile, int &PID):
+ pid(-1), pidFile(PIDFileName + ".PID"), pidDirectory(path), deletePIDFile(deletePIDFile), signum(SIGINT){
+  PID = -1;
+  if(checkRunningProcess(PID))
+    pid = PID;
+};
+
+ProcessHandler::ProcessHandler(const std::string &path, const std::string &PIDFileName, const bool deletePIDFile):
+ pid(-1), pidFile(PIDFileName + ".PID"), pidDirectory(path), deletePIDFile(deletePIDFile), signum(SIGINT){
+};
+
 
 ProcessHandler::~ProcessHandler() {
   cleanup();
 }
 
-void ProcessHandler::cleanup() {
-  if(proc_util::isProcessRunning(pid)) {
-    std::cout
-        << "Going to kill (SIGINT) process in the destructor of ProcessHandler for process: "
-        << pid << std::endl;
-    killProcess(pid, SIGINT);
-  } else {
-    return;
+bool ProcessHandler::changeDirectory(){
+  std::string pidDir = pidDirectory;
+  if(pidDirectory.back() != '/')
+    pidDir.append(std::string("/").c_str());
+  if(!isPIDFolderWritable()){
+    throw std::runtime_error("Folder where to store the PID file is not writable!");
   }
-  usleep(200000);
-  if(proc_util::isProcessRunning(pid)) {
-    std::cout
-        << "Going to kill (SIGKILL) process in the destructor of ProcessHandler for process: "
-        << pid << std::endl;
-    killProcess(pid, SIGKILL);
+  if(chdir(pidDir.c_str())) {
+    std::stringstream ss;
+    ss << "Failed to change to pid file directory: " << pidDir;
+    std::cout << ss.str() << std::endl;
+    return false;
+  } else {
+    return true;
   }
 }
 
-size_t ProcessHandler::startProcess(const std::string &path,
-    const std::string &cmd, const std::string &append) {
+void ProcessHandler::cleanup() {
+  if(pid > 0 && proc_util::isProcessRunning(pid)){
+#ifdef DEBUG
+    std::cout
+        << "Going to kill (SIGINT) process in the destructor of ProcessHandler for process: "
+        << pid << std::endl;
+#endif
+    kill(-pid, signum);
+    usleep(200000);
+    if(proc_util::isProcessRunning(pid)) {
+#ifdef DEBUG
+      std::cout
+          << "Going to kill (SIGKILL) process in the destructor of ProcessHandler for process: "
+          << pid << std::endl;
+#endif
+      kill(-pid, SIGKILL);
+      usleep(200000);
+      if(proc_util::isProcessRunning(pid)) {
+        std::stringstream ss;
+        ss << "When cleaning up the ProcessHandler the process ";
+        ss << pid;
+        ss << " could not be stopped. Even using signal SIGKILL!";
+        throw std::runtime_error(ss.str());
+      }
+    }
+  }
+  if(!deletePIDFile)
+    remove(pidFile.c_str());
+}
+
+bool ProcessHandler::checkRunningProcess(int &PID){
+  if(pidDirectory.empty()){
+    return readTempPID(PID);
+  } else if (changeDirectory()){
+    return readTempPID(PID);
+  }
+  return false;
+}
+
+bool ProcessHandler::isPIDFolderWritable() {
+    if(access(pidDirectory.c_str(), W_OK) == 0) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+size_t ProcessHandler::startProcess(const std::string &path, const std::string &cmd) {
   if(path.empty() || cmd.empty()) {
     throw std::runtime_error(
         "Path or command not set before starting a proccess!");
   }
-//  if(isProcessRunning(pid)) {
-//    std::cerr
-//        << "There is still a process running that was not cleaned up! I will do a cleanup now."
-//        << std::endl;
-//    cleanup();
-//  }
-  pidFile = std::string("pid") + append;
+  // process could be stopped even if it was present when the ProcessHandler was constructed.
+  if(pid > 0 && proc_util::isProcessRunning(pid)) {
+    std::cerr
+        << "There is still a process running that was not cleaned up! I will do a cleanup now."
+        << std::endl;
+    cleanup();
+  }
+
+  if(!pidDirectory.empty() && !changeDirectory()){
+    std::stringstream ss;
+    ss << "Failed to change to the directory where to create the PID file: " << pidDirectory;
+    throw std::runtime_error(ss.str());
+  }
+
   pid_t p = fork();
   if(p == 0) {
     // Don't throw in the child since the parent will not catch it
@@ -181,7 +245,8 @@ size_t ProcessHandler::startProcess(const std::string &path,
     sleep(1);
     if(readTempPID(pid)) {
       std::cout << "PID was read:" << pid << std::endl;
-      remove("pid");
+      if(deletePIDFile)
+        remove(pidFile.c_str());
     } else {
       throw std::runtime_error("Process is not started!");
     }
@@ -203,18 +268,6 @@ bool ProcessHandler::readTempPID(int &PID) {
     testFile.close();
     return false;
   }
-}
-
-void ProcessHandler::killProcess(const size_t &PID, const int &sig) {
-  if(!proc_util::isProcessRunning(PID)) {
-    std::cerr << "When trying to kill a process with PID " << PID
-        << " no such process was running!" << std::endl;
-    return;
-  }
-#ifdef DEBUG
-  std::cout << "Going to kill process: " << PID << std::endl;
-#endif
-  kill(-PID, sig);
 }
 
 SysInfo::SysInfo() :

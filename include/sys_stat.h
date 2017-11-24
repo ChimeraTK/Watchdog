@@ -39,36 +39,101 @@ namespace proc_util{
 };
 
 /**
- * Handler used to start, stop processes and check their status.
+ * Handler used to start, stop processes.
+ * Use the Handler only to start a single process.
  * When a process is started fork + execv is used. The parent
  * process does not know the child process and its pid. Therefore,
- * the child created a temporary file that contains the PID. The parent
- * process reads the PID from that file and deletes it afterwards.
- * The pid of the last started process is stored.
- * If a new process is started or the object is destroyed a check is performed
+ * the child creates a file that contains the PID. The parent
+ * process reads the PID from that file.
+ * By default the file is created in the directory where the main
+ * thread is executed and the file is deleted if the started process
+ * is killed using killProcess. Else the file is not deleted.
+ * If e.g. the watchdog is killed, the process that was started before
+ * by its ProcessHandler can not be terminated and could still be running.
+ * In that case the pid file indicates that. If the watchdog constructs a
+ * new ProcessHandler it will realize during construction that the PID is still
+ * present and it will check if the process is still running.
+ * If the ProcessHandler is destroyed a check is performed
  * if a process with the stored pid is still running.
  * If this is the case it is killed. First the process is killed using SIGINT
  * and if that fails SIGKILL is used.
  */
 struct ProcessHandler {
 private:
+
   /**
    * Read the PID from a temporary file that is created by the child process.
    */
   bool readTempPID(int &PID);
+
   /**
    * If a process was started using the ProcessHandler this method can be used
    * to kill it in case it is still running.
-   * If this is the case it is killed. First the process is killed using SIGINT
+   * If this is the case it is killed. First the process is killed using signum
    * and if that fails SIGKILL is used.
+   * If that process stared other processes also they are
+   * killed since
+   * \code
+   * kill -pid
+   * \endcode
+   * is called.
+   * \throw runtime_error In case the process could not be killed (even using SIGKILL)
    */
   void cleanup();
+
+  /**
+   * Try do move to the directory where to store the PID file.
+   * \throw runtime_error In case the directory is not writable
+   */
+  bool changeDirectory();
+
+  /**
+   * Check if a PID exists and read the PID.
+   * Check if a process is running, that has the PID from the PID file.
+   * \param PID In case there is a running process its PID is stored
+   * \return True in case a running process was found.
+   */
+  bool checkRunningProcess(int &PID);
+
+  bool isPIDFolderWritable();
+
   int pid; ///< The pid of the last process that was started.
   std::string pidFile; ///< Name of the temporary file that holds the child PID
+  std::string pidDirectory; ///< Path where to create PID files.
+  bool        deletePIDFile; ///< If true the PID file is deleted after reading the PID.
+  int signum;///< Signal used to stop a process
 
 public:
-  ProcessHandler(): pid(-1){ };
+  /**
+   * Constructor.
+   * It is checked if a process is already running. This is done by testing if the
+   * PID file already exists and a process with the PID read from the PID file is found.
+   * \param path This is the path where to store the PID file. If an empty string is
+   * entered the directory where the main thread is started is used.
+   * \param PIDFileName the name of the PID file -> will result in: PIDFileName.PID
+   * \param deletePIDFile If true the PID file deleted directly after reading the PID.
+   * This avoids overwriting the PID in case a second ProcessHandler starts a process
+   * with the same PID file settings. But you can not check for a running process if the
+   * ProcessHandler is not terminated correctly and started again.
+   * \param PID The PID is set in case a running process was found. Else it is set to -1.
+   */
+  ProcessHandler(const std::string &path, const std::string &PIDFileName,
+      const bool deletePIDFile, int &PID);
+
+  /**
+     * Constructor.
+     * \param path This is the path where to store the PID file. If an empty string is
+     * entered the directory where the main thread is started is used.
+     * \param PIDFileName the name of the PID file -> will result in: PIDFileName.PID
+     * \param deletePIDFile If true the PID file deleted directly after reading the PID.
+     * This avoids overwriting the PID in case a second ProcessHandler starts a process
+     * with the same PID file settings. But you can not check for a running process if the
+     * ProcessHandler is not terminated correctly and started again.
+     */
+  ProcessHandler(const std::string &path, const std::string &PIDFileName,
+      const bool deletePIDFile = false);
   ~ProcessHandler();
+
   /**
    * Start a process.
    * The process is started using fork + execv. Usually the copied process will
@@ -80,32 +145,24 @@ public:
    * kill -PID
    * \endcode
    * where PID is the PID of the child process.
-   * The child process creates a file that is called "pid". In case of the watchdog
-   * this file is created in the directory where the watchdog is run. Thus it could
-   * in principle happen that more than one process is started at the same time
-   * and file would be overwritten before the PID is read from the temporary file.
-   * \remark In that case use a unique string to be appended to the file name!
+   * The child process creates a file that is called "PIDFileName.PID". Depending
+   * on the set pidDirectory it can happen that more than one process is
+   * started at the same time and the file would be overwritten before the PID
+   * is read from the temporary file.
+   * \remark In that case use a unique string PIDFileName used for the file name!
    *
    * \param path Path where to find the cmd you are about to call.
    * \param cmd CMD including command line options.
-   * \param append Append a unique string to the temporary file name "pid"
    * \return PID of the created process
    * \remark The command will not be executated in the working directory of the
    * calling process but in the given path!
    */
-  size_t startProcess(const std::string &path, const std::string &cmd,
-      const std::string &append = "");
+  size_t startProcess(const std::string &path, const std::string &cmd);
+
   /**
-   * Kill a certain process. If that process stared other processes also they are
-   * killed since
-   * \code
-   * kill -pid
-   * \endcode
-   * is called.
-   * \param PID Process ID of the process to be killed
    * \param sig Signal used to kill the process (e.g. SIGINT = 2, SIGKILL = 9)
    */
-  void killProcess(const size_t &PID, const int &sig);
+  void setSigNum(int sig){signum = sig;}
 
 };
 
