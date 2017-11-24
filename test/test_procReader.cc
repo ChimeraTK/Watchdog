@@ -17,7 +17,7 @@ using namespace std;
 
 BOOST_AUTO_TEST_CASE( testProcessHelper){
 	std::unique_ptr<ProcessHandler> p(new ProcessHandler("", "test"));
-	size_t pid;
+	size_t pid = -1;
 	try{
 		pid = p->startProcess("/bin","ping google.de");
 //		pid = p.startProcess("/home/zenker/sw/doocs/server/singenerator_server","singenerator_server", "");

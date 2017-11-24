@@ -20,7 +20,7 @@ SystemInfoModule::SystemInfoModule(EntityOwner *owner, const std::string &name,
     ctk::ApplicationModule(owner, name, description, eliminateHierarchy, tags) {
   for(auto it = sysInfo.ibegin; it != sysInfo.iend; it++) {
 #ifdef DEBUG
-    std::cout << "Adding sysInfor: " << space2underscore(it->first) << std::endl;
+    std::cout << "Adding sysInfo: " << space2underscore(it->first) << std::endl;
 #endif
     strInfos[it->first].replace(ctk::ScalarOutput<std::string> { this,
         space2underscore(it->first), "", space2underscore(it->first) });

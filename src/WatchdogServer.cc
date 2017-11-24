@@ -69,8 +69,10 @@ void WatchdogServer::defineConnections() {
   std::cout << "Map size is: " << systemInfo.strInfos.size() << std::endl;
   for(auto it = systemInfo.strInfos.begin(), ite = systemInfo.strInfos.end();
       it != ite; it++) {
+#ifdef DEBUG
     std::cout << "Adding system info: " << space2underscore(it->first)
         << std::endl;
+#endif
     it->second >> cs["SYS"](space2underscore(it->first));
   }
   systemInfo.findTag("CS").connectTo(cs["SYS"]);
