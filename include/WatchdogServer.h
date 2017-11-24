@@ -11,8 +11,6 @@
 #undef GENERATE_XML
 #include <ChimeraTK/ApplicationCore/ApplicationCore.h>
 
-#include <map>
-
 #include "SystemInfoModule.h"
 #include "ProcessModule.h"
 
