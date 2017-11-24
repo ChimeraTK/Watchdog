@@ -25,26 +25,9 @@ SystemInfoModule::SystemInfoModule(EntityOwner *owner, const std::string &name,
     strInfos[it->first].replace(ctk::ScalarOutput<std::string> { this,
         space2underscore(it->first), "", space2underscore(it->first) });
   }
-  // add two since nCPU starts counting at 0 and cpuTotal should be added too
-  for(size_t iCPU = 0; iCPU < (sysInfo.getNCpu() + 2); iCPU++) {
-    std::stringstream ss;
-    ss << "cpu";
-    if(iCPU != 0) {
-      ss << iCPU;
-      ss << "Usage";
-      cpu_use.push_back(ctk::ScalarOutput<double>(this, ss.str().c_str(), "%", "CPU usage",
-              { "CS", "SYS" }));
-//      cpu_use.emplace_back(this, ss.str().c_str(), "%", "CPU usage",
-//              { "CS", "SYS" });
-    } else {
-      cpu_use.push_back(ctk::ScalarOutput<double>(this, "cpuUsageTotal", "%", "Total CPU usage",
-              { "CS", "SYS" }));
-
-//      cpu_use.emplace_back(this, "cpuUsageTotal", "%", "Total CPU usage",
-//              { "CS", "SYS" });
-    }
-    lastInfo.push_back(cpu());
-  }
+  cpu_use.reset(new ctk::ArrayOutput<double>{this, "cpuUsage", "%", sysInfo.getNCpu(), "CPU usage for each processor", { "CS", "SYS" }});
+//  // add 1 since cpuTotal should be added too
+  lastInfo = std::vector<cpu>(sysInfo.getNCpu() + 1);
 }
 
 void SystemInfoModule::mainLoop() {
@@ -56,17 +39,9 @@ void SystemInfoModule::mainLoop() {
   nCPU.write();
   ticksPerSecond = sysconf(_SC_CLK_TCK);
   ticksPerSecond.write();
-  double tmp[3] = { 0., 0., 0. };
 
-  if(lastInfo.size() != (unsigned) (nCPU + 2)) {
+  if(lastInfo.size() != (unsigned) (nCPU + 1)) {
     std::cerr << getName() << "Size of lastInfo: " << lastInfo.size()
-        << "\t nCPU: " << nCPU << std::endl;
-    throw std::runtime_error(
-        "Vector size mismatch in SystemInfoModule::mainLoop.");
-  }
-
-  if(cpu_use.size() != (unsigned) (nCPU + 2)) {
-    std::cerr << getName() << "Size of cpu_use: " << cpu_use.size()
         << "\t nCPU: " << nCPU << std::endl;
     throw std::runtime_error(
         "Vector size mismatch in SystemInfoModule::mainLoop.");
@@ -132,10 +107,11 @@ void SystemInfoModule::mainLoop() {
       std::cerr << getName() << "Conversion failed: " << e.what() << std::endl;
     }
 
-    loadavg(&tmp[0], &tmp[1], &tmp[2]);
-    loadAvg = tmp[0];
-    loadAvg5 = tmp[1];
-    loadAvg15 = tmp[2];
+//    double tmp[3] = { 0., 0., 0. };
+    std::vector<double> v_tmp(3);
+
+    loadavg(&v_tmp[0], &v_tmp[1], &v_tmp[2]);
+    loadAvg = v_tmp;
 
     uptime_secTotal.write();
     uptime_sec.write();
@@ -143,8 +119,6 @@ void SystemInfoModule::mainLoop() {
     uptime_hour.write();
     uptime_min.write();
     loadAvg.write();
-    loadAvg5.write();
-    loadAvg15.write();
 
     calculatePCPU();
   }
@@ -153,18 +127,19 @@ void SystemInfoModule::mainLoop() {
 void SystemInfoModule::calculatePCPU() {
   unsigned long long total;
   double tmp;
+  std::vector<double> usage_tmp(nCPU + 1);
   std::vector<std::string> strs;
-  std::vector<cpu> vcpu(nCPU + 2);
+  std::vector<cpu> vcpu(nCPU + 1);
   readCPUInfo(vcpu);
   auto lastcpu = lastInfo.begin();
   auto newcpu = vcpu.begin();
-  for(int iCPU = 0; iCPU < (nCPU + 2); iCPU++) {
+  for(int iCPU = 0; iCPU < (nCPU + 1); iCPU++) {
     if(newcpu->totalUser < lastcpu->totalUser
         || newcpu->totalUserLow < lastcpu->totalUserLow
         || newcpu->totalSys < lastcpu->totalSys
         || newcpu->totalIdle < lastcpu->totalIdle) {
       //Overflow detection. Just skip this value.
-      cpu_use.at(iCPU) =(-1.0);
+      usage_tmp.at(iCPU) =(-1.0);
     } else {
       total = (newcpu->totalUser - lastcpu->totalUser)
           + (newcpu->totalUserLow - lastcpu->totalUserLow)
@@ -173,14 +148,18 @@ void SystemInfoModule::calculatePCPU() {
       total += (newcpu->totalIdle - lastcpu->totalIdle);
       tmp /= total;
       tmp *= 100.;
-      cpu_use.at(iCPU) = tmp;
+      usage_tmp.at(iCPU) = tmp;
 
     }
     *lastcpu = *newcpu;
-    cpu_use.at(iCPU).write();
     lastcpu++;
     newcpu++;
   }
+  cpu_useTotal = usage_tmp.back();
+  cpu_useTotal.write();
+  usage_tmp.pop_back();
+  cpu_use->operator =(usage_tmp);
+  cpu_use->write();
 }
 
 void SystemInfoModule::readCPUInfo(std::vector<cpu> &vcpu) {

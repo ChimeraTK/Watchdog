@@ -297,7 +297,7 @@ SysInfo::SysInfo() :
   if(!cpufile.is_open())
     throw std::runtime_error("Failed to open /sys/devices/system/cpu/present");
   std::getline(cpufile, line);
-  CPUcount = std::atoi(line.substr(2, 2).c_str());
+  CPUcount = std::atoi(line.substr(2, 2).c_str()) + 1;
 }
 
 bool SysInfo::lookup(const std::string &line, const std::string &pattern) {

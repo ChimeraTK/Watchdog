@@ -113,12 +113,10 @@ public:
     { "CS", "SYS" } };
   ctk::ScalarOutput<int> uptime_sec { this, "uptimeSec", "s", "Seconds up",
     { "CS", "SYS" } };
-  std::vector<ctk::ScalarOutput<double> > cpu_use;
-  ctk::ScalarOutput<double> loadAvg { this, "loadAvg", "", "Average load within last min",
+  std::unique_ptr<ctk::ArrayOutput<double> > cpu_use;
+  ctk::ScalarOutput<double> cpu_useTotal {this, "cpuTotal", "%", "Total CPU usage",
     { "CS", "SYS" } };
-  ctk::ScalarOutput<double> loadAvg5 { this, "loadAvg5", "", "Average load within last 5min",
-    { "CS", "SYS" } };
-  ctk::ScalarOutput<double> loadAvg15 { this, "loadAvg15", "", "Average load within last 15min",
+  ctk::ArrayOutput<double> loadAvg{ this, "loadAvg", "", 3, "Average load within last min, 5min, 15min",
     { "CS", "SYS" } };
   /** @} */
 
