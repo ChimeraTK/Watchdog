@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <watchdog>
-  <process name="PROCESS_1"/>
-  <process name="PROCESS_2"/>
+  <process name="IN1-MB01"/>
+  <process name="IN1-MB02"/>
+  <process name="LA1-RC01"/>
+  <process name="LA1-RC11"/>
+  <process name="LA2-RC01"/>
+  <process name="LA2-RC11"/>
 </watchdog>
