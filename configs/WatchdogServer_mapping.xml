@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <uamapping>
-        <config rootFolder="wtachdog_server" description="Watchdog server">
+        <config rootFolder="watchdog_server" description="Watchdog server">
                 <serverConfig applicationName="watchdog_server" port="16660" />
                 <!--login username="test" password="test123" /--> 
         </config>
