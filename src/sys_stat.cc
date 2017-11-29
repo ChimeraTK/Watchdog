@@ -28,17 +28,16 @@ std::mutex proc_mutex;
 
 bool isProcessRunning(const int &PID) {
   std::lock_guard<std::mutex> lock(proc_mutex);
-  PROCTAB* proc = openproc(PROC_FILLMEM | PROC_FILLSTAT | PROC_FILLSTATUS);
+  PROCTAB* proc = openproc(PROC_FILLSTAT);
   proc_t* proc_info;
   while ((proc_info = readproc(proc, NULL)) != NULL) {
-    //\ToDo: Check if freeproc needs to be called every time
     if(PID == proc_info->tid) {
       freeproc(proc_info);
       closeproc(proc);
       return true;
     }
+    freeproc(proc_info);
   }
-  freeproc(proc_info);
   closeproc(proc);
   return false;
 }
@@ -49,7 +48,6 @@ size_t getNChilds(const size_t &PGID) {
   proc_t* proc_info;
   size_t nChild = 0;
   while((proc_info = readproc(proc, NULL)) != NULL) {
-    //\ToDo: Check if freeproc needs to be called every time
     if(PGID == (unsigned) proc_info->pgrp) {
 #ifdef DEBUG
       std::cout << "Found child for PGID: " << PGID << std::endl;
@@ -57,8 +55,8 @@ size_t getNChilds(const size_t &PGID) {
 #endif
       nChild++;
     }
+    freeproc(proc_info);
   }
-  freeproc(proc_info);
   closeproc(proc);
   return nChild;
 
@@ -66,14 +64,16 @@ size_t getNChilds(const size_t &PGID) {
 
 std::shared_ptr<proc_t> getInfo(const size_t &PID) {
   std::lock_guard<std::mutex> lock(proc_mutex);
-  PROCTAB* proc = openproc(PROC_FILLMEM | PROC_FILLSTAT | PROC_FILLSTATUS);
+  PROCTAB* proc = openproc(PROC_FILLMEM | PROC_FILLSTAT | PROC_FILLSTATUS | PROC_FILLOOM);
   proc_t* proc_info;
   std::shared_ptr<proc_t> result(nullptr);
   while((proc_info = readproc(proc, NULL)) != NULL) {
-    //\ToDo: Check if freeproc needs to be called every time
     std::string tmp(proc_info->cmd);
     if(PID == (unsigned) proc_info->tid) {
       result.reset(new proc_t(*proc_info));
+      break;
+    } else {
+      freeproc(proc_info);
     }
   }
   freeproc(proc_info);
