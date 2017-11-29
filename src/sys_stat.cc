@@ -68,7 +68,6 @@ std::shared_ptr<proc_t> getInfo(const size_t &PID) {
   proc_t* proc_info;
   std::shared_ptr<proc_t> result(nullptr);
   while((proc_info = readproc(proc, NULL)) != NULL) {
-    std::string tmp(proc_info->cmd);
     if(PID == (unsigned) proc_info->tid) {
       result.reset(new proc_t(*proc_info));
       break;
