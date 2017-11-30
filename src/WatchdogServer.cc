@@ -97,6 +97,8 @@ void WatchdogServer::defineConnections() {
     systemInfo.startTime >> item.sysStartTime;
     timer.trigger >> item.trigger;
   }
-//  dumpConnections();
+#ifdef DEBUG
+  dumpConnections();
+#endif
 }
 
