@@ -28,18 +28,17 @@ std::mutex proc_mutex;
 
 bool isProcessRunning(const int &PID) {
   std::lock_guard<std::mutex> lock(proc_mutex);
-  PROCTAB* proc = openproc(PROC_FILLSTAT);
-  proc_t* proc_info;
-  while ((proc_info = readproc(proc, NULL)) != NULL) {
-    if(PID == proc_info->tid) {
-      freeproc(proc_info);
-      closeproc(proc);
-      return true;
-    }
+  pid_t pid = PID;
+  PROCTAB* proc = openproc(PROC_FILLSTAT | PROC_PID, &pid, NULL);
+  proc_t* proc_info = readproc(proc, NULL);
+  if(proc_info == NULL){
     freeproc(proc_info);
+    closeproc(proc);
+    return false;
   }
+  freeproc(proc_info);
   closeproc(proc);
-  return false;
+  return true;
 }
 
 size_t getNChilds(const size_t &PGID) {
@@ -64,17 +63,19 @@ size_t getNChilds(const size_t &PGID) {
 
 std::shared_ptr<proc_t> getInfo(const size_t &PID) {
   std::lock_guard<std::mutex> lock(proc_mutex);
-  PROCTAB* proc = openproc(PROC_FILLMEM | PROC_FILLSTAT | PROC_FILLSTATUS | PROC_FILLOOM);
+  pid_t pid = PID;
+  PROCTAB* proc = openproc(PROC_FILLMEM | PROC_FILLSTAT | PROC_FILLSTATUS | PROC_PID, &pid, NULL);
   proc_t* proc_info;
   std::shared_ptr<proc_t> result(nullptr);
-  while((proc_info = readproc(proc, NULL)) != NULL) {
-    if(PID == (unsigned) proc_info->tid) {
-      result.reset(new proc_t(*proc_info));
-      break;
-    } else {
-      freeproc(proc_info);
-    }
+  proc_info = readproc(proc, NULL);
+  if(proc_info == NULL){
+    freeproc(proc_info);
+    closeproc(proc);
+    std::stringstream ss;
+    ss << "Process " << PID << " not found when trying to read process information.";
+    throw std::runtime_error("Process not found.");
   }
+  result.reset(new proc_t(*proc_info));
   freeproc(proc_info);
   closeproc(proc);
   return result;
