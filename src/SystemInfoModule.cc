@@ -75,7 +75,7 @@ void SystemInfoModule::mainLoop() {
       maxMem    = std::stoi(std::to_string(kb_main_total));
       freeMem   = std::stoi(std::to_string(kb_main_free));
       cachedMem = std::stoi(std::to_string(kb_main_cached));
-      usedMem   = std::stoi(std::to_string(maxMem - freeMem));
+      usedMem   = std::stoi(std::to_string(maxMem - freeMem - cachedMem));
       maxSwap   = std::stoi(std::to_string(kb_swap_total));
       freeSwap  = std::stoi(std::to_string(kb_swap_free));
       usedSwap  = std::stoi(std::to_string(maxSwap - freeSwap));
