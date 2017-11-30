@@ -66,7 +66,6 @@ struct ProcessInfoModule : public ctk::ApplicationModule {
    * \name Parameters read by proc
    * @{
    */
-
   //\todo Use unsigned long long int
   /** user-mode CPU time accumulated by process */
   ctk::ScalarOutput<int> utime { this, "utime", "clock ticks", "user-mode CPU time accumulated by process",
@@ -87,6 +86,10 @@ struct ProcessInfoModule : public ctk::ApplicationModule {
 
   ctk::ScalarOutput<std::string> startTimeStr { this, "startTimeStr", "", "start time string",
       { "CS", "PROCESS", getName() } };
+
+  //\ToDo Use unsigned long
+  ctk::ScalarOutput<int> mem { this, "mem", "kB", "Memory used by the process",
+    { "CS", "PROCESS", getName() } };
 
   //\todo Use long
   /** kernel scheduling priority */

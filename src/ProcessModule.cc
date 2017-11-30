@@ -15,7 +15,11 @@ void ProcessInfoModule::mainLoop(){
   processPID.write();
   while(true) {
     trigger.read();
-    FillProcInfo(proc_util::getInfo(processPID));
+    try{
+      FillProcInfo(proc_util::getInfo(processPID));
+    } catch (std::runtime_error &e) {
+      std::cerr << this << "Failed to read process information for process " << processPID << std::endl;
+    }
   }
 }
 
@@ -39,6 +43,7 @@ void ProcessInfoModule::FillProcInfo(const std::shared_ptr<proc_t> &info){
       priority = std::stoi(std::to_string(info->priority));
       nice = std::stoi(std::to_string(info->nice));
       rss = std::stoi(std::to_string(info->rss));
+      mem = std::stoi(std::to_string(info->vm_rss));
 
       sysUpTime.read();
       ticksPerSecond.read();
@@ -70,6 +75,7 @@ void ProcessInfoModule::FillProcInfo(const std::shared_ptr<proc_t> &info){
     pcpu      = 0;
     avpcpu    = 0;
     runtime   = 0;
+    mem       = 0;
   }
   utime    .write();
   stime    .write();
@@ -83,6 +89,7 @@ void ProcessInfoModule::FillProcInfo(const std::shared_ptr<proc_t> &info){
   pcpu     .write();
   avpcpu   .write();
   runtime  .write();
+  mem      .write();
 }
 
 std::ostream& operator<<(std::ostream& os, const ProcessInfoModule* ph){
@@ -212,7 +219,7 @@ void ProcessControlModule::mainLoop() {
           processNChilds = proc_util::getNChilds(processPID);
           processNChilds.write();
         } catch(std::runtime_error &e) {
-          std::cout << e.what() << std::endl;
+          std::cout << this << e.what() << std::endl;
           Failed();
         }
       } else {
@@ -220,7 +227,12 @@ void ProcessControlModule::mainLoop() {
         std::cout << this << "Process is running..." << processIsRunning << " PID: " << getpid() << std::endl;
 #endif
         pidOffset.read();
-        FillProcInfo(proc_util::getInfo(processPID + pidOffset));
+        try{
+          FillProcInfo(proc_util::getInfo(processPID + pidOffset));
+        } catch (std::runtime_error &e){
+          std::cerr << this << "Failed to read information for process " << (processPID + pidOffset) <<
+              ". Check if pidOffset is set correctly!" << std::endl;
+        }
       }
     } else {
       if(processPID < 0) {
