@@ -20,6 +20,7 @@ namespace ctk = ChimeraTK;
 namespace bp = boost_process;
 #else
 #include "sys_stat.h"
+#include "ProcessHandler.h"
 #endif
 
 /**

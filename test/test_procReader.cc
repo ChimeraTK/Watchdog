@@ -7,8 +7,10 @@
 #define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MODULE sysTest
 
+#include "ProcessHandler.h"
 #include "sys_stat.h"
 #include <signal.h>
+#include <vector>
 
 #include <boost/test/unit_test.hpp>
 using namespace boost::unit_test_framework;

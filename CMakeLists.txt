@@ -118,12 +118,9 @@ target_link_libraries(${PROJECT_NAME}-xmlGenerator ${PROJECT_NAME}lib)
 add_custom_target(${PROJECT_NAME}-xml ALL DEPENDS ${PROJECT_NAME}-xmlGenerator COMMAND ${PROJECT_BINARY_DIR}/${PROJECT_NAME}-xmlGenerator WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
 
 # Create the executable for automated unit testing.
-# add the test executable with all test source files
-aux_source_directory(${CMAKE_SOURCE_DIR}/test test_sources)
-include_directories(${CMAKE_SOURCE_DIR}/test)
-add_executable(test_${PROJECT_NAME} ${test_sources})
-target_link_libraries(test_${PROJECT_NAME} ${PROJECT_NAME}lib ${Boost_LIBRARIES}  )
-add_test(test_${PROJECT_NAME} test_${PROJECT_NAME})
+add_executable(test_procReader ${CMAKE_SOURCE_DIR}/test/test_procReader.cc)
+target_link_libraries(test_procReader ${PROJECT_NAME}lib ${Boost_LIBRARIES})
+add_test(test_procReader test_procReader)
 
 # The make coverage command is only available in debug mode
 IF(CMAKE_BUILD_TYPE STREQUAL "Debug")
