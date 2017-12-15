@@ -4,8 +4,8 @@ After=network.target local-fs.target
 
 [Service]
 Type=forking
-ExecStart=/export/ChimeraTK/WatchdogServer/ChimeraTK-WatchdogServer
-PIDFile=/export/ChimeraTK/WatchdogServer/WatchdogServer.PID
+ExecStart=@CMAKE_INSTALL_PREFIX/@PROJECT_NAME@/ChimeraTK-WatchdogServer
+PIDFile=@CMAKE_INSTALL_PREFIX/@PROJECT_NAME@/WatchdogServer.PID
 Restart=always
 RestartSec=1min
 

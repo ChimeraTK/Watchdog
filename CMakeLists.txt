@@ -1,4 +1,4 @@
-PROJECT(ChimeraTK-WatchdogServer)
+PROJECT(WatchdogServer)
 cmake_minimum_required(VERSION 2.8)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/Modules)
@@ -54,13 +54,9 @@ SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 
 # the RPATH to be used when installing, but only if it's not a system directory
-LIST(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/lib" isSystemDir)
+LIST(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/${PROJECT_NAME}" isSystemDir)
 IF("${isSystemDir}" STREQUAL "-1")
-  if("${CMAKE_INSTALL_PREFIX}" STREQUAL "/export/doocs/server")
-    SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${PROJECT_NAME}/lib")
-  else()
-    SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
-  endif()
+  SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${PROJECT_NAME}")
 ENDIF("${isSystemDir}" STREQUAL "-1")
 
 ##################FIX THIS#########################################
@@ -133,7 +129,7 @@ IF(CMAKE_BUILD_TYPE STREQUAL "Debug")
   #)
 ENDIF(CMAKE_BUILD_TYPE STREQUAL "Debug")
 
-# copy config file for running in virtuallab environment
+
 FILE( COPY ${CMAKE_SOURCE_DIR}/configs/devMapFile.dmap DESTINATION ${PROJECT_BINARY_DIR})
 FILE( COPY ${CMAKE_SOURCE_DIR}/configs/${PROJECT_NAME}.xlmap DESTINATION ${PROJECT_BINARY_DIR})
 FILE( COPY ${CMAKE_SOURCE_DIR}/configs/${PROJECT_NAME}_processes.xml DESTINATION ${PROJECT_BINARY_DIR})
@@ -143,20 +139,6 @@ IF(ADAPTER STREQUAL "OPCUA")
 ELSEIF(ADAPTER STREQUAL "DOOCS")
   FILE( COPY ${CMAKE_SOURCE_DIR}/configs/${PROJECT_NAME}.conf DESTINATION ${PROJECT_BINARY_DIR})
 ENDIF()
-
-SET(CMAKE_INSTALL_PREFIX "/export/ChimeraTK/WatchdogServer/"
-CACHE PATH "Install path prefix")
-
-# Install the executable and the RPC_LIBNO file
-if("${CMAKE_INSTALL_PREFIX}" STREQUAL "/export/doocs/server")
-  install(TARGETS ${PROJECT_NAME}lib LIBRARY DESTINATION ${PROJECT_NAME}/lib)
-  install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION ${PROJECT_NAME}/bin)
-  install(FILES ${CMAKE_SOURCE_DIR}/configs/RPC_LIBNO DESTINATION ${PROJECT_NAME})
-else()
-  install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION bin)
-  install(TARGETS ${PROJECT_NAME}lib LIBRARY DESTINATION lib)
-  # the RPC_LIBNO file is not installed when not following the DOOCS directory scheme
-endif()
 
 find_package(Doxygen)
 if(DOXYGEN_FOUND)
@@ -174,3 +156,29 @@ if(DOXYGEN_FOUND)
 else(DOXYGEN_FOUND)
   message("Doxygen not found, documentation cannot be build.")
 endif(DOXYGEN_FOUND)
+
+# Install the executable and the RPC_LIBNO file
+if("${CMAKE_INSTALL_PREFIX}" STREQUAL "/export/doocs/server")
+  install(TARGETS ${PROJECT_NAME}lib LIBRARY DESTINATION ${PROJECT_NAME})
+  install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION ${PROJECT_NAME})
+  install(FILES ${CMAKE_SOURCE_DIR}/configs/RPC_LIBNO DESTINATION ${PROJECT_NAME})
+else()
+  install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION  ${PROJECT_NAME})
+  install(TARGETS ${PROJECT_NAME}lib LIBRARY DESTINATION  ${PROJECT_NAME})
+  # the RPC_LIBNO file is not installed when not following the DOOCS directory scheme
+endif()
+
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/configs/ChimeraTK-Watchdog.service.in ${CMAKE_CURRENT_BINARY_DIR}/ChimeraTK-Watchdog.service @ONLY)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/ChimeraTK-Watchdog.service DESTINATION ${PROJECT_NAME})
+install(FILES ${CMAKE_SOURCE_DIR}/configs/devMapFile.dmap 
+        ${CMAKE_SOURCE_DIR}/configs/${PROJECT_NAME}.xlmap
+        ${CMAKE_SOURCE_DIR}/configs/${PROJECT_NAME}_processes.xml
+        DESTINATION ${PROJECT_NAME})
+IF(ADAPTER STREQUAL "OPCUA")
+  install( FILES ${CMAKE_SOURCE_DIR}/configs/WatchdogServer_mapping.xml DESTINATION ${PROJECT_BINARY_DIR})
+ELSEIF(ADAPTER STREQUAL "DOOCS")
+  install( FILES ${CMAKE_SOURCE_DIR}/configs/${PROJECT_NAME}.conf DESTINATION ${PROJECT_BINARY_DIR})
+ENDIF()
+
+
+include(${CMAKE_SOURCE_DIR}/cmake/create_cmake_config_files.cmake)
