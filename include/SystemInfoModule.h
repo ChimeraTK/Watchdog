@@ -17,7 +17,8 @@
 namespace ctk = ChimeraTK;
 
 /**
- * This module is used to read system parameter.
+ * \brief This module is used to read system parameter.
+ *
  * Some of them are static and only read once (e.g. processor model).
  * Others are watched continuously (e.g. uptime, work load...).
  * \todo Implement proper data types instead of using int for all of them!

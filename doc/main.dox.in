@@ -6,7 +6,7 @@ The watchdog contains two main moudles:
   - SYS: Monitors system paramters
   - PROCESS: Start/stop and monitor a process 
 
-System parameter are read directly from \c /proc/cpuinfo and \c   /sys/devices/system/cpu/present.
+System parameter are read directly from \c /proc/\%PID%/cpuinfo and \c   /sys/devices/system/cpu/present.
 Information about processes also taken from \c /proc/ using the \c proc library. By default only one Process module
 will be created that can be used to control one process. This is done using the properties:
   - enableProcess
@@ -40,4 +40,8 @@ If one would overwrite the \c path or \c cmd variable with the one from the \c  
 information would not be true in any case. If the user changed the path or command during the run time of the server 
 and started the process its is indicated in the watchdog. After a restart still the watchdog would show that the process
 is running, but \c path or \c cmd would show wrong values taken from the \c  watchdog_server_processes.xml file.
+
+\remark 
+For each process a link in the proc directory is created! Thus one can access the path \c /proc/self/ without knowing the 
+PID of the process. This might be useful in some cases...
 */

@@ -17,7 +17,7 @@
 namespace ctk = ChimeraTK;
 
 /**
- * This module is used to trigger the mainloops of the modules to go on.
+ * \brief This module is used to trigger the mainloops of the modules to go on.
  */
 struct TimerModule: public ctk::ApplicationModule {
   using ctk::ApplicationModule::ApplicationModule;
@@ -35,6 +35,8 @@ struct TimerModule: public ctk::ApplicationModule {
 };
 
 /**
+ * \brief The watchdog application
+ *
  * So far from the watchdog_server_processes.xml file only the process name is used.
  * The initial values are not used so far, since these values can not be set in the constructor.
  * They need to be set at a later stage, which requires rephrasing the xml.

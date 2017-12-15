@@ -25,7 +25,8 @@ namespace bp = boost_process;
 
 /**
  * \brief
- * This module is used to start and stop subprocess controlled by the watchdog.
+ * This module is used to collect process information.
+ *
  * It also collects information about the running job.
  * \todo Implement proper data types instead of using int for all of them!
  */
@@ -132,6 +133,10 @@ struct ProcessInfoModule : public ctk::ApplicationModule {
   friend std::ostream& operator<<(std::ostream& os, const ProcessInfoModule* ph);
 };
 
+
+/**
+ * \brief This module is used to start and stop subprocess controlled by the watchdog.
+ */
 struct ProcessControlModule : public ProcessInfoModule{
 #ifdef BOOST_1_64
   std::shared_ptr<boost_process::process::child> process;

@@ -1,10 +1,10 @@
-PROJECT(watchdog_server)
+PROJECT(ChimeraTK-WatchdogServer)
 cmake_minimum_required(VERSION 2.8)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/Modules)
 
 set(${PROJECT_NAME}_MAJOR_VERSION 00)
-set(${PROJECT_NAME}_MINOR_VERSION 02)
+set(${PROJECT_NAME}_MINOR_VERSION 03)
 set(${PROJECT_NAME}_PATCH_VERSION 00)
 include(cmake/set_version_numbers.cmake)
 
@@ -115,7 +115,7 @@ add_executable(${PROJECT_NAME}-xmlGenerator ${server_sources})
 set_target_properties(${PROJECT_NAME}-xmlGenerator PROPERTIES COMPILE_FLAGS "-DGENERATE_XML")
 target_link_libraries(${PROJECT_NAME}-xmlGenerator ${PROJECT_NAME}lib)
 
-add_custom_target(${PROJECT_NAME}-xml ALL DEPENDS ${PROJECT_NAME}-xmlGenerator COMMAND ${PROJECT_BINARY_DIR}/${PROJECT_NAME}-xmlGenerator WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+
 
 # Create the executable for automated unit testing.
 add_executable(test_procReader ${CMAKE_SOURCE_DIR}/test/test_procReader.cc)
@@ -124,6 +124,7 @@ add_test(test_procReader test_procReader)
 
 # The make coverage command is only available in debug mode
 IF(CMAKE_BUILD_TYPE STREQUAL "Debug")
+  add_custom_target(${PROJECT_NAME}-xml ALL DEPENDS ${PROJECT_NAME}-xmlGenerator COMMAND ${PROJECT_BINARY_DIR}/${PROJECT_NAME}-xmlGenerator WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
   #configure_file(cmake/Makefile.coverage.in ${PROJECT_BINARY_DIR}/Makefile.coverage @ONLY)
   #add_custom_target(coverage
   #  make -f Makefile.coverage
@@ -142,6 +143,9 @@ IF(ADAPTER STREQUAL "OPCUA")
 ELSEIF(ADAPTER STREQUAL "DOOCS")
   FILE( COPY ${CMAKE_SOURCE_DIR}/configs/${PROJECT_NAME}.conf DESTINATION ${PROJECT_BINARY_DIR})
 ENDIF()
+
+SET(CMAKE_INSTALL_PREFIX "/export/ChimeraTK/WatchdogServer/"
+CACHE PATH "Install path prefix")
 
 # Install the executable and the RPC_LIBNO file
 if("${CMAKE_INSTALL_PREFIX}" STREQUAL "/export/doocs/server")

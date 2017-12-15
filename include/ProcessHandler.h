@@ -12,7 +12,8 @@
 #include <ChimeraTK/ApplicationCore/Application.h>
 
 /**
- * Handler used to start, stop processes.
+ * \brief Handler used to start and stop processes.
+ *
  * Use the Handler only to start a single process.
  * When a process is started fork + execv is used. The parent
  * process does not know the child process and its pid. Therefore,
@@ -136,6 +137,17 @@ public:
    * \param sig Signal used to kill the process (e.g. SIGINT = 2, SIGKILL = 9)
    */
   void setSigNum(int sig){signum = sig;}
+
+  /**
+   * Tell all file handles to be closed when exec is called.
+   * Therefore this should be called after forking in the child process brefore calling
+   * exec.
+   * In principle one can find out the number of open file handles by checking /proc/self/fd
+   * Here we simply set it for all file handles that are allowed by process (typically 1024).
+   * This is supposed to be easier than finding out the correct nuber of file handles conneced
+   * to the process.
+   */
+  static void setAllFHCloseOnExec();
 
 };
 

@@ -11,6 +11,11 @@
 #include "ChimeraTK/ApplicationCore/Module.h"
 #include "ChimeraTK/ApplicationCore/Application.h"
 
+//includes for set_all_close_on_exec
+#define _POSIX_C_SOURCE 200809L
+#include <fcntl.h>
+#include <sys/resource.h>
+
 ProcessHandler::ProcessHandler(const std::string &path, const std::string &PIDFileName, const bool deletePIDFile, int &PID):
  pid(-1), pidFile(PIDFileName + ".PID"), pidDirectory(path), deletePIDFile(deletePIDFile), signum(SIGINT){
   PID = -1;
@@ -95,7 +100,7 @@ bool ProcessHandler::isPIDFolderWritable() {
 size_t ProcessHandler::startProcess(const std::string &path, const std::string &cmd) {
   if(path.empty() || cmd.empty()) {
     throw std::runtime_error(
-        "Path or command not set before starting a proccess!");
+        "Path or command not set before starting a process!");
   }
   // process could be stopped even if it was present when the ProcessHandler was constructed.
   if(pid > 0 && proc_util::isProcessRunning(pid)) {
@@ -116,16 +121,14 @@ size_t ProcessHandler::startProcess(const std::string &path, const std::string &
     // Don't throw in the child since the parent will not catch it
     pid_t child = (int) getpid();
     if(setpgid(0, child)) {
-      throw std::runtime_error("Failed to reset GPID.");
+      std::cerr << "Failed to reset GPID." << std::endl;
     }
     printf("child running: %d\n", (int) child);
     std::ofstream file;
     file.open(pidFile);
     if(!file.is_open()) {
       file.close();
-      std::stringstream ss;
-      ss << "Failed to create PID file: " << pidFile;
-      std::cout << ss.str() << std::endl;
+      std::cerr << "Failed to create PID file: " << pidFile << std::endl;
       _exit(0);
     } else {
       file << child;
@@ -135,9 +138,7 @@ size_t ProcessHandler::startProcess(const std::string &path, const std::string &
     if(path.back() != '/')
       path_copy.append(std::string("/").c_str());
     if(chdir(path.c_str())) {
-      std::stringstream ss;
-      ss << "Failed to change to directory: " << path;
-      std::cout << ss.str() << std::endl;
+      std::cerr << "Failed to change to directory: " << path << std::endl;
       _exit(0);
     }
     auto args = split_arguments(cmd);
@@ -151,6 +152,7 @@ size_t ProcessHandler::startProcess(const std::string &path, const std::string &
     exec_args[arg_count++] = 0; // tell it when to stop!
     std::cout << "\", \"NULL\")" << std::endl;
 
+    setAllFHCloseOnExec();
     execv((path_copy + args.at(0)).c_str(), exec_args);
 //    execl((path + std::string("/") + cmd).c_str(), cmd.c_str(), NULL);
     _exit(0);
@@ -184,5 +186,43 @@ bool ProcessHandler::readTempPID(int &PID) {
     testFile.close();
     return false;
   }
+}
+
+void ProcessHandler::setAllFHCloseOnExec()
+{
+  struct rlimit  rlim;
+  long           max;
+  int            fd;
+
+  /* Resource limit? */
+#if defined(RLIMIT_NOFILE)
+  if (getrlimit(RLIMIT_NOFILE, &rlim) != 0)
+    rlim.rlim_max = 0;
+#elif defined(RLIMIT_OFILE)
+  if (getrlimit(RLIMIT_OFILE, &rlim) != 0)
+    rlim.rlim_max = 0;
+#else
+  /* POSIX: 8 message queues, 20 files, 8 streams */
+  rlim.rlim_max = 36;
+#endif
+
+  /* Configured limit? */
+#if defined(_SC_OPEN_MAX)
+  max = sysconf(_SC_OPEN_MAX);
+#else
+  max = 36L;
+#endif
+
+  /* Use the bigger of the two. */
+  if ((int)max > (int)rlim.rlim_max)
+    fd = max;
+  else
+    fd = rlim.rlim_max;
+
+  while (fd-->0)
+    if (fd != STDIN_FILENO  &&
+        fd != STDOUT_FILENO &&
+        fd != STDERR_FILENO)
+      fcntl(fd, F_SETFD, FD_CLOEXEC);
 }
 

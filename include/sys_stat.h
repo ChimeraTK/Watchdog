@@ -16,12 +16,13 @@
 #include <proc/readproc.h>
 
 /**
- * This class is used to read /proc information via libproc.
- * The libproc library is not thread safe. Therefore only one
- * instance of the ProcReader should be present!
+ * \brief This namespace contains functions is used to read /proc information via libproc.
+ *
+ * The libproc library is not thread safe. Therefore a mutex is used here.
  */
 namespace proc_util{
   extern std::mutex proc_mutex;
+
   /**
    * Use system folder \c /proc to search for a process with the given process ID.
    * If a directory with the given PID is found the process is running.
@@ -57,8 +58,9 @@ std::string space2underscore(std::string text);
 std::vector<std::string> split_arguments(const std::string &arguments);
 
 /**
- * Class that reads static system information from the system by reading
+ * \brief Class that reads static system information from the system by reading
  * \c /proc/cpuinfo and \c /sys/devices/system/cpu/present.
+ *
  * \throws runtime_error Exception is thrown in case one of the /proc/ files could not be read.
  */
 class SysInfo {

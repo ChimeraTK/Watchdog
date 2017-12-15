@@ -1,0 +1,14 @@
+[Unit]
+Description=ChimeraTK Watchdog Server
+After=network.target local-fs.target
+
+[Service]
+Type=forking
+ExecStart=/export/ChimeraTK/WatchdogServer/ChimeraTK-WatchdogServer
+PIDFile=/export/ChimeraTK/WatchdogServer/WatchdogServer.PID
+Restart=always
+RestartSec=1min
+
+
+[Install]
+WantedBy=multi-user.target
