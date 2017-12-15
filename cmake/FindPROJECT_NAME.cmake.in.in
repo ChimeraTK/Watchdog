@@ -1,0 +1,62 @@
+#######################################################################################################################
+#
+# cmake module for finding @PROJECT_NAME@
+#
+# returns:
+#   @PROJECT_NAME@_FOUND        : true or false, depending on whether the package was found
+#   @PROJECT_NAME@_VERSION      : the package version
+#   @PROJECT_NAME@_INCLUDE_DIRS : path to the include directory
+#   @PROJECT_NAME@_LIBRARY_DIRS : path to the library directory
+#   @PROJECT_NAME@_LIBRARIES    : libraries the depending project needs to link against
+#   @PROJECT_NAME@_CXX_FLAGS    : additional C++ compiler flags
+#   @PROJECT_NAME@_LINKER_FLAGS : additional linker flags
+#
+# @author Martin Killenberg, DESY
+#
+#######################################################################################################################
+
+#######################################################################################################################
+#
+# IMPORTANT NOTE:
+#
+# DO NOT MODIFY THIS FILE inside a project. Instead update the project-template repository and pull the change from
+# there. Make sure to keep the file generic, since it will be used by other projects, too.
+#
+# If you have modified this file inside a project despite this warning, make sure to cherry-pick all your changes
+# into the project-template repository immediately.
+#
+#######################################################################################################################
+
+# The library itself must be "searched" using the FIND_LIBRARY command in the known install directory, to set
+# the variable properly
+FIND_LIBRARY(@PROJECT_NAME@_LIBRARY @PROJECT_NAME@
+  @CMAKE_INSTALL_PREFIX@/lib
+  NO_DEFAULT_PATH
+)
+
+# Since this file is already part of the installation to be found, the configuration can be hard-coded at
+# installation time
+set(@PROJECT_NAME@_VERSION "@@PROJECT_NAME@_SOVERSION@")
+set(@PROJECT_NAME@_INCLUDE_DIRS @@PROJECT_NAME@_INCLUDE_DIRS@)
+set(@PROJECT_NAME@_LIBRARY_DIRS @@PROJECT_NAME@_LIBRARY_DIRS@)
+set(@PROJECT_NAME@_LIBRARIES ${@PROJECT_NAME@_LIBRARY} @@PROJECT_NAME@_LIBRARIES@)
+set(@PROJECT_NAME@_CXX_FLAGS "@@PROJECT_NAME@_CXX_FLAGS@")
+set(@PROJECT_NAME@_LINKER_FLAGS "@@PROJECT_NAME@_LINKER_FLAGS@ @@PROJECT_NAME@_LINK_FLAGS@")
+set(@PROJECT_NAME@_LINK_FLAGS "@@PROJECT_NAME@_LINKER_FLAGS@ @@PROJECT_NAME@_LINK_FLAGS@")
+set(@PROJECT_NAME@_PREFIX "@CMAKE_INSTALL_PREFIX@")
+
+# Use a macro provided by CMake to check if all the listed arguments are valid and set @PROJECT_NAME@_FOUND accordingly.
+# This is mainly important to check the version.
+set(@PROJECT_NAME@_FOUND 0)
+include(FindPackageHandleStandardArgs)
+
+# The FOUND_VAR option in FIND_PACKAGE_HANDLE_STANDARD_ARGS was introduced in cmake-2.8.11, but Ubuntu 12.04 has cmake-2.8.7 only.
+# Thus we use a work around here for older cmake versions.
+if("${CMAKE_VERSION}" VERSION_LESS 2.8.11)
+  # The old version always provides a variable with upper case project name, so we just copy that
+  FIND_PACKAGE_HANDLE_STANDARD_ARGS(@PROJECT_NAME@ REQUIRED_VARS @PROJECT_NAME@_PREFIX VERSION_VAR @PROJECT_NAME@_VERSION)
+  STRING(TOUPPER "@PROJECT_NAME@" PROJECT_NAME_UPPERCASE)
+  set(@PROJECT_NAME@_FOUND ${${PROJECT_NAME_UPPERCASE}_FOUND})
+else()
+  FIND_PACKAGE_HANDLE_STANDARD_ARGS(@PROJECT_NAME@ REQUIRED_VARS @PROJECT_NAME@_PREFIX VERSION_VAR @PROJECT_NAME@_VERSION FOUND_VAR @PROJECT_NAME@_FOUND)
+endif()
