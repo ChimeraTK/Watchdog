@@ -1,4 +1,4 @@
-PROJECT(WatchdogServer)
+PROJECT(watchdog-server)
 cmake_minimum_required(VERSION 2.8)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/Modules)
@@ -15,8 +15,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fPIC -Wextra -ansi -Wuninitialize
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSER=\\\"`whoami`\\\" -DHOST=\\\"`hostname`\\\"")
 
 #use -DCMAKE_BUILD_TYPE=Debug in your cmake command to turn on the coverage option
-#set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 --coverage -DDEBUG")
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 --coverage")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 --coverage -DDEBUG")
 #set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O3 --coverage")
 
 # linker flags
@@ -39,39 +38,8 @@ ELSE()
                       "   -DADAPTER=OPCUA to use OPC-UA")
 ENDIF()
 
-##################RPATH handling ##################################
-#RPATH handling
-# use, i.e. don't skip the full RPATH for the build tree
-SET(CMAKE_SKIP_BUILD_RPATH  FALSE)
-
-# when building, don't use the install RPATH already
-# (but later on when installing)
-SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
-
-# add the automatically determined parts of the RPATH
-# which point to directories outside the build tree to the install RPATH
-SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-
-
-# the RPATH to be used when installing, but only if it's not a system directory
-LIST(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/${PROJECT_NAME}" isSystemDir)
-IF("${isSystemDir}" STREQUAL "-1")
-  SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/${PROJECT_NAME}")
-ENDIF("${isSystemDir}" STREQUAL "-1")
-
-##################FIX THIS#########################################
-#check boost version that includes boost.process
-FIND_PACKAGE(Boost 1.64 COMPONENTS thread system filesystem unit_test_framework)
-
-IF(Boost_FOUND)
-  MESSAGE(STATUS "Found boost version that includes boost process (>1.64).")
-  add_definitions( "-DBOOST_1_64" )
-ELSE()
-  MESSAGE(STATUS "Found no boost version that includes boost process. Will use fork/exec.")
-  FIND_PACKAGE(Boost COMPONENTS thread system filesystem unit_test_framework)
-ENDIF(Boost_FOUND)
+FIND_PACKAGE(Boost COMPONENTS unit_test_framework)
 ENABLE_TESTING()
-####################QUICK FIX#########################################
 
 FIND_PACKAGE(PkgConfig REQUIRED)
 set(LIBXML++_VERSION "libxml++-2.6")
@@ -93,49 +61,43 @@ set(server_sources ${CMAKE_SOURCE_DIR}/src/applicationInstance.cc)
 configure_file(include/version.h.in ${PROJECT_BINARY_DIR}/version/version.h)
 include_directories(${PROJECT_BINARY_DIR}/version)
 
-# server library (to avoid compiling everyting multiple times)
-add_library(${PROJECT_NAME}lib SHARED ${library_sources} )
-set_target_properties(${PROJECT_NAME}lib PROPERTIES VERSION ${${PROJECT_NAME}_FULL_LIBRARY_VERSION}
-                                                    SOVERSION ${${PROJECT_NAME}_SOVERSION})
-target_link_libraries(${PROJECT_NAME}lib ${Boost_LIBRARIES}
-                                         ${ChimeraTK-ApplicationCore_LIBRARIES}
-                                         procps
-                                         ${Boost_process_LIBRARIES})
-
 # main server executable
-add_executable(${PROJECT_NAME} ${server_sources})
-target_link_libraries(${PROJECT_NAME} ${PROJECT_NAME}lib ${ChimeraTK-ControlSystemAdapter-DoocsAdapter_LIBRARIES} ${ChimeraTK-ControlSystemAdapter-OPCUAAdapter_LIBRARIES})
+add_executable(${PROJECT_NAME} ${server_sources} ${library_sources})
+target_link_libraries(${PROJECT_NAME} ${ChimeraTK-ApplicationCore_LIBRARIES} 
+                                      ${ChimeraTK-ControlSystemAdapter-DoocsAdapter_LIBRARIES} 
+                                      ${ChimeraTK-ControlSystemAdapter-OPCUAAdapter_LIBRARIES}
+                                      ${LibXML++_LIBRARIES} 
+                                      procps)
 
 # XML file generation
-add_executable(${PROJECT_NAME}-xmlGenerator ${server_sources})
+add_executable(${PROJECT_NAME}-xmlGenerator ${server_sources} ${library_sources})
 set_target_properties(${PROJECT_NAME}-xmlGenerator PROPERTIES COMPILE_FLAGS "-DGENERATE_XML")
-target_link_libraries(${PROJECT_NAME}-xmlGenerator ${PROJECT_NAME}lib)
-
-
+target_link_libraries(${PROJECT_NAME}-xmlGenerator ${ChimeraTK-ApplicationCore_LIBRARIES} 
+                                                   ${LibXML++_LIBRARIES} 
+                                                   procps) 
 
 # Create the executable for automated unit testing.
-add_executable(test_procReader ${CMAKE_SOURCE_DIR}/test/test_procReader.cc)
-target_link_libraries(test_procReader ${PROJECT_NAME}lib ${Boost_LIBRARIES})
+add_executable(test_procReader ${CMAKE_SOURCE_DIR}/test/test_procReader.cc ${library_sources})
+target_link_libraries(test_procReader ${ChimeraTK-ApplicationCore_LIBRARIES} 
+                                      ${LibXML++_LIBRARIES} 
+                                      procps 
+                                      ${Boost_LIBRARIES})
 add_test(test_procReader test_procReader)
 
 # The make coverage command is only available in debug mode
 IF(CMAKE_BUILD_TYPE STREQUAL "Debug")
   add_custom_target(${PROJECT_NAME}-xml ALL DEPENDS ${PROJECT_NAME}-xmlGenerator COMMAND ${PROJECT_BINARY_DIR}/${PROJECT_NAME}-xmlGenerator WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
-  #configure_file(cmake/Makefile.coverage.in ${PROJECT_BINARY_DIR}/Makefile.coverage @ONLY)
-  #add_custom_target(coverage
-  #  make -f Makefile.coverage
-  #  WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-  #  COMMENT "Generating test coverage documentation" VERBATIM
-  #)
+  configure_file(cmake/Makefile.coverage.in ${PROJECT_BINARY_DIR}/Makefile.coverage @ONLY)
+  add_custom_target(coverage
+    make -f Makefile.coverage
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    COMMENT "Generating test coverage documentation" VERBATIM
+  )
 ENDIF(CMAKE_BUILD_TYPE STREQUAL "Debug")
 
-
-FILE( COPY ${CMAKE_SOURCE_DIR}/configs/devMapFile.dmap DESTINATION ${PROJECT_BINARY_DIR})
-FILE( COPY ${CMAKE_SOURCE_DIR}/configs/${PROJECT_NAME}.xlmap DESTINATION ${PROJECT_BINARY_DIR})
-FILE( COPY ${CMAKE_SOURCE_DIR}/configs/${PROJECT_NAME}_processes.xml DESTINATION ${PROJECT_BINARY_DIR})
+FILE( COPY ${CMAKE_SOURCE_DIR}/configs/WatchdogServer_processes.xml DESTINATION ${PROJECT_BINARY_DIR})
 IF(ADAPTER STREQUAL "OPCUA")
   FILE( COPY ${CMAKE_SOURCE_DIR}/configs/WatchdogServer_mapping.xml DESTINATION ${PROJECT_BINARY_DIR})
-#  FILE( COPY ${CMAKE_SOURCE_DIR}/serverTypes/${TYPE}/configs/LLRFServer.persist DESTINATION ${PROJECT_BINARY_DIR})
 ELSEIF(ADAPTER STREQUAL "DOOCS")
   FILE( COPY ${CMAKE_SOURCE_DIR}/configs/${PROJECT_NAME}.conf DESTINATION ${PROJECT_BINARY_DIR})
 ENDIF()
@@ -159,26 +121,22 @@ endif(DOXYGEN_FOUND)
 
 # Install the executable and the RPC_LIBNO file
 if("${CMAKE_INSTALL_PREFIX}" STREQUAL "/export/doocs/server")
-  install(TARGETS ${PROJECT_NAME}lib LIBRARY DESTINATION ${PROJECT_NAME})
   install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION ${PROJECT_NAME})
   install(FILES ${CMAKE_SOURCE_DIR}/configs/RPC_LIBNO DESTINATION ${PROJECT_NAME})
 else()
-  install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION  ${PROJECT_NAME})
-  install(TARGETS ${PROJECT_NAME}lib LIBRARY DESTINATION  ${PROJECT_NAME})
-  # the RPC_LIBNO file is not installed when not following the DOOCS directory scheme
+  install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION  bin)
 endif()
 
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/configs/ChimeraTK-Watchdog.service.in ${CMAKE_CURRENT_BINARY_DIR}/ChimeraTK-Watchdog.service @ONLY)
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/ChimeraTK-Watchdog.service DESTINATION ${PROJECT_NAME})
-install(FILES ${CMAKE_SOURCE_DIR}/configs/devMapFile.dmap 
-        ${CMAKE_SOURCE_DIR}/configs/${PROJECT_NAME}.xlmap
-        ${CMAKE_SOURCE_DIR}/configs/${PROJECT_NAME}_processes.xml
-        DESTINATION ${PROJECT_NAME})
+# install config files to /etc/... This allows the user to change config files and keeping these changes even if a new version of the 
+# package is installed. 
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/configs/chimeratk-watchdog.service.in ${CMAKE_CURRENT_BINARY_DIR}/chimeratk-watchdog.service @ONLY)
+install(FILES ${CMAKE_SOURCE_DIR}/configs/WatchdogServer_processes.xml
+        DESTINATION /etc/chimeratk/${PROJECT_NAME})
+# move systemd service file to /var similar to other system services        
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/chimeratk-watchdog.service
+        DESTINATION /var/lib/chimeratk/${PROJECT_NAME})
 IF(ADAPTER STREQUAL "OPCUA")
-  install( FILES ${CMAKE_SOURCE_DIR}/configs/WatchdogServer_mapping.xml DESTINATION ${PROJECT_BINARY_DIR})
+  install( FILES ${CMAKE_SOURCE_DIR}/configs/WatchdogServer_mapping.xml DESTINATION /etc/chimeratk/${PROJECT_NAME})
 ELSEIF(ADAPTER STREQUAL "DOOCS")
   install( FILES ${CMAKE_SOURCE_DIR}/configs/${PROJECT_NAME}.conf DESTINATION ${PROJECT_BINARY_DIR})
 ENDIF()
-
-
-include(${CMAKE_SOURCE_DIR}/cmake/create_cmake_config_files.cmake)

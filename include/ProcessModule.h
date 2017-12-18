@@ -15,13 +15,8 @@
 
 namespace ctk = ChimeraTK;
 
-#ifdef BOOST_1_64
-#include <boost_process/process/child.hpp>
-namespace bp = boost_process;
-#else
 #include "sys_stat.h"
 #include "ProcessHandler.h"
-#endif
 
 /**
  * \brief
@@ -138,11 +133,7 @@ struct ProcessInfoModule : public ctk::ApplicationModule {
  * \brief This module is used to start and stop subprocess controlled by the watchdog.
  */
 struct ProcessControlModule : public ProcessInfoModule{
-#ifdef BOOST_1_64
-  std::shared_ptr<boost_process::process::child> process;
-#else
   std::unique_ptr<ProcessHandler> process; ///< The process handler used to get information about the subprocess
-#endif
 
   using ProcessInfoModule::ProcessInfoModule;
 

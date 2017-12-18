@@ -25,7 +25,7 @@ void TimerModule::mainLoop() {
 
 WatchdogServer::WatchdogServer() :
     Application("WatchdogServer") {
-  std::string fileName("watchdog_server_processes.xml");
+  std::string fileName("WatchdogServer_processes.xml");
   // parse the file into a DOM structure
   xmlpp::DomParser parser;
   try {
@@ -62,15 +62,6 @@ WatchdogServer::WatchdogServer() :
         << std::endl;
     std::cout << "I will create only one process named PROCESS..." << std::endl;
     processes.emplace_back(this, "PROCESS", "Test process");
-  }
-  std::ofstream file;
-  file.open("WatchdogServer.PID");
-  if(!file.is_open()) {
-    file.close();
-    std::cerr << "Failed to create PID file: WatchdogServer.PID" << std::endl;
-  } else {
-    file << (int)getpid();
-    file.close();
   }
 }
 

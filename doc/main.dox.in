@@ -44,4 +44,9 @@ is running, but \c path or \c cmd would show wrong values taken from the \c  wat
 \remark 
 For each process a link in the proc directory is created! Thus one can access the path \c /proc/self/ without knowing the 
 PID of the process. This might be useful in some cases...
+
+\remark 
+Since boost version 1.64 a new tool kit is available: boost.process. It can be used to spawn processes without using system calls like
+fork/exec. Check if it is more useful compared to the current implementation. It is not used so far, since it is not available in 
+Ubuntu 16.04.
 */
