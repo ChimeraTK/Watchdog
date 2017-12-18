@@ -3,12 +3,11 @@ Description=ChimeraTK Watchdog Server
 After=network.target local-fs.target
 
 [Service]
-Type=forking
-ExecStart=@CMAKE_INSTALL_PREFIX/@PROJECT_NAME@/ChimeraTK-WatchdogServer
-PIDFile=@CMAKE_INSTALL_PREFIX/@PROJECT_NAME@/WatchdogServer.PID
+Type=simple
+WorkingDirectory=/var/lib/chimeratk/@PROJECT_NAME@/
+ExecStart=/usr/bin/watchdog-server
 Restart=always
 RestartSec=1min
-
 
 [Install]
 WantedBy=multi-user.target

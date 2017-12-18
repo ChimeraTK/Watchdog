@@ -102,60 +102,6 @@ std::ostream& operator<<(std::ostream& os, const ProcessInfoModule* ph){
   return os;
 }
 
-#ifdef BOOST_1_64
-void ProcessControlModule::mainLoop() {
-  SetOffline();
-  processRestarts = 0;
-  processRestarts.write();
-  while(true) {
-    trigger.read();
-    enableProcess.read();
-    // reset number of failed tries in case the process is set offline
-    if(!enableProcess) {
-      processNFailed = 0;
-      processNFailed.write();
-    }
-
-    // don't do anything in case failed more than 4 times -> to reset turn off/on the process
-    if(processNFailed > 4) {
-      usleep(200000);
-      continue;
-    }
-
-    if(enableProcess) {
-      if(process.get() == nullptr || !process->running()) {
-        std::cout << this << "Trying to start the process..." << std::endl;
-        processCMD.read();
-        try {
-          process.reset(new bp::child((std::string)processPath + (std::string)processCMD));
-          SetOnline(process->id());
-          process->detach();
-        } catch (std::system_error &e) {
-          std::cerr << this << "Failed to start the process with cmd: " << (std::string)processPath + (std::string)processCMD << "\n Message: " << e.what() << std::endl;
-          Failed();
-        }
-
-      } else {
-        std::cout << "Process is running..." << std::endl;
-      }
-    } else {
-      if(process.get() == nullptr || !process->running()) {
-        std::cout << this << "Process is not running...OK" << std::endl;
-      } else if (process->running()) {
-        std::cout << this << "Trying to kill the process..." << std::endl;
-        try {
-          process->terminate();
-          process.reset();
-          SetOffline();
-        } catch (std::system_error &e) {
-          std::cerr << this << "Failed to kill the process." << std::endl;
-        }
-      }
-    }
-  }
-}
-#else
-
 void ProcessControlModule::mainLoop() {
   SetOffline();
   processRestarts = 0;
@@ -254,7 +200,6 @@ void ProcessControlModule::mainLoop() {
     }
   }
 }
-#endif
 
 void ProcessControlModule::SetOnline(const int &pid){
   processPID = pid;
