@@ -2,6 +2,7 @@
 The watchdog server is used to monitor the system, the watchdog itself and addition processes (started by the watchdog) with respect to their memory consumption, runtime and more.
 
 ## Details about the watchdog server and its operation
+
 Before starting the watchdog server the number of processes to be controlled needs to be fixed. This is done by modifying the config file `WatchdogServer_processes.xml` (installed in `/etc/chimeratk/watchdog-server/`). 
 Here you only need to give a name to the process to be added. All process specific settings are done via the watchdog server when it is started.
  
