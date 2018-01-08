@@ -105,7 +105,7 @@ SysInfo::SysInfo() :
         std::make_pair("stepping", ""),
         std::make_pair("cpu MHz", ""),
         std::make_pair("bogomips", "") },
-        ibegin(sysData.begin()), iend(sysData.end()) {
+        CPUcount(0), ibegin(sysData.begin()), iend(sysData.end()) {
   std::ifstream procfile("/proc/cpuinfo");
   if(!procfile.is_open())
     throw std::runtime_error("Failed to open /proc/cpuinfo");
@@ -120,10 +120,18 @@ SysInfo::SysInfo() :
   procfile.close();
 
   std::ifstream cpufile("/sys/devices/system/cpu/present");
-  if(!cpufile.is_open())
-    throw std::runtime_error("Failed to open /sys/devices/system/cpu/present");
-  std::getline(cpufile, line);
-  CPUcount = std::atoi(line.substr(2, 2).c_str()) + 1;
+  if(!cpufile.is_open()){
+    procfile.open("/proc/cpuinfo");
+    // this file might not be present (e.g. when using pbuilder)
+    while(std::getline(procfile, line)) {
+      if(lookup(line, "processor"))
+        CPUcount += 1;
+    }
+    procfile.close();
+  } else {
+    std::getline(cpufile, line);
+    CPUcount = std::atoi(line.substr(2, 2).c_str()) + 1;
+  }
 }
 
 bool SysInfo::lookup(const std::string &line, const std::string &pattern) {

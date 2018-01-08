@@ -84,9 +84,10 @@ target_link_libraries(test_procReader ${ChimeraTK-ApplicationCore_LIBRARIES}
                                       ${Boost_LIBRARIES})
 add_test(test_procReader test_procReader)
 
+add_custom_target(${PROJECT_NAME}-xml ALL DEPENDS ${PROJECT_NAME}-xmlGenerator COMMAND ${PROJECT_BINARY_DIR}/${PROJECT_NAME}-xmlGenerator WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+
 # The make coverage command is only available in debug mode
 IF(CMAKE_BUILD_TYPE STREQUAL "Debug")
-  add_custom_target(${PROJECT_NAME}-xml ALL DEPENDS ${PROJECT_NAME}-xmlGenerator COMMAND ${PROJECT_BINARY_DIR}/${PROJECT_NAME}-xmlGenerator WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
   configure_file(cmake/Makefile.coverage.in ${PROJECT_BINARY_DIR}/Makefile.coverage @ONLY)
   add_custom_target(coverage
     make -f Makefile.coverage
@@ -119,12 +120,14 @@ else(DOXYGEN_FOUND)
   message("Doxygen not found, documentation cannot be build.")
 endif(DOXYGEN_FOUND)
 
-# Install the executable and the RPC_LIBNO file
+# Install the executable, server information and the RPC_LIBNO file
 if("${CMAKE_INSTALL_PREFIX}" STREQUAL "/export/doocs/server")
   install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION ${PROJECT_NAME})
   install(FILES ${CMAKE_SOURCE_DIR}/configs/RPC_LIBNO DESTINATION ${PROJECT_NAME})
+  install(FILES ${PROJECT_BINARY_DIR}/WatchdogServer.xml DESTINATION ${PROJECT_NAME})
 else()
   install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION  bin)
+  install(FILES ${PROJECT_BINARY_DIR}/WatchdogServer.xml DESTINATION /etc/chimeratk/${PROJECT_NAME})
 endif()
 
 # install config files to /etc/... This allows the user to change config files and keeping these changes even if a new version of the 
