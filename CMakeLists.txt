@@ -84,8 +84,6 @@ target_link_libraries(test_procReader ${ChimeraTK-ApplicationCore_LIBRARIES}
                                       ${Boost_LIBRARIES})
 add_test(test_procReader test_procReader)
 
-add_custom_target(${PROJECT_NAME}-xml ALL DEPENDS ${PROJECT_NAME}-xmlGenerator COMMAND ${PROJECT_BINARY_DIR}/${PROJECT_NAME}-xmlGenerator WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
-
 # The make coverage command is only available in debug mode
 IF(CMAKE_BUILD_TYPE STREQUAL "Debug")
   configure_file(cmake/Makefile.coverage.in ${PROJECT_BINARY_DIR}/Makefile.coverage @ONLY)
@@ -124,10 +122,10 @@ endif(DOXYGEN_FOUND)
 if("${CMAKE_INSTALL_PREFIX}" STREQUAL "/export/doocs/server")
   install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION ${PROJECT_NAME})
   install(FILES ${CMAKE_SOURCE_DIR}/configs/RPC_LIBNO DESTINATION ${PROJECT_NAME})
-  install(FILES ${PROJECT_BINARY_DIR}/WatchdogServer.xml DESTINATION ${PROJECT_NAME})
+  install(TARGETS ${PROJECT_NAME}-xmlGenerator RUNTIME DESTINATION ${PROJECT_NAME})
 else()
   install(TARGETS ${PROJECT_NAME} RUNTIME DESTINATION  bin)
-  install(FILES ${PROJECT_BINARY_DIR}/WatchdogServer.xml DESTINATION /etc/chimeratk/${PROJECT_NAME})
+  install(TARGETS ${PROJECT_NAME}-xmlGenerator RUNTIME DESTINATION bin)
 endif()
 
 # install config files to /etc/... This allows the user to change config files and keeping these changes even if a new version of the 

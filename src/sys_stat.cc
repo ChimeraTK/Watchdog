@@ -117,21 +117,12 @@ SysInfo::SysInfo() :
     }
     procfile.seekg(0, std::ios::beg);
   }
-  procfile.close();
-
-  std::ifstream cpufile("/sys/devices/system/cpu/present");
-  if(!cpufile.is_open()){
-    procfile.open("/proc/cpuinfo");
-    // this file might not be present (e.g. when using pbuilder)
-    while(std::getline(procfile, line)) {
-      if(lookup(line, "processor"))
-        CPUcount += 1;
-    }
-    procfile.close();
-  } else {
-    std::getline(cpufile, line);
-    CPUcount = std::atoi(line.substr(2, 2).c_str()) + 1;
+  procfile.seekg(0, std::ios::beg);
+  while(std::getline(procfile, line)) {
+    if(lookup(line, "processor"))
+      CPUcount += 1;
   }
+  procfile.close();
 }
 
 bool SysInfo::lookup(const std::string &line, const std::string &pattern) {
