@@ -8,8 +8,9 @@
 #include "ProcessHandler.h"
 #include <signal.h>
 #include "sys_stat.h"
-#include "ChimeraTK/ApplicationCore/Module.h"
-#include "ChimeraTK/ApplicationCore/Application.h"
+#include <sstream>
+#include <iostream>
+#include <fstream>
 
 //includes for set_all_close_on_exec
 #define _POSIX_C_SOURCE 200809L
@@ -123,7 +124,9 @@ size_t ProcessHandler::startProcess(const std::string &path, const std::string &
     if(setpgid(0, child)) {
       std::cerr << "Failed to reset GPID." << std::endl;
     }
-    printf("child running: %d\n", (int) child);
+#ifdef DEBUG
+    std::cout << "Child running and its PID is: " << child << std::endl;
+#endif
     std::ofstream file;
     file.open(pidFile);
     if(!file.is_open()) {
@@ -144,17 +147,19 @@ size_t ProcessHandler::startProcess(const std::string &path, const std::string &
     auto args = split_arguments(cmd);
     char * exec_args[1024];
     int arg_count = 0;
+#ifdef DEBUG
     std::cout << "Going to call: execv(\"" << (path_copy + args.at(0)).c_str();
+#endif
     for(size_t x = 0; x < args.size(); x++) {
       exec_args[arg_count++] = strdup(args[x].c_str());
       std::cout << "\", \"" << exec_args[x];
     }
     exec_args[arg_count++] = 0; // tell it when to stop!
+#ifdef DEBUG
     std::cout << "\", \"NULL\")" << std::endl;
-
+#endif
     setAllFHCloseOnExec();
     execv((path_copy + args.at(0)).c_str(), exec_args);
-//    execl((path + std::string("/") + cmd).c_str(), cmd.c_str(), NULL);
     _exit(0);
   } else {
     // Ignore the signal SIGCHLD by the parent since after killing the child it will hang in defunct status since the kernel
@@ -162,7 +167,9 @@ size_t ProcessHandler::startProcess(const std::string &path, const std::string &
     signal(SIGCHLD, SIG_IGN);
     sleep(1);
     if(readTempPID(pid)) {
+#ifdef DEBUG
       std::cout << "PID was read:" << pid << std::endl;
+#endif
       if(deletePIDFile)
         remove(pidFile.c_str());
     } else {

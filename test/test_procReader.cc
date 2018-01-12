@@ -8,6 +8,7 @@
 #define BOOST_TEST_MODULE sysTest
 
 #include "ProcessHandler.h"
+#include <iostream>
 #include "sys_stat.h"
 #include <signal.h>
 #include <vector>

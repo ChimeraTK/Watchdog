@@ -131,25 +131,18 @@ void ProcessControlModule::mainLoop() {
       processRestarts.write();
     }
 
-    // don't do anything in case failed more than 4 times -> to reset turn off/on the process
-    if(processNFailed > 4) {
+    /*
+     * don't do anything in case failed more than 4 times
+     * or if the server was restarted more than 100 times
+     * -> to reset turn off/on the process
+     */
+    if(processNFailed > 4 || processRestarts > 100) {
       usleep(200000);
       continue;
     }
 
     if(processPID > 0 && enableProcess) {
-      if(!proc_util::isProcessRunning(processPID)) {
-        Failed();
-        std::cerr << this
-            << "Child process not running any more, but it should run!"
-            << std::endl;
-        processRestarts += 1;
-        processRestarts.write();
-
-      } else {
-        processIsRunning = 1;
-        processIsRunning.write();
-      }
+      CheckIsOnline(processPID);
     }
 
     if(enableProcess) {
@@ -167,6 +160,7 @@ void ProcessControlModule::mainLoop() {
         } catch(std::runtime_error &e) {
           std::cout << this << e.what() << std::endl;
           Failed();
+          SetOffline();
         }
       } else {
 #ifdef DEBUG
@@ -202,10 +196,17 @@ void ProcessControlModule::mainLoop() {
 }
 
 void ProcessControlModule::SetOnline(const int &pid){
-  processPID = pid;
-  processPID.write();
-  processIsRunning = 1;
-  processIsRunning.write();
+  usleep(100000);
+  CheckIsOnline(pid);
+  if(processIsRunning == 1){
+    processPID = pid;
+    processPID.write();
+  } else {
+    SetOffline();
+    std::cerr << this
+        << "Failed to start process " << (std::string)processPath << "/" << (std::string)processCMD << std::endl;
+    Failed();
+  }
 }
 
 void ProcessControlModule::SetOffline(){
@@ -219,7 +220,34 @@ void ProcessControlModule::SetOffline(){
 void ProcessControlModule::Failed(){
   processNFailed = processNFailed + 1;
   processNFailed.write();
-  SetOffline();
+  if(processNFailed == 5){
+    std::cerr << this
+          << "Failed to start the process " << (std::string)processPath << "/" << (std::string)processCMD << " 5 times."
+          << " It will not be started again until you reset the process by switching it off and on again."
+          << std::endl;
+  }
   sleep(2);
+}
+
+void ProcessControlModule::CheckIsOnline(const int pid){
+  if(!proc_util::isProcessRunning(pid)) {
+    SetOffline();
+    std::cerr << this
+        << "Child process with PID " << processPID << " is not running, but it should run!"
+        << std::endl;
+    processRestarts += 1;
+    processRestarts.write();
+    if(processRestarts > 100){
+      std::cerr << this
+            << "The process " << (std::string)processPath << "/" << (std::string)processCMD << " was restarted 100 times."
+            << " It will not be started again until you reset the process by switching it off and on again."
+            << std::endl;
+    }
+
+  } else {
+    std::cout << this << "Ok process is started successfully" << std::endl;
+    processIsRunning = 1;
+    processIsRunning.write();
+  }
 }
 

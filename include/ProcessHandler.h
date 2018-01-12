@@ -9,7 +9,7 @@
 #define INCLUDE_PROCESSHANDLER_H_
 
 #undef GENERATE_XML
-#include <ChimeraTK/ApplicationCore/Application.h>
+#include <string>
 
 /**
  * \brief Handler used to start and stop processes.

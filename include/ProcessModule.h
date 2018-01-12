@@ -161,7 +161,7 @@ struct ProcessControlModule : public ProcessInfoModule{
   ctk::ScalarOutput<int> processIsRunning { this, "IsRunning", "", "Process status 0: not running, 1: running",
       { "CS", "PROCESS", getName() } };
   /** Number of failed restarts */
-  ctk::ScalarOutput<int> processNFailed { this, "Failed", "", "Number of failed restarts",
+  ctk::ScalarOutput<int> processNFailed { this, "Failed", "", "Number of failed starts/restarts",
     { "CS", "PROCESS", getName() } };   
   /** Number of started processes */
   ctk::ScalarOutput<int> processNChilds { this, "nChilds", "", "Number of started processes",
@@ -188,6 +188,15 @@ struct ProcessControlModule : public ProcessInfoModule{
    * In addition a sleep of 1s is added to have some delay between different attempts to start a process.
    */
   void Failed();
+
+  /**
+   * Check if the process with PID is running.
+   * If not update status variables (processPID, processIsRunning, processRestarts)
+   * \param pid PID of the process that was started.
+   * \ToDo: If using a const reference here, starting a process always results in a positive result here.
+   * Even if starting the process failed.
+   */
+  void CheckIsOnline(const int pid);
 
   /**
    * Application core main loop.
