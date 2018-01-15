@@ -84,6 +84,14 @@ target_link_libraries(test_procReader ${ChimeraTK-ApplicationCore_LIBRARIES}
                                       ${Boost_LIBRARIES})
 add_test(test_procReader test_procReader)
 
+add_executable(test_processModule ${CMAKE_SOURCE_DIR}/test/test_processModule.cc ${library_sources})
+target_link_libraries(test_processModule ${ChimeraTK-ApplicationCore_LIBRARIES} 
+                                      ${LibXML++_LIBRARIES} 
+                                      procps 
+                                      ${Boost_LIBRARIES})
+add_test(test_processModule test_processModule)
+
+
 # The make coverage command is only available in debug mode
 IF(CMAKE_BUILD_TYPE STREQUAL "Debug")
   configure_file(cmake/Makefile.coverage.in ${PROJECT_BINARY_DIR}/Makefile.coverage @ONLY)

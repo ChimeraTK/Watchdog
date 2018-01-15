@@ -194,7 +194,8 @@ struct ProcessControlModule : public ProcessInfoModule{
    * If not update status variables (processPID, processIsRunning, processRestarts)
    * \param pid PID of the process that was started.
    * \ToDo: If using a const reference here, starting a process always results in a positive result here.
-   * Even if starting the process failed.
+   * Even if starting the process failed. See test_processModule.cc/testFailed, which can not even reproduce this
+   * behavior, but shows what to test witch a real server.
    */
   void CheckIsOnline(const int pid);
 
