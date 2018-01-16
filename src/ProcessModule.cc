@@ -201,6 +201,9 @@ void ProcessControlModule::SetOnline(const int &pid){
   if(processIsRunning == 1){
     processPID = pid;
     processPID.write();
+#ifdef DEBUG
+    std::cout << this << "Ok process is started successfully" << std::endl;
+#endif
   } else {
     SetOffline();
     std::cerr << this
@@ -245,7 +248,6 @@ void ProcessControlModule::CheckIsOnline(const int pid){
     }
 
   } else {
-    std::cout << this << "Ok process is started successfully" << std::endl;
     processIsRunning = 1;
     processIsRunning.write();
   }
