@@ -108,8 +108,8 @@ void ProcessControlModule::mainLoop() {
   processRestarts.write();
 
   // check for left over processes reading the persist file
-  processPath.read();
-  processCMD.read();
+  processSetPath.read();
+  processSetCMD.read();
   try{
     process.reset(new ProcessHandler("", getName(), false, processPID));
     if(processPID > 0){
@@ -149,19 +149,19 @@ void ProcessControlModule::mainLoop() {
       if(processPID < 0) {
         std::cout << this << "Trying to start a new process..." << std::endl;
         try {
-          processLogfile.read();
-          if(((std::string)processLogfile).empty()){
+          processSetLogfile.read();
+          if(((std::string)processSetLogfile).empty()){
             std::stringstream ss;
             ss << this << "No logfile name is set...no process started." << std::endl;
             throw std::runtime_error(ss.str());
           }
 
-          processPath.read();
-          processCMD.read();
+          processSetPath.read();
+          processSetCMD.read();
           process.reset(new ProcessHandler("", getName()));
           SetOnline(
-              process->startProcess((std::string) processPath,
-                  (std::string) processCMD, (std::string)processLogfile));
+              process->startProcess((std::string) processSetPath,
+                  (std::string) processSetCMD, (std::string)processSetLogfile));
           processNChilds = proc_util::getNChilds(processPID);
           processNChilds.write();
         } catch(std::runtime_error &e) {
@@ -208,11 +208,17 @@ void ProcessControlModule::SetOnline(const int &pid){
   if(processIsRunning == 1){
     processPID = pid;
     processPID.write();
+    processPath = (std::string)processSetPath;
+    processPath.write();
+    processCMD = (std::string)processSetCMD;
+    processCMD.write();
+    processLogfile = (std::string)processSetLogfile;
+    processLogfile.write();
     std::cout << this << "Ok process is started successfully" << std::endl;
   } else {
     SetOffline();
     std::cerr << this
-        << "Failed to start process " << (std::string)processPath << "/" << (std::string)processCMD << std::endl;
+        << "Failed to start process " << (std::string)processSetPath << "/" << (std::string)processSetCMD << std::endl;
     Failed();
   }
 }
@@ -230,7 +236,7 @@ void ProcessControlModule::Failed(){
   processNFailed.write();
   if(processNFailed == 5){
     std::cerr << this
-          << "Failed to start the process " << (std::string)processPath << "/" << (std::string)processCMD << " 5 times."
+          << "Failed to start the process " << (std::string)processSetPath << "/" << (std::string)processSetCMD << " 5 times."
           << " It will not be started again until you reset the process by switching it off and on again."
           << std::endl;
   }
@@ -247,7 +253,7 @@ void ProcessControlModule::CheckIsOnline(const int pid){
     processRestarts.write();
     if(processRestarts > 100){
       std::cerr << this
-            << "The process " << (std::string)processPath << "/" << (std::string)processCMD << " was restarted 100 times."
+            << "The process " << (std::string)processSetPath << "/" << (std::string)processSetCMD << " was restarted 100 times."
             << " It will not be started again until you reset the process by switching it off and on again."
             << std::endl;
     }

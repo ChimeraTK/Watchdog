@@ -138,21 +138,37 @@ struct ProcessControlModule : public ProcessInfoModule{
   using ProcessInfoModule::ProcessInfoModule;
 
   /**
-   * \name Process control parameter and status
+   * \name Process control parameter (static during process execution)
    * @{
    */
   /** Path where to execute the command used to start the process */
-  ctk::ScalarPollInput<std::string> processPath { this, "path", "",
+  ctk::ScalarOutput<std::string> processPath { this, "Path", "",
       "Path where to execute the command used to start the process",
-      { "PROCESS", getName() } };
-  /** Start the process */
-  ctk::ScalarPollInput<int> enableProcess { this, "startProcess", "", "Start the process",
+    {  "CS", "PROCESS", getName() } };
+  /** Command used to start the process */
+  ctk::ScalarOutput<std::string> processCMD { this, "CMD", "", "Command used to start the process",
+    {  "CS", "PROCESS", getName() } };
+  /** Log file name. It will be created in the given processPath */
+  ctk::ScalarOutput<std::string> processLogfile { this, "Logfile", "", "Name of the logfile created in the given path",
+    {  "CS", "PROCESS", getName() } };
+
+  /** @} */
+  /**
+     * \name Process control parameter (dynamic process execution)
+     * @{
+     */
+  /** Path where to execute the command used to start the process */
+  ctk::ScalarPollInput<std::string> processSetPath { this, "SetPath", "",
+      "Set the path where to execute the command used to start the process",
     { "PROCESS", getName() } };
   /** Command used to start the process */
-  ctk::ScalarPollInput<std::string> processCMD { this, "cmd", "", "Command used to start the process",
+  ctk::ScalarPollInput<std::string> processSetCMD { this, "SetCMD", "", "Set the command used to start the process",
     { "PROCESS", getName() } };
   /** Log file name. It will be created in the given processPath */
-  ctk::ScalarPollInput<std::string> processLogfile { this, "logfile", "", "Name of the logfile created in the given path",
+  ctk::ScalarPollInput<std::string> processSetLogfile { this, "SetLogfile", "", "Set the name of the logfile created in the given path",
+    { "PROCESS", getName() } };
+  /** Start the process */
+  ctk::ScalarPollInput<int> enableProcess { this, "startProcess", "", "Start the process",
     { "PROCESS", getName() } };
   /** Signal used to kill the process (2: SIGINT, 9: SIGKILL) */
   ctk::ScalarPollInput<int> killSig { this, "killSig", "", "Signal used to kill the process (2: SIGINT, 9: SIGKILL)",

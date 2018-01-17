@@ -46,8 +46,8 @@ struct testApp : public ChimeraTK::Application {
      * Define all other connections as done in the ProcessControlModule
      */
     cs["Process"]("enableProcess") >> process.enableProcess;
-    cs["Process"]("CMD") >> process.processCMD;
-    cs["Process"]("Path") >> process.processPath;
+    cs["Process"]("CMD") >> process.processSetCMD;
+    cs["Process"]("Path") >> process.processSetPath;
     cs["Process"]("killSig") >> process.killSig;
     cs["Process"]("pidOffset") >> process.pidOffset;
     process.findTag("CS").connectTo(cs["Process"]);
