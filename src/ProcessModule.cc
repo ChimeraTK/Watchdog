@@ -147,17 +147,11 @@ void ProcessControlModule::mainLoop() {
 
     if(enableProcess) {
       if(processPID < 0) {
-        std::cout << this << "Trying to start a new process..." << std::endl;
         try {
           processSetLogfile.read();
-          if(((std::string)processSetLogfile).empty()){
-            std::stringstream ss;
-            ss << this << "No logfile name is set...no process started." << std::endl;
-            throw std::runtime_error(ss.str());
-          }
-
           processSetPath.read();
           processSetCMD.read();
+          std::cout << this << "Trying to start a new process: " << (std::string)processSetPath << "/" << (std::string)processSetCMD << std::endl;
           process.reset(new ProcessHandler("", getName()));
           SetOnline(
               process->startProcess((std::string) processSetPath,

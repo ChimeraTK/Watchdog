@@ -162,14 +162,18 @@ size_t ProcessHandler::startProcess(const std::string &path, const std::string &
     std::cout << "\", \"NULL\")" << std::endl;
 #endif
 
-		// open the logfile
-    int fd = open(logfile.c_str(), O_RDWR | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
-    if(fd == -1){
-      std::cerr << "Failed to open log file. No logfile will be written." << std::endl;
+    if(logfile.empty()){
+      std::cout << "No log file name is set. Process output is dumpt to stout/stderr." << std::endl;
     } else {
-      dup2(fd, 1);   // make stdout go to file
-      dup2(fd, 2);   // make stderr go to file
-      close(fd);
+      // open the logfile
+      int fd = open(logfile.c_str(), O_RDWR | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
+      if(fd == -1){
+        std::cerr << "Failed to open log file. No logfile will be written." << std::endl;
+      } else {
+        dup2(fd, 1);   // make stdout go to file
+        dup2(fd, 2);   // make stderr go to file
+        close(fd);
+      }
     }
 
 		// close file handles when calling execv -> release the OPC UA port
