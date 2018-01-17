@@ -151,6 +151,9 @@ struct ProcessControlModule : public ProcessInfoModule{
   /** Command used to start the process */
   ctk::ScalarPollInput<std::string> processCMD { this, "cmd", "", "Command used to start the process",
     { "PROCESS", getName() } };
+  /** Log file name. It will be created in the given processPath */
+  ctk::ScalarPollInput<std::string> processLogfile { this, "logfile", "", "Name of the logfile created in the given path",
+    { "PROCESS", getName() } };
   /** Signal used to kill the process (2: SIGINT, 9: SIGKILL) */
   ctk::ScalarPollInput<int> killSig { this, "killSig", "", "Signal used to kill the process (2: SIGINT, 9: SIGKILL)",
     { "PROCESS", getName() } };

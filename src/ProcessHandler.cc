@@ -11,6 +11,7 @@
 #include <sstream>
 #include <iostream>
 #include <fstream>
+#include <fcntl.h> // open
 
 //includes for set_all_close_on_exec
 #define _POSIX_C_SOURCE 200809L
@@ -98,7 +99,7 @@ bool ProcessHandler::isPIDFolderWritable() {
 }
 
 
-size_t ProcessHandler::startProcess(const std::string &path, const std::string &cmd) {
+size_t ProcessHandler::startProcess(const std::string &path, const std::string &cmd, const std::string &logfile) {
   if(path.empty() || cmd.empty()) {
     throw std::runtime_error(
         "Path or command not set before starting a process!");
@@ -152,12 +153,26 @@ size_t ProcessHandler::startProcess(const std::string &path, const std::string &
 #endif
     for(size_t x = 0; x < args.size(); x++) {
       exec_args[arg_count++] = strdup(args[x].c_str());
+#ifdef DEBUG
       std::cout << "\", \"" << exec_args[x];
+#endif
     }
     exec_args[arg_count++] = 0; // tell it when to stop!
 #ifdef DEBUG
     std::cout << "\", \"NULL\")" << std::endl;
 #endif
+
+		// open the logfile
+    int fd = open(logfile.c_str(), O_RDWR | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
+    if(fd == -1){
+      std::cerr << "Failed to open log file. No logfile will be written." << std::endl;
+    } else {
+      dup2(fd, 1);   // make stdout go to file
+      dup2(fd, 2);   // make stderr go to file
+      close(fd);
+    }
+
+		// close file handles when calling execv -> release the OPC UA port
     setAllFHCloseOnExec();
     execv((path_copy + args.at(0)).c_str(), exec_args);
     _exit(0);
@@ -209,18 +224,18 @@ void ProcessHandler::setAllFHCloseOnExec()
   if (getrlimit(RLIMIT_OFILE, &rlim) != 0)
     rlim.rlim_max = 0;
 #else
-  /* POSIX: 8 message queues, 20 files, 8 streams */
+  // POSIX: 8 message queues, 20 files, 8 streams
   rlim.rlim_max = 36;
 #endif
 
-  /* Configured limit? */
+  // Configured limit? 
 #if defined(_SC_OPEN_MAX)
   max = sysconf(_SC_OPEN_MAX);
 #else
   max = 36L;
 #endif
 
-  /* Use the bigger of the two. */
+  // Use the bigger of the two.
   if ((int)max > (int)rlim.rlim_max)
     fd = max;
   else

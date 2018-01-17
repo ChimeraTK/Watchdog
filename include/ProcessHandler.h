@@ -127,11 +127,13 @@ public:
    *
    * \param path Path where to find the cmd you are about to call.
    * \param cmd CMD including command line options.
+   * \param logfile Name of the log file. It will be created in the path directory. If
+   * that file already exists new output will be appended.
    * \return PID of the created process
    * \remark The command will not be executated in the working directory of the
    * calling process but in the given path!
    */
-  size_t startProcess(const std::string &path, const std::string &cmd);
+  size_t startProcess(const std::string &path, const std::string &cmd, const std::string &logfile);
 
   /**
    * \param sig Signal used to kill the process (e.g. SIGINT = 2, SIGKILL = 9)
