@@ -222,6 +222,12 @@ void ProcessControlModule::SetOffline(){
   processPID.write();
   processIsRunning = 0;
   processIsRunning.write();
+  processPath = "";
+  processPath.write();
+  processCMD = "";
+  processCMD.write();
+  processLogfile = "";
+  processLogfile.write();
   FillProcInfo(nullptr);
 }
 
