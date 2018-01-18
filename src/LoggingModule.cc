@@ -34,9 +34,10 @@ void LoggingModule::mainLoop(){
     if(msg.logLevel >= static_cast<LogLevel>((uint)logLevel)){
       messageList.emplace(msg);
       std::string tmpLog  = (std::string)logTail;
-      if(tailLength > 0 && messageList.size() > tailLength){
+      if((tailLength == 0 && messageList.size() > 20) ||
+          (tailLength > 0 && messageList.size() > tailLength)){
         messageList.pop();
-        tmpLog = tmpLog.substr(tmpLog.find_first_of("\n"), tmpLog.length());
+        tmpLog = tmpLog.substr(tmpLog.find_first_of("\n")+1, tmpLog.length());
       }
       if(msg.logLevel == LogLevel::ERROR)
         std::cout << msg.getMessage() << std::endl;

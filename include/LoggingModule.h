@@ -15,7 +15,7 @@
 
 namespace ctk = ChimeraTK;
 
-enum LogLevel { DEBUG, INFO, WARNING, ERROR, END };
+enum LogLevel { DEBUG, INFO, WARNING, ERROR };
 
 struct Message{
   std::string message;

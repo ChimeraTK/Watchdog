@@ -18,7 +18,8 @@ void ProcessInfoModule::mainLoop(){
     try{
       FillProcInfo(proc_util::getInfo(processPID));
     } catch (std::runtime_error &e) {
-      std::cerr << this << "Failed to read process information for process " << processPID << std::endl;
+      logging << this << "Failed to read process information for process " << processPID;
+      sendMessage(LogLevel::ERROR);
     }
   }
 }
@@ -49,8 +50,8 @@ void ProcessInfoModule::FillProcInfo(const std::shared_ptr<proc_t> &info){
       ticksPerSecond.read();
       runtime = std::stoi(std::to_string(sysUpTime - std::stoi(std::to_string(info->start_time)) * 1. / ticksPerSecond));
     } catch(std::exception &e) {
-      std::cerr << this << "FillProcInfo::Conversion failed: " << e.what()
-          << std::endl;
+      logging << this << "FillProcInfo::Conversion failed: " << e.what();
+      sendMessage(LogLevel::ERROR);
     }
     // check if it is the first call after process is started (time_stamp  == not_a_date_time)
     if(!time_stamp.is_special()) {
@@ -103,12 +104,13 @@ void ProcessControlModule::mainLoop() {
   try{
     process.reset(new ProcessHandler("", getName(), false, processPID));
     if(processPID > 0){
-      std::cout << this << "Found process that is still running." << std::endl;
+      logging << this << "Found process that is still running.";
+      sendMessage(LogLevel::INFO);
       SetOnline(processPID);
     }
   } catch (std::runtime_error &e){
-    std::cerr << this << " Failed to check for existing processes. Message:" << std::endl;
-    std::cerr << this << e.what() << std::endl;
+    logging << this << " Failed to check for existing processes. Message:\n" << e.what();
+    sendMessage(LogLevel::ERROR);
   }
   while(true) {
     trigger.read();
@@ -141,7 +143,8 @@ void ProcessControlModule::mainLoop() {
           processSetLogfile.read();
           processSetPath.read();
           processSetCMD.read();
-          std::cout << this << "Trying to start a new process: " << (std::string)processSetPath << "/" << (std::string)processSetCMD << std::endl;
+          logging << this << "Trying to start a new process: " << (std::string)processSetPath << "/" << (std::string)processSetCMD;
+          sendMessage(LogLevel::INFO);
           process.reset(new ProcessHandler("", getName()));
           SetOnline(
               process->startProcess((std::string) processSetPath,
@@ -149,7 +152,8 @@ void ProcessControlModule::mainLoop() {
           processNChilds = proc_util::getNChilds(processPID);
           processNChilds.write();
         } catch(std::runtime_error &e) {
-          std::cout << this << e.what() << std::endl;
+          logging << this << e.what();
+          sendMessage(LogLevel::ERROR);
           Failed();
           SetOffline();
         }
@@ -161,21 +165,22 @@ void ProcessControlModule::mainLoop() {
         try{
           FillProcInfo(proc_util::getInfo(processPID + pidOffset));
         } catch (std::runtime_error &e){
-          std::cerr << this << "Failed to read information for process " << (processPID + pidOffset) <<
-              ". Check if pidOffset is set correctly!" << std::endl;
+          logging << this << "Failed to read information for process " << (processPID + pidOffset) <<
+              ". Check if pidOffset is set correctly!";
+          sendMessage(LogLevel::ERROR);
         }
       }
     } else {
       if(processPID < 0) {
         processIsRunning = 0;
         processIsRunning.write();
-#ifdef DEBUG
-        std::cout << this << "Process Running: " << processIsRunning << std::endl;
-        std::cout << this << "Process is not running...OK" << " PID: " << getpid() <<std::endl;
-#endif
+
+        logging << this << "Process Running: " << processIsRunning << ". Process is not running...OK" << " PID: " << getpid();
+        sendMessage(LogLevel::DEBUG);
       } else {
-        std::cout << this << "Trying to kill the process..." << " PID: "
-            << processPID << std::endl;
+        logging << this << "Trying to kill the process..." << " PID: "
+            << processPID;
+        sendMessage(LogLevel::INFO);
         killSig.read();
         process->setSigNum(killSig);
         process.reset(nullptr);
@@ -198,11 +203,13 @@ void ProcessControlModule::SetOnline(const int &pid){
     processCMD.write();
     processLogfile = (std::string)processSetLogfile;
     processLogfile.write();
-    std::cout << this << "Ok process is started successfully" << std::endl;
+    logging << this << "Ok process is started successfully";
+//    sendMessage(LogLevel::INFO);
   } else {
     SetOffline();
-    std::cerr << this
-        << "Failed to start process " << (std::string)processSetPath << "/" << (std::string)processSetCMD << std::endl;
+    logging << this
+        << "Failed to start process " << (std::string)processSetPath << "/" << (std::string)processSetCMD;
+    sendMessage(LogLevel::ERROR);
     Failed();
   }
 }
@@ -225,14 +232,9 @@ void ProcessControlModule::Failed(){
   processNFailed = processNFailed + 1;
   processNFailed.write();
   if(processNFailed == 5){
-    *this << LogLevel::ERROR
-        << "Failed to start the process " << (std::string)processSetPath << "/" << (std::string)processSetCMD << " 5 times."
-        << " It will not be started again until you reset the process by switching it off and on again."
-        << LogLevel::END;
-    std::cerr << this
-          << "Failed to start the process " << (std::string)processSetPath << "/" << (std::string)processSetCMD << " 5 times."
-          << " It will not be started again until you reset the process by switching it off and on again."
-          << std::endl;
+    logging << this <<  "Failed to start the process " << (std::string)processSetPath << "/" << (std::string)processSetCMD << " 5 times."
+        << " It will not be started again until you reset the process by switching it off and on again.";
+    sendMessage(LogLevel::ERROR);
   }
   sleep(2);
 }
@@ -240,16 +242,16 @@ void ProcessControlModule::Failed(){
 void ProcessControlModule::CheckIsOnline(const int pid){
   if(!proc_util::isProcessRunning(pid)) {
     SetOffline();
-    std::cerr << this
-        << "Child process with PID " << processPID << " is not running, but it should run!"
-        << std::endl;
+    logging << this
+        << "Child process with PID " << processPID << " is not running, but it should run!";
+    sendMessage(LogLevel::ERROR);
     processRestarts += 1;
     processRestarts.write();
     if(processRestarts > 100){
-      std::cerr << this
+      logging << this
             << "The process " << (std::string)processSetPath << "/" << (std::string)processSetCMD << " was restarted 100 times."
-            << " It will not be started again until you reset the process by switching it off and on again."
-            << std::endl;
+            << " It will not be started again until you reset the process by switching it off and on again.";
+      sendMessage(LogLevel::ERROR);
     }
 
   } else {
@@ -258,20 +260,20 @@ void ProcessControlModule::CheckIsOnline(const int pid){
   }
 }
 
-ProcessInfoModule& ProcessInfoModule::operator<<(LogLevel level){
-  if(level != LogLevel::END){
-    messageLevel = level;
-    std::chrono::system_clock::time_point tp = std::chrono::system_clock::now();
-    time_t t = std::chrono::system_clock::to_time_t(tp);
-    const char * tc = ctime(&t);
-    std::string str = std::string {tc};
-    str.pop_back();
-    logging << "WATCHDOG_SERVER: " << str << " " << this->getName() << " -> ";
-  } else {
-    message = logging.str();
-    message.write();
-    messageLevel.write();
-    logging.clear();
-  }
-  return *this;
+void ProcessInfoModule::sendMessage(const LogLevel &level){
+  message = logging.str();
+  message.write();
+  messageLevel = level;
+  messageLevel.write();
+  logging.str("");
+}
+
+std::stringstream& operator<<(std::stringstream &ss, const ProcessInfoModule* module){
+  std::chrono::system_clock::time_point tp = std::chrono::system_clock::now();
+  time_t t = std::chrono::system_clock::to_time_t(tp);
+  const char * tc = ctime(&t);
+  std::string str = std::string {tc};
+  str.pop_back();
+  ss << "WATCHDOG_SERVER: " << str << " " << module->getName() << " -> ";
+  return ss;
 }

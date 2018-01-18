@@ -138,13 +138,9 @@ struct ProcessInfoModule : public ctk::ApplicationModule {
 
   std::stringstream logging;
 
-  template <class myNumber>
-  ProcessInfoModule& operator<<(myNumber val){
-    logging << val;
-    return *this;
-  }
+  void sendMessage(const LogLevel &level = LogLevel::INFO);
 
-  ProcessInfoModule& operator<<(LogLevel level);
+  friend std::stringstream& operator<<(std::stringstream &ss, const ProcessInfoModule* module);
 
 
 };
