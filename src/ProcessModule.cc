@@ -92,16 +92,6 @@ void ProcessInfoModule::FillProcInfo(const std::shared_ptr<proc_t> &info){
   mem      .write();
 }
 
-std::ostream& operator<<(std::ostream& os, const ProcessInfoModule* ph){
-  std::chrono::system_clock::time_point tp = std::chrono::system_clock::now();
-  time_t t = std::chrono::system_clock::to_time_t(tp);
-  const char * tc = ctime(&t);
-  std::string str = std::string {tc};
-  str.pop_back();
-  os << "WATCHDOG_SERVER: " << str << " " << ph->getName() << " -> ";
-  return os;
-}
-
 void ProcessControlModule::mainLoop() {
   SetOffline();
   processRestarts = 0;
@@ -235,6 +225,10 @@ void ProcessControlModule::Failed(){
   processNFailed = processNFailed + 1;
   processNFailed.write();
   if(processNFailed == 5){
+    *this << LogLevel::ERROR
+        << "Failed to start the process " << (std::string)processSetPath << "/" << (std::string)processSetCMD << " 5 times."
+        << " It will not be started again until you reset the process by switching it off and on again."
+        << LogLevel::END;
     std::cerr << this
           << "Failed to start the process " << (std::string)processSetPath << "/" << (std::string)processSetCMD << " 5 times."
           << " It will not be started again until you reset the process by switching it off and on again."
@@ -264,3 +258,20 @@ void ProcessControlModule::CheckIsOnline(const int pid){
   }
 }
 
+ProcessInfoModule& ProcessInfoModule::operator<<(LogLevel level){
+  if(level != LogLevel::END){
+    messageLevel = level;
+    std::chrono::system_clock::time_point tp = std::chrono::system_clock::now();
+    time_t t = std::chrono::system_clock::to_time_t(tp);
+    const char * tc = ctime(&t);
+    std::string str = std::string {tc};
+    str.pop_back();
+    logging << "WATCHDOG_SERVER: " << str << " " << this->getName() << " -> ";
+  } else {
+    message = logging.str();
+    message.write();
+    messageLevel.write();
+    logging.clear();
+  }
+  return *this;
+}

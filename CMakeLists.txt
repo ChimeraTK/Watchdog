@@ -15,7 +15,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fPIC -Wextra -ansi -Wuninitialize
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSER=\\\"`whoami`\\\" -DHOST=\\\"`hostname`\\\"")
 
 #use -DCMAKE_BUILD_TYPE=Debug in your cmake command to turn on the coverage option
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 --coverage -DDEBUG")
+set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 --coverage")
 #set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O3 --coverage")
 
 # linker flags
@@ -91,6 +91,12 @@ target_link_libraries(test_processModule ${ChimeraTK-ApplicationCore_LIBRARIES}
                                       ${Boost_LIBRARIES})
 add_test(test_processModule test_processModule)
 
+add_executable(test_loggingModule ${CMAKE_SOURCE_DIR}/test/test_loggingModule.cc ${library_sources})
+target_link_libraries(test_loggingModule ${ChimeraTK-ApplicationCore_LIBRARIES} 
+                                      ${LibXML++_LIBRARIES} 
+                                      procps 
+                                      ${Boost_LIBRARIES})
+add_test(test_loggingModule test_loggingModule)
 
 # The make coverage command is only available in debug mode
 IF(CMAKE_BUILD_TYPE STREQUAL "Debug")

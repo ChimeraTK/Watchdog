@@ -13,6 +13,7 @@
 
 #include "SystemInfoModule.h"
 #include "ProcessModule.h"
+#include "LoggingModule.h"
 
 namespace ctk = ChimeraTK;
 
@@ -58,8 +59,13 @@ struct WatchdogServer: public ctk::Application {
    * If that file is not found only one process named PROCESS is added.
    */
   std::vector<ProcessControlModule> processes;
+  std::vector<LoggingModule> processesLog;
+
   
   ProcessInfoModule watchdog{this, "watchdog", "Module monitoring the watchdog process"};
+
+  LoggingModule watchdogLog{this, "watchdogLog", "Logging module of the watchdog process"};
+
   /**
    * Use either
    * - ctk::ControlSystemModule cs;

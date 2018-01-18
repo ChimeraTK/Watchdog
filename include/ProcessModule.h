@@ -17,6 +17,7 @@ namespace ctk = ChimeraTK;
 
 #include "sys_stat.h"
 #include "ProcessHandler.h"
+#include "LoggingModule.h"
 
 /**
  * \brief
@@ -37,9 +38,19 @@ struct ProcessInfoModule : public ctk::ApplicationModule {
   /** PID of the process */
   ctk::ScalarOutput<int> processPID { this, "PID", "", "PID of the process",
     { "CS", "PROCESS", getName() } };
+
   /** Time since process is running */
   ctk::ScalarOutput<int> runtime { this, "runtime", "s", "Time since process is running",
     { "CS", "PROCESS", getName() } };
+
+  /** Message to be send to the logging module */
+  ctk::ScalarOutput<std::string> message { this, "message", "", "Message of the module to the logging System",
+      { "Logging", "PROCESS", getName() } };
+
+  /** Message to be send to the logging module */
+  ctk::ScalarOutput<uint> messageLevel { this, "messageLevel", "", "Logging level of the message",
+      { "Logging", "PROCESS", getName() } };
+
   /** @} */
 
   /**
@@ -125,7 +136,17 @@ struct ProcessInfoModule : public ctk::ApplicationModule {
    */
   void FillProcInfo(const std::shared_ptr<proc_t> &info);
 
-  friend std::ostream& operator<<(std::ostream& os, const ProcessInfoModule* ph);
+  std::stringstream logging;
+
+  template <class myNumber>
+  ProcessInfoModule& operator<<(myNumber val){
+    logging << val;
+    return *this;
+  }
+
+  ProcessInfoModule& operator<<(LogLevel level);
+
+
 };
 
 

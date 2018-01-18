@@ -52,6 +52,7 @@ WatchdogServer::WatchdogServer() :
               << fileName << std::endl;
         } else {
           processes.emplace_back(this, nameAttr->get_value().data(), "process");
+          processesLog.emplace_back(this, nameAttr->get_value().data(), "process log");
         }
       }
 
@@ -62,6 +63,7 @@ WatchdogServer::WatchdogServer() :
         << std::endl;
     std::cout << "I will create only one process named PROCESS..." << std::endl;
     processes.emplace_back(this, "PROCESS", "Test process");
+    processesLog.emplace_back(this, "PROCESS", "Test process log");
   }
 }
 
@@ -79,12 +81,19 @@ void WatchdogServer::defineConnections() {
   timer.connectTo(systemInfo);
 
 	watchdog.findTag("CS").connectTo(cs[watchdog.getName()]);
+
+	watchdogLog.findTag("CS").connectTo(cs[watchdog.getName()]);
+	cs[watchdog.getName()]("LogLevel") >> watchdogLog.logLevel;
+	cs[watchdog.getName()]("LogFile") >> watchdogLog.logFile;
+	watchdog.findTag("Logging").connectTo(watchdogLog);
+
 	systemInfo.ticksPerSecond >> watchdog.ticksPerSecond;
   systemInfo.uptime_secTotal >> watchdog.sysUpTime;
   systemInfo.startTime >> watchdog.sysStartTime;
   timer.trigger >> watchdog.trigger;
 
   std::cout << "Adding " << processes.size() << " processes..." << std::endl;
+  auto log = processesLog.begin();
   for(auto &item : processes) {
     cs[item.getName()]("enableProcess") >> item.enableProcess;
     cs[item.getName()]("SetCMD") >> item.processSetCMD;
@@ -92,14 +101,21 @@ void WatchdogServer::defineConnections() {
     cs[item.getName()]("SetLogfile") >> item.processSetLogfile;
     cs[item.getName()]("killSig") >> item.killSig;
     cs[item.getName()]("pidOffset") >> item.pidOffset;
+
+    item.findTag("Logging").connectTo(*log);
+    cs[item.getName()]("LogLevel") >> (*log).logLevel;
+    cs[item.getName()]("LogFile") >> (*log).logFile;
+    (*log).findTag("CS").connectTo(cs[item.getName()]);
+
     item.findTag("CS").connectTo(cs[item.getName()]);
     systemInfo.ticksPerSecond >> item.ticksPerSecond;
     systemInfo.uptime_secTotal >> item.sysUpTime;
     systemInfo.startTime >> item.sysStartTime;
     timer.trigger >> item.trigger;
+    log++;
   }
-#ifdef DEBUG
+
   dumpConnections();
-#endif
+
 }
 
