@@ -53,6 +53,7 @@ WatchdogServer::WatchdogServer() :
         } else {
           processes.emplace_back(this, nameAttr->get_value().data(), "process");
           processesLog.emplace_back(this, nameAttr->get_value().data(), "process log");
+          processesLogExternal.emplace_back(this, nameAttr->get_value().data(), "process external log");
         }
       }
 
@@ -64,6 +65,7 @@ WatchdogServer::WatchdogServer() :
     std::cout << "I will create only one process named PROCESS..." << std::endl;
     processes.emplace_back(this, "PROCESS", "Test process");
     processesLog.emplace_back(this, "PROCESS", "Test process log");
+    processesLogExternal.emplace_back(this, "PROCESS", "Test process external log");
   }
 }
 
@@ -95,6 +97,7 @@ void WatchdogServer::defineConnections() {
 
   std::cout << "Adding " << processes.size() << " processes..." << std::endl;
   auto log = processesLog.begin();
+  auto logExternal = processesLogExternal.begin();
   for(auto &item : processes) {
     cs[item.getName()]("enableProcess") >> item.enableProcess;
     cs[item.getName()]("SetCMD") >> item.processSetCMD;
@@ -107,6 +110,8 @@ void WatchdogServer::defineConnections() {
     cs[item.getName()]("LogLevel") >> (*log).logLevel;
     cs[item.getName()]("LogFile") >> (*log).logFile;
     cs[item.getName()]("LogfileTailLength") >> (*log).tailLength;
+    cs[item.getName()]("LogfileExternal") >> (*logExternal).logFile;
+    cs[item.getName()]("LogfileExternalTailLength") >> (*logExternal).tailLength;
     (*log).findTag("CS").connectTo(cs[item.getName()]);
 
     item.findTag("CS").connectTo(cs[item.getName()]);
@@ -115,6 +120,7 @@ void WatchdogServer::defineConnections() {
     systemInfo.startTime >> item.sysStartTime;
     timer.trigger >> item.trigger;
     log++;
+    logExternal++;
   }
 
   dumpConnections();

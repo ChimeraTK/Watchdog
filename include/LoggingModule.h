@@ -27,6 +27,53 @@ struct Message{
   std::string getMessage();
 };
 
+/**
+ * Get data from an istream (e.g. filebuf or stringstream) and put a certain number of lines to the ostream (e.g. cout).
+ * \param data The input data stream to be formated (select the requested number of lines + cut long lines).
+ * \param os The ostream used to put the selected messages to.
+ * \param numberOfLines The number of lines from the input \c data to be put to the output \c os.
+ * \param maxCharacters The maximum number of charaters per line. If a line contains more characters, the cutted line will
+ * be put to the output \c os and a message is raised.
+ *
+ */
+void formatLogTail(std::istream  &data, std::ostream &os, size_t numberOfLines = 10, size_t maxCharacters = 30);
+
+/**
+ * Module used to read external log file in order to make messages available
+ * to the control system.
+ * E.g. the ChimeraTk watchdog starts a process and its output is not available by the watchdog.
+ * But the log file produced by the process can be read. If the log file is set
+ * via \c logFileExternal it is parsed and the tail is published to \c LogFileTailExternal.
+ */
+struct LogFileModule: public ctk::ApplicationModule {
+  using ctk::ApplicationModule::ApplicationModule;
+
+  ctk::ScalarPollInput<std::string> logFile { this, "logFile", "",
+    "Name of the external logfile, e.g. produced by a program started by the watchdog." };
+
+  ctk::ScalarPollInput<uint> tailLength { this, "maxLength", "",
+    "Maximum number of messages to be shown in the lofgile tail." };
+
+  ctk::ScalarOutput<std::string> logTailExtern { this, "LogfileTailExternal", "",
+    "Tail of an external log file, e.g. produced by a program started by the watchdog.",
+    { "CS", "PROCESS", getName() } };
+
+  /**
+   * Application core main loop.
+   */
+  virtual void mainLoop();
+
+};
+
+/**
+ * Module used to handle logging messages.
+ * A ChimeraTK module is producing messages, that are send to the LoggingModule
+ * via the \c message variable. The message is then put into the logfile ring buffer
+ * and published in the \c LogFileTail. In addidtion the message is put to an ostream.
+ * For now the ostream is cout/cerr depending on the \c messageLevel.
+ * \ToDo: Implement ostream handling to allow pushing messages also to a file if logFile
+ * is not empty.
+ */
 struct LoggingModule: public ctk::ApplicationModule {
 
   std::queue<Message> messageList;
@@ -39,8 +86,8 @@ struct LoggingModule: public ctk::ApplicationModule {
   ctk::ScalarPushInput<uint> messageLevel { this, "messageLevel", "",
         "Message log level." };
 
-  ctk::ScalarPollInput<std::string> logFile { this, "logfile", "",
-      "Name of the logfile" };
+  ctk::ScalarPollInput<std::string> logFile { this, "logFile", "",
+    "Name of the external logfile. If empty messages are pushed to cout/cerr" };
 
   ctk::ScalarPollInput<uint> tailLength { this, "maxLength", "",
       "Maximum number of messages to be shown in the lofgile tail." };

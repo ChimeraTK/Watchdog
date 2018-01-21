@@ -60,6 +60,7 @@ struct WatchdogServer: public ctk::Application {
    */
   std::vector<ProcessControlModule> processes;
   std::vector<LoggingModule> processesLog;
+  std::vector<LogFileModule> processesLogExternal;
 
   
   ProcessInfoModule watchdog{this, "watchdog", "Module monitoring the watchdog process"};

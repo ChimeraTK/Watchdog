@@ -27,6 +27,68 @@ std::string Message::getMessage(){
   }
 }
 
+void formatLogTail(std::istream  &data, std::ostream &os, size_t numberOfLines, size_t maxCharacters){
+  int nLines = std::count(std::istreambuf_iterator<char>(data),
+               std::istreambuf_iterator<char>(), '\n');
+  data.seekg(0, std::ios::beg);
+  char s[256];
+  int line = 0;
+
+  /* Don't use while(data.getline(2,25), because lines exceeding 256 characters would be dropped */
+  while(data.good()){
+    data.getline(s, maxCharacters);
+    if(data.eof()){
+      break;
+    }
+    line++;
+    // also allow negative values here in case there are less lines in the data stream compared to the number of lines to be written.
+    if((nLines-line) < (int)numberOfLines){
+      if(data.fail()){
+        os << s << "|\n The above line was cut by logger!" << std::endl;
+        data.clear();
+      } else {
+        os << s << std::endl;
+      }
+    } else {
+      if(data.fail())
+        data.clear();
+    }
+  }
+}
+
+void LogFileModule::mainLoop(){
+  logFile.read();
+  std::string currentFile = (std::string)logFile;
+  std::filebuf logFileBuffer;
+  logFileBuffer.open(currentFile,std::ios::in);
+  std::stringstream messageTail;
+  while(1){
+    logFile.read();
+    messageTail.str("");
+    if(((std::string)logFile).compare(currentFile) != 0){
+      logFileBuffer.close();
+      currentFile = (std::string)logFile;
+      messageTail << "New log file is opened: " << currentFile << std::endl;
+      logFileBuffer.open(currentFile,std::ios::in);
+    }
+
+    if(logFileBuffer.is_open()){
+      std::istream i(&logFileBuffer);
+      formatLogTail(i, messageTail, tailLength);
+
+    } else {
+      if(currentFile.empty()){
+       messageTail << "No log file is set." << std::endl;
+      } else {
+        messageTail << "Can not open file: " << currentFile << std::endl;
+      }
+    }
+    logTailExtern = messageTail.str();
+    logTailExtern.write();
+    sleep(1);
+  }
+}
+
 void LoggingModule::mainLoop(){
   while(1){
     readAll();
