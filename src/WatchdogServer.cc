@@ -108,11 +108,12 @@ void WatchdogServer::defineConnections() {
 
     item.findTag("Logging").connectTo(*log);
     cs[item.getName()]("LogLevel") >> (*log).logLevel;
-    cs[item.getName()]("LogFile") >> (*log).logFile;
-    cs[item.getName()]("LogfileTailLength") >> (*log).tailLength;
-    cs[item.getName()]("LogfileExternal") >> (*logExternal).logFile;
-    cs[item.getName()]("LogfileExternalTailLength") >> (*logExternal).tailLength;
+    cs[item.getName()]("LogTailLength") >> (*log).tailLength;
     (*log).findTag("CS").connectTo(cs[item.getName()]);
+    item.processLogfile >> (*logExternal).logFile;
+    cs[item.getName()]("LogfileExternalTailLength") >> (*logExternal).tailLength;
+    timer.trigger >> (*logExternal).trigger;
+    (*logExternal).findTag("CS").connectTo(cs[item.getName()]);
 
     item.findTag("CS").connectTo(cs[item.getName()]);
     systemInfo.ticksPerSecond >> item.ticksPerSecond;

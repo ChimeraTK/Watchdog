@@ -166,8 +166,11 @@ struct ProcessControlModule : public ProcessInfoModule{
   ctk::ScalarOutput<std::string> processCMD { this, "CMD", "", "Command used to start the process",
     {  "CS", "PROCESS", getName() } };
   /** Log file name. It will be created in the given processPath */
-  ctk::ScalarOutput<std::string> processLogfile { this, "Logfile", "", "Name of the logfile created in the given path",
-    {  "CS", "PROCESS", getName() } };
+  //ToDo: Change description here once the module output goes to the watchdog log file
+  ctk::ScalarOutput<std::string> processLogfile { this, "Logfile", "",
+    "Name of the logfile created in the given path (the process controlled by the module will "
+    "put its output here. Module messages go to cout/cerr",
+    {  "CS", "Logging", "PROCESS", getName() } };
 
   /** @} */
   /**

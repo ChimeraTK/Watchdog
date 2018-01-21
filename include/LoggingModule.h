@@ -36,7 +36,7 @@ struct Message{
  * be put to the output \c os and a message is raised.
  *
  */
-void formatLogTail(std::istream  &data, std::ostream &os, size_t numberOfLines = 10, size_t maxCharacters = 30);
+void formatLogTail(std::istream  &data, std::ostream &os, size_t numberOfLines = 10, size_t maxCharacters = 256);
 
 /**
  * Module used to read external log file in order to make messages available
@@ -47,6 +47,9 @@ void formatLogTail(std::istream  &data, std::ostream &os, size_t numberOfLines =
  */
 struct LogFileModule: public ctk::ApplicationModule {
   using ctk::ApplicationModule::ApplicationModule;
+
+  ctk::ScalarPushInput<int> trigger { this, "trigger", "",
+    "Trigger used to update the watchdog" };
 
   ctk::ScalarPollInput<std::string> logFile { this, "logFile", "",
     "Name of the external logfile, e.g. produced by a program started by the watchdog." };
@@ -86,16 +89,17 @@ struct LoggingModule: public ctk::ApplicationModule {
   ctk::ScalarPushInput<uint> messageLevel { this, "messageLevel", "",
         "Message log level." };
 
-  ctk::ScalarPollInput<std::string> logFile { this, "logFile", "",
+  // \ToDo: To be used -> get watchdog logfile name and push processModule messages there
+  ctk::ScalarPollInput<std::string> logFile { this, "Logfile", "",
     "Name of the external logfile. If empty messages are pushed to cout/cerr" };
 
   ctk::ScalarPollInput<uint> tailLength { this, "maxLength", "",
-      "Maximum number of messages to be shown in the lofgile tail." };
+      "Maximum number of messages to be shown in the logging stream tail." };
 
   ctk::ScalarPollInput<uint> logLevel { this, "loglevel", "",
       "Current log level used for messages." };
 
-  ctk::ScalarOutput<std::string> logTail { this, "LogfileTail", "", "Tail of the logfile.",
+  ctk::ScalarOutput<std::string> logTail { this, "LogTail", "", "Tail of the logging stream.",
       { "CS", "PROCESS", getName() } };
 
   /**

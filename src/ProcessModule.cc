@@ -204,7 +204,7 @@ void ProcessControlModule::SetOnline(const int &pid){
     processLogfile = (std::string)processSetLogfile;
     processLogfile.write();
     logging << this << "Ok process is started successfully";
-//    sendMessage(LogLevel::INFO);
+    sendMessage(LogLevel::INFO);
   } else {
     SetOffline();
     logging << this
@@ -223,8 +223,11 @@ void ProcessControlModule::SetOffline(){
   processPath.write();
   processCMD = "";
   processCMD.write();
+  /* Don't reset the log file name since the Logger might still try to access it.
+     It will be updated once a new process is started!
   processLogfile = "";
   processLogfile.write();
+  */
   FillProcInfo(nullptr);
 }
 

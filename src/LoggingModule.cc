@@ -31,7 +31,7 @@ void formatLogTail(std::istream  &data, std::ostream &os, size_t numberOfLines, 
   int nLines = std::count(std::istreambuf_iterator<char>(data),
                std::istreambuf_iterator<char>(), '\n');
   data.seekg(0, std::ios::beg);
-  char s[256];
+  char s[maxCharacters];
   int line = 0;
 
   /* Don't use while(data.getline(2,25), because lines exceeding 256 characters would be dropped */
@@ -63,6 +63,7 @@ void LogFileModule::mainLoop(){
   logFileBuffer.open(currentFile,std::ios::in);
   std::stringstream messageTail;
   while(1){
+    trigger.read();
     logFile.read();
     messageTail.str("");
     if(((std::string)logFile).compare(currentFile) != 0){
@@ -74,18 +75,17 @@ void LogFileModule::mainLoop(){
 
     if(logFileBuffer.is_open()){
       std::istream i(&logFileBuffer);
+      tailLength.read();
       formatLogTail(i, messageTail, tailLength);
-
     } else {
       if(currentFile.empty()){
-       messageTail << "No log file is set." << std::endl;
+       messageTail << "No log file is set. Try starting the process and setting a LogFile." << std::endl;
       } else {
         messageTail << "Can not open file: " << currentFile << std::endl;
       }
     }
     logTailExtern = messageTail.str();
     logTailExtern.write();
-    sleep(1);
   }
 }
 
