@@ -86,8 +86,8 @@ void WatchdogServer::defineConnections() {
 
 	watchdogLog.findTag("CS").connectTo(cs[watchdog.getName()]);
 	cs[watchdog.getName()]("LogLevel") >> watchdogLog.logLevel;
-	cs[watchdog.getName()]("LogFile") >> watchdogLog.logFile;
-	cs[watchdog.getName()]("LogfileTailLength") >> watchdogLog.tailLength;
+	cs[watchdog.getName()]("SetLogFile") >> watchdogLog.logFile;
+	cs[watchdog.getName()]("LogTailLength") >> watchdogLog.tailLength;
 	watchdog.findTag("Logging").connectTo(watchdogLog);
 
 	systemInfo.ticksPerSecond >> watchdog.ticksPerSecond;

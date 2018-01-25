@@ -12,31 +12,9 @@
 
 #undef GENERATE_XML
 #include <ChimeraTK/ApplicationCore/ApplicationCore.h>
+#include "Logging.h"
 
 namespace ctk = ChimeraTK;
-
-enum LogLevel { DEBUG, INFO, WARNING, ERROR };
-
-struct Message{
-  std::string message;
-  LogLevel logLevel;
-  Message(const std::string &msg, const LogLevel &level):
-   message(msg), logLevel(level) { }
-  Message():
-    message(""), logLevel(LogLevel::INFO) { }
-  std::string getMessage();
-};
-
-/**
- * Get data from an istream (e.g. filebuf or stringstream) and put a certain number of lines to the ostream (e.g. cout).
- * \param data The input data stream to be formated (select the requested number of lines + cut long lines).
- * \param os The ostream used to put the selected messages to.
- * \param numberOfLines The number of lines from the input \c data to be put to the output \c os.
- * \param maxCharacters The maximum number of charaters per line. If a line contains more characters, the cutted line will
- * be put to the output \c os and a message is raised.
- *
- */
-void formatLogTail(std::istream  &data, std::ostream &os, size_t numberOfLines = 10, size_t maxCharacters = 256);
 
 /**
  * Module used to read external log file in order to make messages available
@@ -79,7 +57,8 @@ struct LogFileModule: public ctk::ApplicationModule {
  */
 struct LoggingModule: public ctk::ApplicationModule {
 
-  std::queue<Message> messageList;
+  /** Number of messages stored in the tail */
+  size_t messageCounter;
 
   using ctk::ApplicationModule::ApplicationModule;
 

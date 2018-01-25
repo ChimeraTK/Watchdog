@@ -140,7 +140,21 @@ struct ProcessInfoModule : public ctk::ApplicationModule {
 
   void sendMessage(const LogLevel &level = LogLevel::INFO);
 
-  friend std::stringstream& operator<<(std::stringstream &ss, const ProcessInfoModule* module);
+  /* Don't overload the stream operator of ProcessInfoModule -> will cause Segfaults. Use getTime() instead. */
+//  friend std::stringstream& operator<<(std::stringstream &ss, const ProcessInfoModule* module);
+
+  /**
+   * Print the watchdog server name, a time stamp and the module name:
+   * Result is: 'WATCHDOG_SERVER: "day of week"  "month" "day" hh:mm:ss yyyy "module_name" -> '
+   */
+  std::string getTime();
+
+  /**
+   * Search for key words in the given stream (LogLevels like DEBUG, INFO...).
+   * Splits the stream using Logging::stripMessages().
+   * Then sends individual messages to the LoggingModule.
+   */
+  void evaluateMessage(std::stringstream &msg);
 
 
 };
