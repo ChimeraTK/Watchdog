@@ -17,8 +17,9 @@
 namespace ctk = ChimeraTK;
 
 /**
- * Module used to read external log file in order to make messages available
+ * \brief Module used to read external log file in order to make messages available
  * to the control system.
+ *
  * E.g. the ChimeraTk watchdog starts a process and its output is not available by the watchdog.
  * But the log file produced by the process can be read. If the log file is set
  * via \c logFileExternal it is parsed and the tail is published to \c LogFileTailExternal.
@@ -39,15 +40,20 @@ struct LogFileModule: public ctk::ApplicationModule {
     "Tail of an external log file, e.g. produced by a program started by the watchdog.",
     { "CS", "PROCESS", getName() } };
 
+  std::unique_ptr<std::filebuf> logFileBuffer;
+
   /**
    * Application core main loop.
    */
   virtual void mainLoop();
 
+  void terminate();
+
 };
 
 /**
- * Module used to handle logging messages.
+ * \brief Module used to handle logging messages.
+ *
  * A ChimeraTK module is producing messages, that are send to the LoggingModule
  * via the \c message variable. The message is then put into the logfile ring buffer
  * and published in the \c LogFileTail. In addidtion the message is put to an ostream.
@@ -68,9 +74,12 @@ struct LoggingModule: public ctk::ApplicationModule {
   ctk::ScalarPushInput<uint> messageLevel { this, "messageLevel", "",
         "Message log level." };
 
+  ctk::ScalarPollInput<uint> targetStream { this, "targetStream", "",
+          "Set the tagret stream: 0 (cout/cerr), 1 (logfile), 2 (cout/cerr+logfile), 3 (none)" };
+
   // \ToDo: To be used -> get watchdog logfile name and push processModule messages there
-  ctk::ScalarPollInput<std::string> logFile { this, "Logfile", "",
-    "Name of the external logfile. If empty messages are pushed to cout/cerr" };
+//  ctk::ScalarPollInput<std::string> logFile { this, "Logfile", "",
+//    "Name of the external logfile. If empty messages are pushed to cout/cerr" };
 
   ctk::ScalarPollInput<uint> tailLength { this, "maxLength", "",
       "Maximum number of messages to be shown in the logging stream tail." };
@@ -81,10 +90,14 @@ struct LoggingModule: public ctk::ApplicationModule {
   ctk::ScalarOutput<std::string> logTail { this, "LogTail", "", "Tail of the logging stream.",
       { "CS", "PROCESS", getName() } };
 
+  std::unique_ptr<std::ofstream> file; ///< Log file where to write log messages
+
   /**
    * Application core main loop.
    */
   virtual void mainLoop();
+
+  void terminate();
 
 };
 #endif /* INCLUDE_LOGGINGMODULE_H_ */

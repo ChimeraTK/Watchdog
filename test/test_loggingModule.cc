@@ -41,7 +41,7 @@ struct testApp : public ChimeraTK::Application {
      * application.
      */
     cs("LogLevel") >> logging.logLevel;
-    cs("LogFile") >> logging.logFile;
+//    cs("LogFile") >> logging.logFile;
     cs("LogTailLenght") >> logging.tailLength;
     logging.findTag("CS").connectTo(cs["Logging"]);
 

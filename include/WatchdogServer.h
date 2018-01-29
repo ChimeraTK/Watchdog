@@ -41,7 +41,7 @@ struct TimerModule: public ctk::ApplicationModule {
  * So far from the watchdog_server_processes.xml file only the process name is used.
  * The initial values are not used so far, since these values can not be set in the constructor.
  * They need to be set at a later stage, which requires rephrasing the xml.
- * \todo Check if initial vales are needed?
+ * \todo Check if initial values are needed?
  */
 struct WatchdogServer: public ctk::Application {
   WatchdogServer();

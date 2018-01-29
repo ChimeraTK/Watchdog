@@ -7,8 +7,7 @@
 
 #include "ProcessModule.h"
 #include <signal.h>
-#include <chrono>
-#include <ctime>
+
 
 void ProcessInfoModule::mainLoop(){
   processPID = getpid();
@@ -19,7 +18,7 @@ void ProcessInfoModule::mainLoop(){
       FillProcInfo(proc_util::getInfo(processPID));
     } catch (std::runtime_error &e) {
       logging << getTime() << "Failed to read process information for process " << processPID;
-      sendMessage(LogLevel::ERROR);
+      sendMessage(logging::LogLevel::ERROR);
     }
   }
 }
@@ -51,7 +50,7 @@ void ProcessInfoModule::FillProcInfo(const std::shared_ptr<proc_t> &info){
       runtime = std::stoi(std::to_string(sysUpTime - std::stoi(std::to_string(info->start_time)) * 1. / ticksPerSecond));
     } catch(std::exception &e) {
       logging << getTime() << "FillProcInfo::Conversion failed: " << e.what();
-      sendMessage(LogLevel::ERROR);
+      sendMessage(logging::LogLevel::ERROR);
     }
     // check if it is the first call after process is started (time_stamp  == not_a_date_time)
     if(!time_stamp.is_special()) {
@@ -107,12 +106,12 @@ void ProcessControlModule::mainLoop() {
     evaluateMessage(handlerMessage);
     if(processPID > 0){
       logging << getTime() << "Found process that is still running.";
-      sendMessage(LogLevel::INFO);
+      sendMessage(logging::LogLevel::INFO);
       SetOnline(processPID);
     }
   } catch (std::runtime_error &e){
     logging << getTime() << " Failed to check for existing processes. Message:\n" << e.what();
-    sendMessage(LogLevel::ERROR);
+    sendMessage(logging::LogLevel::ERROR);
   }
   while(true) {
     trigger.read();
@@ -142,48 +141,47 @@ void ProcessControlModule::mainLoop() {
     if(enableProcess) {
       if(processPID < 0) {
         try {
-          processSetLogfile.read();
+          processSetExternalLogfile.read();
           processSetPath.read();
           processSetCMD.read();
           logging << getTime() << "Trying to start a new process: " << (std::string)processSetPath << "/" << (std::string)processSetCMD;
-          sendMessage(LogLevel::INFO);
+          sendMessage(logging::LogLevel::INFO);
           // log level of the process handler is DEBUG per default. So all messages will end up here
-          process.reset(new ProcessHandler("", getName(), false, handlerMessage));
+          process.reset(new ProcessHandler("", getName(), false, handlerMessage, this->getName()));
           SetOnline(
               process->startProcess((std::string) processSetPath,
-                  (std::string) processSetCMD, (std::string)processSetLogfile));
+                  (std::string) processSetCMD, (std::string)processSetExternalLogfile));
           evaluateMessage(handlerMessage);
           processNChilds = proc_util::getNChilds(processPID);
           processNChilds.write();
         } catch(std::runtime_error &e) {
           logging << getTime() << e.what();
-          sendMessage(LogLevel::ERROR);
+          sendMessage(logging::LogLevel::ERROR);
           Failed();
           SetOffline();
         }
       } else {
-        logging << getTime() << "Process is running..." << processIsRunning << " PID: " << getpid();
-        sendMessage(LogLevel::DEBUG);
+        logging << getTime() << "Process is running..." << processIsRunning << " PID: " << processPID;
+        sendMessage(logging::LogLevel::DEBUG);
         pidOffset.read();
         try{
           FillProcInfo(proc_util::getInfo(processPID + pidOffset));
         } catch (std::runtime_error &e){
           logging << getTime() << "Failed to read information for process " << (processPID + pidOffset) <<
               ". Check if pidOffset is set correctly!";
-          sendMessage(LogLevel::ERROR);
+          sendMessage(logging::LogLevel::ERROR);
         }
       }
     } else {
       if(processPID < 0) {
         processIsRunning = 0;
         processIsRunning.write();
-
-        logging << getTime() << "Process Running: " << processIsRunning << ". Process is not running...OK" << " PID: " << getpid();
-        sendMessage(LogLevel::DEBUG);
+        logging << getTime() << "Process Running: " << processIsRunning << ". Process is not running...OK";
+        sendMessage(logging::LogLevel::DEBUG);
       } else {
         logging << getTime() << "Trying to kill the process..." << " PID: "
             << processPID;
-        sendMessage(LogLevel::INFO);
+        sendMessage(logging::LogLevel::INFO);
         killSig.read();
         process->setSigNum(killSig);
         process.reset(nullptr);
@@ -197,6 +195,9 @@ void ProcessControlModule::mainLoop() {
 
 void ProcessControlModule::SetOnline(const int &pid){
   usleep(100000);
+  // set external log file in order to read the log file even if starting the process failed
+  processExternalLogfile = (std::string)processSetExternalLogfile;
+  processExternalLogfile.write();
   CheckIsOnline(pid);
   if(processIsRunning == 1){
     processPID = pid;
@@ -205,15 +206,13 @@ void ProcessControlModule::SetOnline(const int &pid){
     processPath.write();
     processCMD = (std::string)processSetCMD;
     processCMD.write();
-    processLogfile = (std::string)processSetLogfile;
-    processLogfile.write();
     logging << getTime() << "Ok process is started successfully";
-    sendMessage(LogLevel::INFO);
+    sendMessage(logging::LogLevel::INFO);
   } else {
     SetOffline();
     logging << getTime()
         << "Failed to start process " << (std::string)processSetPath << "/" << (std::string)processSetCMD;
-    sendMessage(LogLevel::ERROR);
+    sendMessage(logging::LogLevel::ERROR);
     Failed();
   }
 }
@@ -241,7 +240,7 @@ void ProcessControlModule::Failed(){
   if(processNFailed == 5){
     logging << getTime() <<  "Failed to start the process " << (std::string)processSetPath << "/" << (std::string)processSetCMD << " 5 times."
         << " It will not be started again until you reset the process by switching it off and on again.";
-    sendMessage(LogLevel::ERROR);
+    sendMessage(logging::LogLevel::ERROR);
   }
   sleep(2);
 }
@@ -251,14 +250,14 @@ void ProcessControlModule::CheckIsOnline(const int pid){
     SetOffline();
     logging << getTime()
         << "Child process with PID " << processPID << " is not running, but it should run!";
-    sendMessage(LogLevel::ERROR);
+    sendMessage(logging::LogLevel::ERROR);
     processRestarts += 1;
     processRestarts.write();
     if(processRestarts > 100){
       logging << getTime()
             << "The process " << (std::string)processSetPath << "/" << (std::string)processSetCMD << " was restarted 100 times."
             << " It will not be started again until you reset the process by switching it off and on again.";
-      sendMessage(LogLevel::ERROR);
+      sendMessage(logging::LogLevel::ERROR);
     }
 
   } else {
@@ -267,7 +266,7 @@ void ProcessControlModule::CheckIsOnline(const int pid){
   }
 }
 
-void ProcessInfoModule::sendMessage(const LogLevel &level){
+void ProcessInfoModule::sendMessage(const logging::LogLevel &level){
   message = logging.str();
   message.write();
   messageLevel = level;
@@ -277,7 +276,7 @@ void ProcessInfoModule::sendMessage(const LogLevel &level){
 }
 
 void ProcessInfoModule::evaluateMessage(std::stringstream &msg){
-  auto list = stripMessages(msg);
+  auto list = logging::stripMessages(msg);
   for(auto &message : list){
     logging << getTime() << message.message.str();
     sendMessage(message.logLevel);
@@ -288,12 +287,13 @@ void ProcessInfoModule::evaluateMessage(std::stringstream &msg){
 
 std::string ProcessInfoModule::getTime(){
   std::string str{"WATCHDOG_SERVER: "};
-  std::chrono::system_clock::time_point tp = std::chrono::system_clock::now();
-  time_t t = std::chrono::system_clock::to_time_t(tp);
-  str.append(ctime(&t));
-  str.pop_back();
-  str.append(" ");
+  str.append(logging::getTime());
   str.append(this->getName());
   str.append(" -> ");
   return str;
+}
+
+void ProcessControlModule::terminate(){
+  process.reset(nullptr);
+  ProcessInfoModule::terminate();
 }

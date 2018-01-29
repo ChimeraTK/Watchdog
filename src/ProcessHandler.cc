@@ -18,17 +18,17 @@
 #include <fcntl.h>
 #include <sys/resource.h>
 
-ProcessHandler::ProcessHandler(const std::string &path, const std::string &PIDFileName, const bool deletePIDFile, int &PID, std::ostream &stream):
- pid(-1), pidFile(PIDFileName + ".PID"), pidDirectory(path), deletePIDFile(deletePIDFile), signum(SIGINT),
- os(stream), log(LogLevel::DEBUG), name("ProcessHandler::"){
-  PID = -1;
-  if(checkRunningProcess(PID))
-    pid = PID;
+ProcessHandler::ProcessHandler(const std::string &_path, const std::string &_PIDFileName, const bool _deletePIDFile, int &_PID, std::ostream &_stream, const std::string &_name):
+ pid(-1), pidFile(_PIDFileName + ".PID"), pidDirectory(_path), deletePIDFile(_deletePIDFile), signum(SIGINT),
+ os(_stream), log(logging::LogLevel::DEBUG), name(_name + "/ProcessHandler: "){
+  _PID = -1;
+  if(checkRunningProcess(_PID))
+    pid = _PID;
 };
 
-ProcessHandler::ProcessHandler(const std::string &path, const std::string &PIDFileName, const bool deletePIDFile, std::ostream &stream):
- pid(-1), pidFile(PIDFileName + ".PID"), pidDirectory(path), deletePIDFile(deletePIDFile), signum(SIGINT),
- os(stream), log(LogLevel::DEBUG), name("ProcessHandler::") {
+ProcessHandler::ProcessHandler(const std::string &_path, const std::string &_PIDFileName, const bool _deletePIDFile, std::ostream &_stream, const std::string &_name):
+ pid(-1), pidFile(_PIDFileName + ".PID"), pidDirectory(_path), deletePIDFile(_deletePIDFile), signum(SIGINT),
+ os(_stream), log(logging::LogLevel::DEBUG), name(_name + "/ProcessHandler: ") {
 };
 
 
@@ -44,8 +44,8 @@ bool ProcessHandler::changeDirectory(){
     throw std::runtime_error("Folder where to store the PID file is not writable!");
   }
   if(chdir(pidDir.c_str())) {
-    if(log <= LogLevel::ERROR){
-      os << LogLevel::ERROR << name << "Failed to change to pid file directory: " << pidDir << std::endl;
+    if(log <= logging::LogLevel::ERROR){
+      os << logging::LogLevel::ERROR << name << logging::getTime() << "Failed to change to pid file directory: " << pidDir << std::endl;
     }
     return false;
   } else {
@@ -55,15 +55,15 @@ bool ProcessHandler::changeDirectory(){
 
 void ProcessHandler::cleanup() {
   if(pid > 0 && proc_util::isProcessRunning(pid)){
-    if(log == LogLevel::DEBUG){
-      os  << LogLevel::DEBUG << name << "Going to kill (SIGINT) process in the destructor of ProcessHandler for process: "
+    if(log == logging::LogLevel::DEBUG){
+      os  << logging::LogLevel::DEBUG << name << logging::getTime() << "Going to kill (SIGINT) process in the destructor of ProcessHandler for process: "
           << pid << std::endl;
     }
     kill(-pid, signum);
     usleep(200000);
     if(proc_util::isProcessRunning(pid)) {
-      if(log == LogLevel::DEBUG){
-        os << LogLevel::DEBUG << name << "Going to kill (SIGKILL) process in the destructor of ProcessHandler for process: "
+      if(log == logging::LogLevel::DEBUG){
+        os << logging::LogLevel::DEBUG << name << logging::getTime() << "Going to kill (SIGKILL) process in the destructor of ProcessHandler for process: "
            << pid << std::endl;
       }
       kill(-pid, SIGKILL);
@@ -75,7 +75,7 @@ void ProcessHandler::cleanup() {
         ss << " could not be stopped. Even using signal SIGKILL!";
         throw std::runtime_error(ss.str());
       } else {
-        os << LogLevel::INFO << name << "Ok process was terminated."  << std::endl;
+        os << logging::LogLevel::INFO << name << logging::getTime() << "Ok process was terminated."  << std::endl;
       }
     }
   }
@@ -108,8 +108,8 @@ size_t ProcessHandler::startProcess(const std::string &path, const std::string &
   }
   // process could be stopped even if it was present when the ProcessHandler was constructed.
   if(pid > 0 && proc_util::isProcessRunning(pid)) {
-    if(log <= LogLevel::ERROR){
-        os << LogLevel::ERROR << name << "There is still a process running that was not cleaned up! I will do a cleanup now."
+    if(log <= logging::LogLevel::ERROR){
+        os << logging::LogLevel::ERROR << name << logging::getTime() << "There is still a process running that was not cleaned up! I will do a cleanup now."
         << std::endl;
     }
     cleanup();
@@ -125,34 +125,34 @@ size_t ProcessHandler::startProcess(const std::string &path, const std::string &
   if(p == 0) {
 
     if(logfile.empty()){
-      if(log <= LogLevel::WARNING)
-        std::cout << LogLevel::WARNING << name << "No log file name is set. Process output is dumped to stout/stderr." << std::endl;
+      if(log <= logging::LogLevel::WARNING)
+        std::cout << logging::LogLevel::WARNING << name << logging::getTime() << "No log file name is set. Process output is dumped to stout/stderr." << std::endl;
     } else {
       // open the logfile
       int fd = open(logfile.c_str(), O_RDWR | O_CREAT | O_APPEND, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
-      if(fd == -1 && log <= LogLevel::ERROR){
-        std::cerr << LogLevel::ERROR << name << "Failed to open log file. No logfile will be written." << std::endl;
+      if(fd == -1 && log <= logging::LogLevel::ERROR){
+        std::cerr << logging::LogLevel::ERROR << name << logging::getTime() << "Failed to open log file. No logfile will be written." << std::endl;
       } else {
         dup2(fd, 1);   // make stdout go to file
         dup2(fd, 2);   // make stderr go to file
         close(fd);
       }
     }
-
+    std::cout << name << " " << logging::getTime() << "Going to start a new process." << std::endl;
     // Don't throw in the child since the parent will not catch it
     pid_t child = (int) getpid();
-    if(setpgid(0, child) && log <= LogLevel::ERROR) {
-      std::cerr << name << "Failed to reset GPID." << std::endl;
+    if(setpgid(0, child) && log <= logging::LogLevel::ERROR) {
+      std::cerr << logging::LogLevel::ERROR << name << logging::getTime() << "Failed to reset GPID." << std::endl;
     }
-    if(log == LogLevel::DEBUG){
-      std::cout << LogLevel::DEBUG << name << "Child running and its PID is: " << child << std::endl;
+    if(log == logging::LogLevel::DEBUG){
+      std::cout << logging::LogLevel::DEBUG << name << logging::getTime() << "Child running and its PID is: " << child << std::endl;
     }
     std::ofstream file;
     file.open(pidFile);
     if(!file.is_open()) {
       file.close();
-      if(log <= LogLevel::ERROR){
-        std::cerr << LogLevel::ERROR << name << "Failed to create PID file: " << pidFile << std::endl;
+      if(log <= logging::LogLevel::ERROR){
+        std::cerr << logging::LogLevel::ERROR << name << logging::getTime() << "Failed to create PID file: " << pidFile << std::endl;
       }
       _exit(0);
     } else {
@@ -163,23 +163,23 @@ size_t ProcessHandler::startProcess(const std::string &path, const std::string &
     if(path.back() != '/')
       path_copy.append(std::string("/").c_str());
     if(chdir(path.c_str())) {
-      if(log <= LogLevel::ERROR){
-        std::cerr << LogLevel::ERROR << name << "Failed to change to directory: " << path << std::endl;
+      if(log <= logging::LogLevel::ERROR){
+        std::cerr << logging::LogLevel::ERROR << name << logging::getTime() << "Failed to change to directory: " << path << std::endl;
       }
       _exit(0);
     }
     auto args = split_arguments(cmd);
     char * exec_args[1024];
     int arg_count = 0;
-    if(log == LogLevel::DEBUG)
-      std::cout << LogLevel::DEBUG << name << "Going to call: execv(\"" << (path_copy + args.at(0)).c_str();
+    if(log == logging::LogLevel::DEBUG)
+      std::cout << logging::LogLevel::DEBUG << name << logging::getTime() << "Going to call: execv(\"" << (path_copy + args.at(0)).c_str();
     for(size_t x = 0; x < args.size(); x++) {
       exec_args[arg_count++] = strdup(args[x].c_str());
-      if(log == LogLevel::DEBUG)
+      if(log == logging::LogLevel::DEBUG)
         std::cout << "\", \"" << exec_args[x];
     }
     exec_args[arg_count++] = 0; // tell it when to stop!
-    if(log == LogLevel::DEBUG)
+    if(log == logging::LogLevel::DEBUG)
       std::cout << "\", \"NULL\")" << std::endl;
 
 
@@ -193,8 +193,8 @@ size_t ProcessHandler::startProcess(const std::string &path, const std::string &
     signal(SIGCHLD, SIG_IGN);
     sleep(1);
     if(readTempPID(pid)) {
-      if(log == LogLevel::DEBUG)
-        os << LogLevel::DEBUG << name << "PID was read:" << pid << std::endl;
+      if(log == logging::LogLevel::DEBUG)
+        os << logging::LogLevel::DEBUG << name << logging::getTime() << "PID was read:" << pid << std::endl;
       if(deletePIDFile)
         remove(pidFile.c_str());
     } else {

@@ -79,7 +79,7 @@ private:
   bool        deletePIDFile; ///< If true the PID file is deleted after reading the PID.
   int signum;///< Signal used to stop a process
   std::ostream &os; ///< Stream used to send messages
-  LogLevel log;///< The current log level
+  logging::LogLevel log;///< The current log level
   const std::string name; ///< Name of this class
 
 public:
@@ -92,13 +92,15 @@ public:
    * \param PIDFileName the name of the PID file -> will result in: PIDFileName.PID
    * \param os The ostream used to send status messages and errors.
    * \param deletePIDFile If true the PID file deleted directly after reading the PID.
+   * \param name Give a name to the ProcessHandler to distinguish between multiple handlers.
+   * It is used in the messages send by the handler.
    * This avoids overwriting the PID in case a second ProcessHandler starts a process
    * with the same PID file settings. But you can not check for a running process if the
    * ProcessHandler is not terminated correctly and started again.
    * \param PID The PID is set in case a running process was found. Else it is set to -1.
    */
   ProcessHandler(const std::string &path, const std::string &PIDFileName,
-      const bool deletePIDFile, int &PID, std::ostream &os);
+      const bool deletePIDFile, int &PID, std::ostream &os, const std::string &name = "");
 
   /**
      * Constructor.
@@ -107,12 +109,14 @@ public:
      * \param PIDFileName the name of the PID file -> will result in: PIDFileName.PID
      * \param os The ostream used to send status messages and errors.
      * \param deletePIDFile If true the PID file deleted directly after reading the PID.
+     * \param name Give a name to the ProcessHandler to distinguish between multiple handlers.
+     * It is used in the messages send by the handler.
      * This avoids overwriting the PID in case a second ProcessHandler starts a process
      * with the same PID file settings. But you can not check for a running process if the
      * ProcessHandler is not terminated correctly and started again.
      */
   ProcessHandler(const std::string &path, const std::string &PIDFileName,
-       const bool deletePIDFile = false, std::ostream &os = std::cout);
+       const bool deletePIDFile = false, std::ostream &os = std::cout, const std::string &name = "");
   ~ProcessHandler();
 
   /**
@@ -163,7 +167,7 @@ public:
    *
    * Depending on the level messages are put to the ostream.
    */
-  void SetLogLevel(const LogLevel &level){log = level;}
+  void SetLogLevel(const logging::LogLevel &level){log = level;}
 
 };
 

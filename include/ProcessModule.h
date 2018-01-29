@@ -138,7 +138,7 @@ struct ProcessInfoModule : public ctk::ApplicationModule {
 
   std::stringstream logging;
 
-  void sendMessage(const LogLevel &level = LogLevel::INFO);
+  void sendMessage(const logging::LogLevel &level = logging::LogLevel::INFO);
 
   /* Don't overload the stream operator of ProcessInfoModule -> will cause Segfaults. Use getTime() instead. */
 //  friend std::stringstream& operator<<(std::stringstream &ss, const ProcessInfoModule* module);
@@ -168,6 +168,11 @@ struct ProcessControlModule : public ProcessInfoModule{
 
   using ProcessInfoModule::ProcessInfoModule;
 
+  /* Use terminate function to delete the ProcessHandler, since it is using a local stringstream constructed in the main loop
+   * which is not existing at the time the ProcessHandler destructor is called!
+   */
+  void terminate();
+
   /**
    * \name Process control parameter (static during process execution)
    * @{
@@ -181,10 +186,10 @@ struct ProcessControlModule : public ProcessInfoModule{
     {  "CS", "PROCESS", getName() } };
   /** Log file name. It will be created in the given processPath */
   //ToDo: Change description here once the module output goes to the watchdog log file
-  ctk::ScalarOutput<std::string> processLogfile { this, "Logfile", "",
+  ctk::ScalarOutput<std::string> processExternalLogfile { this, "ExternalLogfile", "",
     "Name of the logfile created in the given path (the process controlled by the module will "
     "put its output here. Module messages go to cout/cerr",
-    {  "CS", "Logging", "PROCESS", getName() } };
+    {  "CS", "PROCESS", getName() } };
 
   /** @} */
   /**
@@ -199,7 +204,8 @@ struct ProcessControlModule : public ProcessInfoModule{
   ctk::ScalarPollInput<std::string> processSetCMD { this, "SetCMD", "", "Set the command used to start the process",
     { "PROCESS", getName() } };
   /** Log file name. It will be created in the given processPath */
-  ctk::ScalarPollInput<std::string> processSetLogfile { this, "SetLogfile", "", "Set the name of the logfile created in the given path",
+  ctk::ScalarPollInput<std::string> processSetExternalLogfile { this, "SetExternalLogfile", "", "Set the name of the logfile"
+      " used by the process to be started. It is created in the given path.",
     { "PROCESS", getName() } };
   /** Start the process */
   ctk::ScalarPollInput<int> enableProcess { this, "startProcess", "", "Start the process",

@@ -52,8 +52,8 @@ WatchdogServer::WatchdogServer() :
               << fileName << std::endl;
         } else {
           processes.emplace_back(this, nameAttr->get_value().data(), "process");
-          processesLog.emplace_back(this, nameAttr->get_value().data(), "process log");
-          processesLogExternal.emplace_back(this, nameAttr->get_value().data(), "process external log");
+          processesLog.emplace_back(this, (nameAttr->get_value() + "-Log").data(), "process log");
+          processesLogExternal.emplace_back(this, (nameAttr->get_value() + "-LogExternal").data(), "process external log");
         }
       }
 
@@ -83,11 +83,11 @@ void WatchdogServer::defineConnections() {
   timer.connectTo(systemInfo);
 
 	watchdog.findTag("CS").connectTo(cs[watchdog.getName()]);
-
 	watchdogLog.findTag("CS").connectTo(cs[watchdog.getName()]);
-	cs[watchdog.getName()]("LogLevel") >> watchdogLog.logLevel;
-	cs[watchdog.getName()]("SetLogFile") >> watchdogLog.logFile;
-	cs[watchdog.getName()]("LogTailLength") >> watchdogLog.tailLength;
+	cs[watchdog.getName()]("SetLogLevel") >> watchdogLog.logLevel;
+//	cs[watchdog.getName()]("SetLogFile") >> watchdogLog.logFile;
+	cs[watchdog.getName()]("SetLogTailLength") >> watchdogLog.tailLength;
+	cs[watchdog.getName()]("SetTargetStream") >> watchdogLog.targetStream;
 	watchdog.findTag("Logging").connectTo(watchdogLog);
 
 	systemInfo.ticksPerSecond >> watchdog.ticksPerSecond;
@@ -99,19 +99,25 @@ void WatchdogServer::defineConnections() {
   auto log = processesLog.begin();
   auto logExternal = processesLogExternal.begin();
   for(auto &item : processes) {
+    std::cout << "Setting up connections for: " << item.getName() << ", " << (*log).getName() << ", " << (*logExternal).getName() << std::endl;
     cs[item.getName()]("enableProcess") >> item.enableProcess;
     cs[item.getName()]("SetCMD") >> item.processSetCMD;
     cs[item.getName()]("SetPath") >> item.processSetPath;
-    cs[item.getName()]("SetLogfile") >> item.processSetLogfile;
+    cs[item.getName()]("SetLogfileExternal") >> item.processSetExternalLogfile;
     cs[item.getName()]("killSig") >> item.killSig;
     cs[item.getName()]("pidOffset") >> item.pidOffset;
 
-    item.findTag("Logging").connectTo(*log);
-    cs[item.getName()]("LogLevel") >> (*log).logLevel;
-    cs[item.getName()]("LogTailLength") >> (*log).tailLength;
+//    item.findTag("Logging").connectTo(*log);
+    item.message >> (*log).message;
+    item.messageLevel >> (*log).messageLevel;
+//    cs[watchdog.getName()]("LogLevel") >> (*log).logFile;
+//    cs[item.getName()]("LogFile") >> (*log).logFile;
+    cs[item.getName()]("SetLogLevel") >> (*log).logLevel;
+    cs[item.getName()]("SetLogTailLength") >> (*log).tailLength;
+    cs[item.getName()]("SetTargetStream") >> (*log).targetStream;
     (*log).findTag("CS").connectTo(cs[item.getName()]);
-    item.processLogfile >> (*logExternal).logFile;
-    cs[item.getName()]("LogfileExternalTailLength") >> (*logExternal).tailLength;
+    item.processExternalLogfile >> (*logExternal).logFile;
+    cs[item.getName()]("SetLogTailLengthExternal") >> (*logExternal).tailLength;
     timer.trigger >> (*logExternal).trigger;
     (*logExternal).findTag("CS").connectTo(cs[item.getName()]);
 
