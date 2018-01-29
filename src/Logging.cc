@@ -7,6 +7,10 @@
 #include "Logging.h"
 #include <iostream>
 #include <algorithm>
+#include <chrono>
+#include <ctime>
+
+using namespace logging;
 
 std::ostream& operator<<(std::ostream &os,const LogLevel &level){
   switch(level){
@@ -28,7 +32,7 @@ std::ostream& operator<<(std::ostream &os,const LogLevel &level){
   return os;
 }
 
-void formatLogTail(std::istream  &data, std::ostream &os, size_t numberOfLines, size_t maxCharacters){
+void logging::formatLogTail(std::istream  &data, std::ostream &os, size_t numberOfLines, size_t maxCharacters){
   data.seekg(0, std::ios::beg);
   int nLines = std::count(std::istreambuf_iterator<char>(data),
                std::istreambuf_iterator<char>(), '\n');
@@ -71,7 +75,7 @@ void formatLogTail(std::istream  &data, std::ostream &os, size_t numberOfLines, 
   }
 }
 
-std::vector<Message> stripMessages(std::stringstream &msg, size_t maxCharacters){
+std::vector<Message> logging::stripMessages(std::stringstream &msg, size_t maxCharacters){
   std::vector<Message> l;
   char s[maxCharacters];
   while(msg.good()){
@@ -130,3 +134,14 @@ Message& Message::operator<<(LogLevel level){
   logLevel = level;
   return *this;
 }
+
+std::string logging::getTime(){
+  std::string str;
+  std::chrono::system_clock::time_point tp = std::chrono::system_clock::now();
+  time_t t = std::chrono::system_clock::to_time_t(tp);
+  str.append(ctime(&t));
+  str.pop_back();
+  str.append(" ");
+  return str;
+}
+

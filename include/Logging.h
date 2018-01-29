@@ -12,9 +12,9 @@
 #include <ostream>
 #include <vector>
 
-enum LogLevel { DEBUG, INFO, WARNING, ERROR, SILENT };
+namespace logging{
 
-std::ostream& operator<<(std::ostream& os, const LogLevel &level);
+enum LogLevel { DEBUG, INFO, WARNING, ERROR, SILENT };
 
 struct Message {
   std::stringstream message;
@@ -45,5 +45,9 @@ void formatLogTail(std::istream  &data, std::ostream &os, size_t numberOfLines =
 
 std::vector<Message> stripMessages(std::stringstream &msg, size_t maxCharacters = 256);
 
+std::string getTime();
+}
+
+std::ostream& operator<<(std::ostream& os, const logging::LogLevel &level);
 
 #endif /* INCLUDE_LOGGING_H_ */
