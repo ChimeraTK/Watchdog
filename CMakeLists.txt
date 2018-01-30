@@ -61,7 +61,10 @@ set(server_sources ${CMAKE_SOURCE_DIR}/src/applicationInstance.cc)
 configure_file(include/version.h.in ${PROJECT_BINARY_DIR}/version/version.h)
 include_directories(${PROJECT_BINARY_DIR}/version)
 
-add_definitions(-DENABLE_LOGGING)
+IF(DEFINED ENABLE_LOGGING)
+  MESSAGE(STATUS "Logging modules are enabled.")
+  add_definitions(-DENABLE_LOGGING)
+ENDIF(DEFINED ENABLE_LOGGING)
 
 # main server executable
 add_executable(${PROJECT_NAME} ${server_sources} ${library_sources})

@@ -55,7 +55,7 @@ struct WatchdogServer: public ctk::Application {
     shutdown();
   }
 
-  SystemInfoModule systemInfo { this, "systeminfo",
+  SystemInfoModule systemInfo { this, "SYS",
       "Module reading system information" };
 
   /**

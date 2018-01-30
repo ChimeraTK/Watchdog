@@ -77,7 +77,7 @@ void WatchdogServer::defineConnections() {
       it != ite; it++) {
     it->second >> cs["SYS"](space2underscore(it->first));
   }
-  systemInfo.findTag("CS").connectTo(cs["SYS"]);
+  systemInfo.findTag("CS").connectTo(cs[systemInfo.getName()]);
   timer.trigger >> systemInfo.trigger;
   cs[timer.getName()]("UpdateTime") >> timer.update;
 
@@ -97,11 +97,11 @@ void WatchdogServer::defineConnections() {
   watchdogLogFile.findTag("CS").connectTo(cs[watchdog.getName()]);
 
   systemInfo.findTag("Logging").connectTo(systemInfoLog);
-  cs[systemInfoLog.getName()]("SetLogFile") >> systemInfoLog.logFile;
-  cs[systemInfoLog.getName()]("SetLogTailLength") >> systemInfoLog.tailLength;
-  cs[systemInfoLog.getName()]("SetTargetStream") >> systemInfoLog.targetStream;
-  cs[systemInfoLog.getName()]("SetLogLevel") >> systemInfoLog.logLevel;
-  systemInfoLog.findTag("CS").connectTo(cs[systemInfoLog.getName()]);
+  cs[watchdog.getName()]("SetLogFile") >> systemInfoLog.logFile;
+  cs[systemInfo.getName()]("SetLogTailLength") >> systemInfoLog.tailLength;
+  cs[systemInfo.getName()]("SetTargetStream") >> systemInfoLog.targetStream;
+  cs[systemInfo.getName()]("SetLogLevel") >> systemInfoLog.logLevel;
+  systemInfoLog.findTag("CS").connectTo(cs[systemInfo.getName()]);
 
 
   auto log = processesLog.begin();
