@@ -59,15 +59,15 @@ void LoggingModule::mainLoop(){
     logging::LogLevel setLevel = static_cast<logging::LogLevel>((uint)logLevel);
     std::stringstream ss;
     ss << level << (std::string)message << std::endl;
-//    if(targetStream == 1 || targetStream == 2){
-//      if(!((std::string)logFile).empty() && !file->is_open()){
-//        file->open((std::string)logFile,  std::ofstream::out | std::ofstream::app);
-//        if(!file->is_open() && level <= LogLevel::ERROR)
-//          std::cerr << LogLevel::ERROR << this->getName() << "LoggingModule failed to open log file for writing: " << (std::string)logFile << std::endl;
-//        else if (file->is_open() && level <= LogLevel::INFO)
-//          std::cout << LogLevel::INFO << this->getName() << " Opened log file for writing: " << (std::string)logFile << std::endl;
-//      }
-//    }
+    if(targetStream == 1 || targetStream == 2){
+      if(!((std::string)logFile).empty() && !file->is_open()){
+        file->open((std::string)logFile,  std::ofstream::out | std::ofstream::app);
+        if(!file->is_open() && level <= logging::LogLevel::ERROR)
+          std::cerr << logging::LogLevel::ERROR << this->getName() << "LoggingModule failed to open log file for writing: " << (std::string)logFile << std::endl;
+        else if (file->is_open() && level <= logging::LogLevel::INFO)
+          std::cout << logging::LogLevel::INFO << this->getName() << " Opened log file for writing: " << (std::string)logFile << std::endl;
+      }
+    }
     if(level >= setLevel){
       std::string tmpLog  = (std::string)logTail;
       if( tailLength == 0 && messageCounter > 20){
@@ -86,8 +86,10 @@ void LoggingModule::mainLoop(){
           std::cerr << ss.str();
       }
       if(targetStream == 1 || targetStream == 2){
-        if(file->is_open())
-          file->operator <<(ss.str().c_str());
+        if(file->is_open()){
+          (*file) << ss.str().c_str();
+          file->flush();
+        }
       }
 
       tmpLog.append(ss.str());

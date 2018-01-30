@@ -16,6 +16,8 @@ void ProcessInfoModule::mainLoop(){
     trigger.read();
     try{
       FillProcInfo(proc_util::getInfo(processPID));
+      logging << getTime() << "Process is running (PID: " << processPID << ")";
+      sendMessage(logging::LogLevel::DEBUG);
     } catch (std::runtime_error &e) {
       logging << getTime() << "Failed to read process information for process " << processPID;
       sendMessage(logging::LogLevel::ERROR);

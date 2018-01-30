@@ -11,15 +11,14 @@
 
 void TimerModule::mainLoop() {
   while(true) {
-    /**
-     * \internal
-     *  Setting an interruption point is included in read() methods of ChimeraTK but not in write()!
-     *  Thus set it by hand here!
-     */
-    boost::this_thread::interruption_point();
+    update.read();
     trigger = trigger + 1;
     trigger.write();
-    sleep(2);
+    if(update < 1){
+      sleep(3);
+    } else {
+      sleep(update);
+    }
   }
 }
 
@@ -70,36 +69,36 @@ WatchdogServer::WatchdogServer() :
 }
 
 void WatchdogServer::defineConnections() {
-  std::cout << "Map size is: " << systemInfo.strInfos.size() << std::endl;
   for(auto it = systemInfo.strInfos.begin(), ite = systemInfo.strInfos.end();
       it != ite; it++) {
-#ifdef DEBUG
-    std::cout << "Adding system info: " << space2underscore(it->first)
-        << std::endl;
-#endif
     it->second >> cs["SYS"](space2underscore(it->first));
   }
   systemInfo.findTag("CS").connectTo(cs["SYS"]);
-  timer.connectTo(systemInfo);
+  timer.trigger >> systemInfo.trigger;
+  cs[timer.getName()]("UpdateTime") >> timer.update;
 
 	watchdog.findTag("CS").connectTo(cs[watchdog.getName()]);
-	watchdogLog.findTag("CS").connectTo(cs[watchdog.getName()]);
-	cs[watchdog.getName()]("SetLogLevel") >> watchdogLog.logLevel;
-//	cs[watchdog.getName()]("SetLogFile") >> watchdogLog.logFile;
+  watchdog.findTag("Logging").connectTo(watchdogLog);
+
+	cs[watchdog.getName()]("SetLogFile") >> watchdogLog.logFile;
 	cs[watchdog.getName()]("SetLogTailLength") >> watchdogLog.tailLength;
 	cs[watchdog.getName()]("SetTargetStream") >> watchdogLog.targetStream;
-	watchdog.findTag("Logging").connectTo(watchdogLog);
+	cs[watchdog.getName()]("SetLogLevel") >> watchdogLog.logLevel;
+  watchdogLog.findTag("CS").connectTo(cs[watchdog.getName()]);
+
+  cs[watchdog.getName()]("SetLogFile") >> watchdogLogFile.logFile;
+  cs[watchdog.getName()]("SetLogTailLengthExternal") >> watchdogLogFile.tailLength;
+  timer.trigger >> watchdogLogFile.trigger;
+  watchdogLogFile.findTag("CS").connectTo(cs[watchdog.getName()]);
 
 	systemInfo.ticksPerSecond >> watchdog.ticksPerSecond;
   systemInfo.uptime_secTotal >> watchdog.sysUpTime;
   systemInfo.startTime >> watchdog.sysStartTime;
   timer.trigger >> watchdog.trigger;
 
-  std::cout << "Adding " << processes.size() << " processes..." << std::endl;
   auto log = processesLog.begin();
   auto logExternal = processesLogExternal.begin();
   for(auto &item : processes) {
-    std::cout << "Setting up connections for: " << item.getName() << ", " << (*log).getName() << ", " << (*logExternal).getName() << std::endl;
     cs[item.getName()]("enableProcess") >> item.enableProcess;
     cs[item.getName()]("SetCMD") >> item.processSetCMD;
     cs[item.getName()]("SetPath") >> item.processSetPath;
@@ -109,8 +108,9 @@ void WatchdogServer::defineConnections() {
 
 //    item.findTag("Logging").connectTo(*log);
     item.message >> (*log).message;
+//    item.message >> watchdogLog.message;
     item.messageLevel >> (*log).messageLevel;
-//    cs[watchdog.getName()]("LogLevel") >> (*log).logFile;
+    cs[watchdog.getName()]("SetLogFile") >> (*log).logFile;
 //    cs[item.getName()]("LogFile") >> (*log).logFile;
     cs[item.getName()]("SetLogLevel") >> (*log).logLevel;
     cs[item.getName()]("SetLogTailLength") >> (*log).tailLength;

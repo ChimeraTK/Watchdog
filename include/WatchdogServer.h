@@ -24,9 +24,12 @@ struct TimerModule: public ctk::ApplicationModule {
   using ctk::ApplicationModule::ApplicationModule;
   /**
    * \remark
-   * Observe this vaiable by other modules to obtain a trigger
+   * Observe this variable by other modules to obtain a trigger
    */
   ctk::ScalarOutput<int> trigger { this, "trigger", "", "Trigger counter",
+    { "Timer" }};
+
+  ctk::ScalarPollInput<int> update {this , "update", "", "Specify the amount of time given in seconds between update triggers.",
     { "Timer" }};
 
   /**
@@ -65,6 +68,25 @@ struct WatchdogServer: public ctk::Application {
   
   ProcessInfoModule watchdog{this, "watchdog", "Module monitoring the watchdog process"};
 
+  /**
+   * This module is used to read the watchdog log file, which includes messages from the
+   * watchdog process and all other processes controlled by the watchdog.
+   * This allows to show all watchdog related messages via the tail (LogfileTailExternal).
+   * The LogFileModule is used differently for all the processes, since in case of the processes
+   * the  massages produced by the started processes are read and shown in the corresponding
+   * tail (LogfileTailExternal). Thus in that case the postfix 'External' makes more sense. Here
+   * the postfix 'External' can be a bit misleading, because the tail (LogfileTailExternal) includes
+   * only messages produced by the watchdog itself.
+   *
+   * \remark It would be nice to connect the message output variable of each process to its LoggingModule
+   * AND the watchdog LoggingModule. But this is not possible, since it is not possible to connect multiple
+   * outputs to a single push input variable.
+   */
+  LogFileModule watchdogLogFile{this, "watchdogLog", "Logging module of all watchdog processes"};
+
+  /**
+   * This module is used to handle messages from the watchdog process it self.
+   */
   LoggingModule watchdogLog{this, "watchdogLog", "Logging module of the watchdog process"};
 
   /**

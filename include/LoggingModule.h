@@ -78,13 +78,13 @@ struct LoggingModule: public ctk::ApplicationModule {
           "Set the tagret stream: 0 (cout/cerr), 1 (logfile), 2 (cout/cerr+logfile), 3 (none)" };
 
   // \ToDo: To be used -> get watchdog logfile name and push processModule messages there
-//  ctk::ScalarPollInput<std::string> logFile { this, "Logfile", "",
-//    "Name of the external logfile. If empty messages are pushed to cout/cerr" };
+  ctk::ScalarPollInput<std::string> logFile { this, "Logfile", "",
+    "Name of the external logfile. If empty messages are pushed to cout/cerr" };
 
   ctk::ScalarPollInput<uint> tailLength { this, "maxLength", "",
       "Maximum number of messages to be shown in the logging stream tail." };
 
-  ctk::ScalarPollInput<uint> logLevel { this, "loglevel", "",
+  ctk::ScalarPollInput<uint> logLevel { this, "logLevel", "",
       "Current log level used for messages." };
 
   ctk::ScalarOutput<std::string> logTail { this, "LogTail", "", "Tail of the logging stream.",
