@@ -7,8 +7,6 @@
 #include "Logging.h"
 #include <iostream>
 #include <algorithm>
-#include <chrono>
-#include <ctime>
 
 using namespace logging;
 
@@ -135,18 +133,8 @@ Message& Message::operator<<(LogLevel level){
   return *this;
 }
 
+#include "boost/date_time/posix_time/posix_time.hpp"
 std::string logging::getTime(){
-  std::string str;
-  try{
-  std::chrono::system_clock::time_point tp = std::chrono::system_clock::now();
-  time_t t = std::chrono::system_clock::to_time_t(tp);
-  str.append(ctime(&t));
-  str.pop_back();
-  str.append(" ");
-  } catch (std::exception &e){
-    std::cerr << "ERROR: Weird things happend: " << e.what() << std::endl;
-    return std::string("NO_TIME ");
-  }
-  return str;
+  return boost::posix_time::to_simple_string(boost::posix_time::second_clock::local_time()) + " ";
 }
 
