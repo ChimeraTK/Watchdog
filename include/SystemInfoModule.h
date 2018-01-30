@@ -11,6 +11,8 @@
 #undef GENERATE_XML
 #include <ChimeraTK/ApplicationCore/ApplicationCore.h>
 
+#include "Logging.h"
+
 #include "sys_stat.h"
 #include <unordered_set>
 
@@ -122,10 +124,33 @@ public:
   /** @} */
 
   /**
+   * \name Logging
+   * @{
+   */
+  std::ostream *logging;
+#ifdef ENABLE_LOGGING
+  /** Message to be send to the logging module */
+  ctk::ScalarOutput<std::string> message { this, "message", "", "Message of the module to the logging System",
+      { "Logging", "PROCESS", getName() } };
+
+  /** Message to be send to the logging module */
+  ctk::ScalarOutput<uint> messageLevel { this, "messageLevel", "", "Logging level of the message",
+      { "Logging", "PROCESS", getName() } };
+
+  void sendMessage(const logging::LogLevel &level = logging::LogLevel::INFO);
+
+#endif
+  /** @} */
+
+  /**
    * Main loop function.
    * Reads number of cores and system clock ticks and other static parameter only once before the loop.
    */
   void mainLoop();
+
+  void terminate();
+
+  std::string getTime();
 
 };
 

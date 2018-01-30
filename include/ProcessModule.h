@@ -17,7 +17,12 @@ namespace ctk = ChimeraTK;
 
 #include "sys_stat.h"
 #include "ProcessHandler.h"
+
+#ifdef ENABLE_LOGGING
 #include "LoggingModule.h"
+#else
+#include "Logging.h"
+#endif
 
 /**
  * \brief
@@ -42,7 +47,7 @@ struct ProcessInfoModule : public ctk::ApplicationModule {
   /** Time since process is running */
   ctk::ScalarOutput<int> runtime { this, "runtime", "s", "Time since process is running",
     { "CS", "PROCESS", getName() } };
-
+#ifdef ENABLE_LOGGING
   /** Message to be send to the logging module */
   ctk::ScalarOutput<std::string> message { this, "message", "", "Message of the module to the logging System",
       { "Logging", "PROCESS", getName() } };
@@ -50,7 +55,7 @@ struct ProcessInfoModule : public ctk::ApplicationModule {
   /** Message to be send to the logging module */
   ctk::ScalarOutput<uint> messageLevel { this, "messageLevel", "", "Logging level of the message",
       { "Logging", "PROCESS", getName() } };
-
+#endif
   /** @} */
 
   /**
@@ -136,10 +141,18 @@ struct ProcessInfoModule : public ctk::ApplicationModule {
    */
   void FillProcInfo(const std::shared_ptr<proc_t> &info);
 
-  std::stringstream logging;
+  std::ostream *logging;
+#ifdef ENABLE_LOGGING
 
   void sendMessage(const logging::LogLevel &level = logging::LogLevel::INFO);
 
+  /**
+   * Search for key words in the given stream (LogLevels like DEBUG, INFO...).
+   * Splits the stream using Logging::stripMessages().
+   * Then sends individual messages to the LoggingModule.
+   */
+  void evaluateMessage(std::stringstream &msg);
+#endif
   /* Don't overload the stream operator of ProcessInfoModule -> will cause Segfaults. Use getTime() instead. */
 //  friend std::stringstream& operator<<(std::stringstream &ss, const ProcessInfoModule* module);
 
@@ -149,14 +162,7 @@ struct ProcessInfoModule : public ctk::ApplicationModule {
    */
   std::string getTime();
 
-  /**
-   * Search for key words in the given stream (LogLevels like DEBUG, INFO...).
-   * Splits the stream using Logging::stripMessages().
-   * Then sends individual messages to the LoggingModule.
-   */
-  void evaluateMessage(std::stringstream &msg);
-
-
+  void terminate();
 };
 
 
@@ -184,13 +190,13 @@ struct ProcessControlModule : public ProcessInfoModule{
   /** Command used to start the process */
   ctk::ScalarOutput<std::string> processCMD { this, "CMD", "", "Command used to start the process",
     {  "CS", "PROCESS", getName() } };
+#ifdef ENABLE_LOGGING
   /** Log file name. It will be created in the given processPath */
-  //ToDo: Change description here once the module output goes to the watchdog log file
   ctk::ScalarOutput<std::string> processExternalLogfile { this, "ExternalLogfile", "",
     "Name of the logfile created in the given path (the process controlled by the module will "
     "put its output here. Module messages go to cout/cerr",
     {  "CS", "PROCESS", getName() } };
-
+#endif
   /** @} */
   /**
      * \name Process control parameter (dynamic process execution)
@@ -203,10 +209,12 @@ struct ProcessControlModule : public ProcessInfoModule{
   /** Command used to start the process */
   ctk::ScalarPollInput<std::string> processSetCMD { this, "SetCMD", "", "Set the command used to start the process",
     { "PROCESS", getName() } };
+#ifdef ENABLE_LOGGING
   /** Log file name. It will be created in the given processPath */
   ctk::ScalarPollInput<std::string> processSetExternalLogfile { this, "SetExternalLogfile", "", "Set the name of the logfile"
       " used by the process to be started. It is created in the given path.",
     { "PROCESS", getName() } };
+#endif
   /** Start the process */
   ctk::ScalarPollInput<int> enableProcess { this, "startProcess", "", "Start the process",
     { "PROCESS", getName() } };

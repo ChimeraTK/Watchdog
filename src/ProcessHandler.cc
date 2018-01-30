@@ -138,7 +138,7 @@ size_t ProcessHandler::startProcess(const std::string &path, const std::string &
         close(fd);
       }
     }
-    std::cout << name << " " << logging::getTime() << "Going to start a new process." << std::endl;
+    std::cout << logging::LogLevel::INFO << name  << logging::getTime() << "Going to start a new process." << std::endl;
     // Don't throw in the child since the parent will not catch it
     pid_t child = (int) getpid();
     if(setpgid(0, child) && log <= logging::LogLevel::ERROR) {

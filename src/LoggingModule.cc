@@ -58,7 +58,7 @@ void LoggingModule::mainLoop(){
     logging::LogLevel level = static_cast<logging::LogLevel>((uint)messageLevel);
     logging::LogLevel setLevel = static_cast<logging::LogLevel>((uint)logLevel);
     std::stringstream ss;
-    ss << level << (std::string)message << std::endl;
+    ss << level << (std::string)message;
     if(targetStream == 1 || targetStream == 2){
       if(!((std::string)logFile).empty() && !file->is_open()){
         file->open((std::string)logFile,  std::ofstream::out | std::ofstream::app);

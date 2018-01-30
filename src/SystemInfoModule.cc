@@ -19,15 +19,17 @@ SystemInfoModule::SystemInfoModule(EntityOwner *owner, const std::string &name,
     const std::unordered_set<std::string> &tags) :
     ctk::ApplicationModule(owner, name, description, eliminateHierarchy, tags) {
   for(auto it = sysInfo.ibegin; it != sysInfo.iend; it++) {
-#ifdef DEBUG
-    std::cout << "Adding sysInfo: " << space2underscore(it->first) << std::endl;
-#endif
     strInfos[it->first].replace(ctk::ScalarOutput<std::string> { this,
         space2underscore(it->first), "", space2underscore(it->first) });
   }
   cpu_use.reset(new ctk::ArrayOutput<double>{this, "cpuUsage", "%", sysInfo.getNCpu(), "CPU usage for each processor", { "CS", "SYS" }});
 //  // add 1 since cpuTotal should be added too
   lastInfo = std::vector<cpu>(sysInfo.getNCpu() + 1);
+#ifdef ENABLE_LOGGING
+  logging = new std::stringstream();
+#else
+  logging = &std::cerr;
+#endif
 }
 
 void SystemInfoModule::mainLoop() {
@@ -41,16 +43,22 @@ void SystemInfoModule::mainLoop() {
   ticksPerSecond.write();
 
   if(lastInfo.size() != (unsigned) (nCPU + 1)) {
-    std::cerr << getName() << "Size of lastInfo: " << lastInfo.size()
+    (*logging) << getName() << "Size of lastInfo: " << lastInfo.size()
         << "\t nCPU: " << nCPU << std::endl;
+#ifdef ENABLE_LOGGING
+    sendMessage(logging::LogLevel::ERROR);
+#endif
     throw std::runtime_error(
         "Vector size mismatch in SystemInfoModule::mainLoop.");
   }
 
   std::ifstream file("/proc/stat");
   if(!file.is_open()) {
-    std::cerr << getName() << "Failed to open system file /proc/stat"
+    (*logging) << getTime() << "Failed to open system file /proc/stat"
         << std::endl;
+#ifdef ENABLE_LOGGING
+    sendMessage(logging::LogLevel::ERROR);
+#endif
     file.close();
     return;
   }
@@ -80,7 +88,10 @@ void SystemInfoModule::mainLoop() {
       freeSwap  = std::stoi(std::to_string(kb_swap_free));
       usedSwap  = std::stoi(std::to_string(maxSwap - freeSwap));
     } catch(std::exception &e) {
-      std::cerr << getName() << "Conversion failed: " << e.what() << std::endl;
+      (*logging) << getTime() << "Conversion failed: " << e.what() << std::endl;
+#ifdef ENABLE_LOGGING
+      sendMessage(logging::LogLevel::ERROR);
+#endif
     }
     maxMem   .write();
     freeMem  .write();
@@ -104,7 +115,10 @@ void SystemInfoModule::mainLoop() {
       uptime_sec = std::stoi(std::to_string(
           uptime_secTotal - (uptime_day * 86400) - (uptime_hour * 3600) - (uptime_min*60)));
     } catch(std::exception &e) {
-      std::cerr << getName() << "Conversion failed: " << e.what() << std::endl;
+      (*logging) << getTime() << "Conversion failed: " << e.what() << std::endl;
+#ifdef ENABLE_LOGGING
+      sendMessage(logging::LogLevel::ERROR);
+#endif
     }
 
 //    double tmp[3] = { 0., 0., 0. };
@@ -121,6 +135,11 @@ void SystemInfoModule::mainLoop() {
     loadAvg.write();
 
     calculatePCPU();
+
+#ifdef ENABLE_LOGGING
+    (*logging) << getTime() << "System data updated" << std::endl;
+    sendMessage(logging::LogLevel::DEBUG);
+#endif
   }
 }
 
@@ -165,8 +184,11 @@ void SystemInfoModule::calculatePCPU() {
 void SystemInfoModule::readCPUInfo(std::vector<cpu> &vcpu) {
   std::ifstream file("/proc/stat");
   if(!file.is_open()) {
-    std::cerr << getName() << "Failed to open system file /proc/stat"
+    (*logging) << getTime() << "Failed to open system file /proc/stat"
         << std::endl;
+#ifdef ENABLE_LOGGING
+    sendMessage(logging::LogLevel::ERROR);
+#endif
     file.close();
     return;
   }
@@ -174,14 +196,17 @@ void SystemInfoModule::readCPUInfo(std::vector<cpu> &vcpu) {
   std::string line;
   for(auto it = vcpu.begin(); it != vcpu.end(); it++) {
     if(!std::getline(file, line)) {
-      std::cerr << getName() << "Could not find enough lines in /proc/stat"
+      (*logging) << getTime() << "Could not find enough lines in /proc/stat"
           << std::endl;
+#ifdef ENABLE_LOGGING
+      sendMessage(logging::LogLevel::ERROR);
+#endif
       file.close();
       return;
     }
     auto strs = split_arguments(line);
     if(strs.size() < 5) {
-      std::cerr << getName() << "Line seems to contain not enough data. Line: "
+      (*logging) << getTime() << "Line seems to contain not enough data. Line: "
           << line << std::endl;
     }
 
@@ -191,11 +216,47 @@ void SystemInfoModule::readCPUInfo(std::vector<cpu> &vcpu) {
       it->totalSys     = std::stoull(strs.at(3), &sz, 0);
       it->totalIdle    = std::stoull(strs.at(4), &sz, 0);
     } catch(std::exception &e) {
-      std::cerr << getName() << "Caught an exception: " << e.what()
+      (*logging) << getTime() << "Caught an exception: " << e.what()
           << std::endl;
+#ifdef ENABLE_LOGGING
+      sendMessage(logging::LogLevel::ERROR);
+#endif
       for(auto s : strs) {
-        std::cerr << getName() << "String token: " << s << std::endl;
+        (*logging) << getTime() << "String token: " << s << std::endl;
+#ifdef ENABLE_LOGGING
+        sendMessage(logging::LogLevel::ERROR);
+#endif
       }
     }
   }
+}
+
+void SystemInfoModule::terminate(){
+#ifdef ENABLE_LOGGING
+  delete logging;
+  logging = 0;
+#endif
+  ApplicationModule::terminate();
+}
+
+#ifdef ENABLE_LOGGING
+void SystemInfoModule::sendMessage(const logging::LogLevel &level){
+  auto logging_ss = dynamic_cast<std::stringstream*>(logging);
+  if(logging_ss){
+    message = logging_ss->str();
+    message.write();
+    messageLevel = level;
+    messageLevel.write();
+    logging_ss->clear();
+    logging_ss->str("");
+  }
+}
+#endif
+
+std::string SystemInfoModule::getTime(){
+  std::string str{"WATCHDOG_SERVER: "};
+  str.append(logging::getTime());
+  str.append(this->getName());
+  str.append(" -> ");
+  return str;
 }

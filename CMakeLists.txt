@@ -61,6 +61,8 @@ set(server_sources ${CMAKE_SOURCE_DIR}/src/applicationInstance.cc)
 configure_file(include/version.h.in ${PROJECT_BINARY_DIR}/version/version.h)
 include_directories(${PROJECT_BINARY_DIR}/version)
 
+add_definitions(-DENABLE_LOGGING)
+
 # main server executable
 add_executable(${PROJECT_NAME} ${server_sources} ${library_sources})
 target_link_libraries(${PROJECT_NAME} ${ChimeraTK-ApplicationCore_LIBRARIES} 
