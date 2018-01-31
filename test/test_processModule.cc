@@ -12,6 +12,8 @@
 #include <string>
 
 #include "ProcessModule.h"
+#include "LoggingModule.h"
+#include "WatchdogServer.h"
 #include "ChimeraTK/ApplicationCore/TestFacility.h"
 #include <mtca4u/RegisterPath.h>
 
@@ -24,13 +26,15 @@ using namespace boost::unit_test_framework;
  * blocking read!
  */
 struct testApp : public ChimeraTK::Application {
-  testApp() : Application("test"){ }
+  testApp() : Application("test"){ process.logging = 0;}
   ~testApp() {
     shutdown();
   }
 
   ProcessControlModule process { this, "ProcessControlModule",
       "ProcessControlModule test" };
+
+  LoggingModule logging {this, "Logging", "Logging module"};
 
   ChimeraTK::ControlSystemModule cs;
 
@@ -46,23 +50,32 @@ struct testApp : public ChimeraTK::Application {
      * Define all other connections as done in the ProcessControlModule
      */
     cs["Process"]("enableProcess") >> process.enableProcess;
-    cs["Process"]("CMD") >> process.processSetCMD;
-    cs["Process"]("Path") >> process.processSetPath;
+    cs["Process"]("SetCMD") >> process.processSetCMD;
+    cs["Process"]("SetPath") >> process.processSetPath;
     cs["Process"]("killSig") >> process.killSig;
     cs["Process"]("pidOffset") >> process.pidOffset;
+    cs["Process"]("externalLogFile") >> process.processSetExternalLogfile;
     process.findTag("CS").connectTo(cs["Process"]);
+
+    cs("SetLogLevel") >> logging.logLevel;
+    cs("SetLogTailLenght") >> logging.tailLength;
+    cs("SetTargetStream") >> logging.targetStream;
+    cs("SetLogFile") >> logging.logFile;
+    logging.findTag("CS").connectTo(cs["Logging"]);
+    process.findTag("Logging").connectTo(logging);
   }
 };
 
 BOOST_AUTO_TEST_CASE( testStart) {
+  BOOST_TEST_MESSAGE("Start test process starting by the watchdog.");
   testApp app;
   app.defineConnections();
   ChimeraTK::TestFacility tf;
 
   // Get the trigger variable thats blocking the application (i.e. ProcessControlModule)
   auto writeTrigger = tf.getScalar<int>("trigger/");
-  auto processCMD = tf.getScalar<std::string>("Process/CMD");
-  auto processPath = tf.getScalar<std::string>("Process/Path");
+  auto processCMD = tf.getScalar<std::string>("Process/SetCMD");
+  auto processPath = tf.getScalar<std::string>("Process/SetPath");
   auto enable = tf.getScalar<int>("Process/enableProcess");
 
   processPath = std::string("/bin/");
@@ -80,14 +93,15 @@ BOOST_AUTO_TEST_CASE( testStart) {
 
 
 BOOST_AUTO_TEST_CASE( testFailOnWrongDirectory) {
+  BOOST_TEST_MESSAGE("Start testing if wrong path does not trigger failed status.");
   testApp app;
   app.defineConnections();
   ChimeraTK::TestFacility tf;
 
   // Get the trigger variable thats blocking the application (i.e. ProcessControlModule)
   auto writeTrigger = tf.getScalar<int>("trigger/");
-  auto processCMD = tf.getScalar<std::string>("Process/CMD");
-  auto processPath = tf.getScalar<std::string>("Process/Path");
+  auto processCMD = tf.getScalar<std::string>("Process/SetCMD");
+  auto processPath = tf.getScalar<std::string>("Process/SetPath");
   auto enable = tf.getScalar<int>("Process/enableProcess");
 
   processPath = std::string("/etc/bin");
@@ -98,7 +112,7 @@ BOOST_AUTO_TEST_CASE( testFailOnWrongDirectory) {
   enable.write();
   tf.runApplication();
   //  test status two times, because it happened that it only worked the first time
-  for(size_t i = 1; i < 3; i++){
+  for(size_t i = 1; i < 3 ; i++){
     usleep(10000);
     writeTrigger = i;
     writeTrigger.write();
@@ -106,5 +120,3 @@ BOOST_AUTO_TEST_CASE( testFailOnWrongDirectory) {
     BOOST_CHECK_EQUAL(tf.readScalar<int>("Process/Failed"), i);
   }
 }
-
-
