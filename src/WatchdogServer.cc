@@ -51,6 +51,7 @@ WatchdogServer::WatchdogServer() :
               << fileName << std::endl;
         } else {
           processes.emplace_back(this, nameAttr->get_value().data(), "process");
+          processes.back().logging = nullptr;
 #ifdef ENABLE_LOGGING
           processesLog.emplace_back(this, (nameAttr->get_value() + "-Log").data(), "process log");
           processesLogExternal.emplace_back(this, (nameAttr->get_value() + "-LogExternal").data(), "process external log");
@@ -65,6 +66,7 @@ WatchdogServer::WatchdogServer() :
         << std::endl;
     std::cout << "I will create only one process named PROCESS..." << std::endl;
     processes.emplace_back(this, "PROCESS", "Test process");
+    processes.back().logging = nullptr;
 #ifdef ENABLE_LOGGING
     processesLog.emplace_back(this, "PROCESS", "Test process log");
     processesLogExternal.emplace_back(this, "PROCESS", "Test process external log");

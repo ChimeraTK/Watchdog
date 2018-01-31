@@ -106,11 +106,12 @@ void ProcessInfoModule::FillProcInfo(const std::shared_ptr<proc_t> &info){
 }
 
 void ProcessInfoModule::terminate(){
+  ApplicationModule::terminate();
 #ifdef ENABLE_LOGGING
-  delete logging;
+  if(logging != nullptr)
+    delete logging;
   logging = 0;
 #endif
-  ApplicationModule::terminate();
 }
 
 void ProcessControlModule::mainLoop() {

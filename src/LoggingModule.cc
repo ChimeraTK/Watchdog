@@ -44,7 +44,8 @@ void LogFileModule::mainLoop(){
 }
 
 void LogFileModule::terminate(){
-  logFileBuffer->close();
+  if((logFileBuffer.get() != nullptr) && (logFileBuffer->is_open()))
+    logFileBuffer->close();
   ApplicationModule::terminate();
 }
 
@@ -101,7 +102,8 @@ void LoggingModule::mainLoop(){
 }
 
 void LoggingModule::terminate(){
-  file->close();
+  if((file.get() != nullptr) && (file->is_open()))
+    file->close();
   ApplicationModule::terminate();
 }
 
