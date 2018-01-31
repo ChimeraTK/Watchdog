@@ -103,6 +103,12 @@ target_link_libraries(test_loggingModule ${ChimeraTK-ApplicationCore_LIBRARIES}
                                       ${Boost_LIBRARIES})
 add_test(test_loggingModule test_loggingModule)
 
+add_executable(test_watchdog ${CMAKE_SOURCE_DIR}/test/test_watchdog.cc ${library_sources})
+target_link_libraries(test_watchdog ${ChimeraTK-ApplicationCore_LIBRARIES} 
+                                      ${LibXML++_LIBRARIES} 
+                                      procps 
+                                      ${Boost_LIBRARIES})
+
 # The make coverage command is only available in debug mode
 IF(CMAKE_BUILD_TYPE STREQUAL "Debug")
   configure_file(cmake/Makefile.coverage.in ${PROJECT_BINARY_DIR}/Makefile.coverage @ONLY)
