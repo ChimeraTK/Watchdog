@@ -190,7 +190,7 @@ void ProcessControlModule::mainLoop() {
 #endif
 
 
-#ifdef Enable_LOGGING
+#ifdef ENABLE_LOGGING
           SetOnline(
               process->startProcess((std::string) processSetPath,
                   (std::string) processSetCMD, (std::string)processSetExternalLogfile));
@@ -355,7 +355,7 @@ void ProcessInfoModule::sendMessage(const logging::LogLevel &level){
 void ProcessInfoModule::evaluateMessage(std::stringstream &msg){
   auto list = logging::stripMessages(msg);
   for(auto &message : list){
-    (*logging) << getTime() << message.message.str() << std::endl;
+    (*logging) << message.message.str() << std::endl;
     sendMessage(message.logLevel);
   }
   msg.clear();
