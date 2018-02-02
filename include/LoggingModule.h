@@ -56,10 +56,18 @@ struct LogFileModule: public ctk::ApplicationModule {
  *
  * A ChimeraTK module is producing messages, that are send to the LoggingModule
  * via the \c message variable. The message is then put into the logfile ring buffer
- * and published in the \c LogFileTail. In addidtion the message is put to an ostream.
- * For now the ostream is cout/cerr depending on the \c messageLevel.
- * \ToDo: Implement ostream handling to allow pushing messages also to a file if logFile
- * is not empty.
+ * and published in the \c LogFileTail. In addidtion the message can be put to an ostream.
+ * Available streams are:
+ * - file stream
+ * - cout/cerr
+ *
+ * You can control which stream is used by setting the targetStream varibale:
+ * 0: cout/cerr and logfile
+ * 1: logfile
+ * 2: cout/cerr
+ * 3: none
+ *
+ * The logfile is given by the client using the logFile variable.
  */
 struct LoggingModule: public ctk::ApplicationModule {
 
@@ -75,9 +83,8 @@ struct LoggingModule: public ctk::ApplicationModule {
         "Message log level." };
 
   ctk::ScalarPollInput<uint> targetStream { this, "targetStream", "",
-          "Set the tagret stream: 0 (cout/cerr), 1 (logfile), 2 (cout/cerr+logfile), 3 (none)" };
+          "Set the tagret stream: 0 (cout/cerr+logfile), 1 (logfile), 2 (cout/cerr), 3 (none)" };
 
-  // \ToDo: To be used -> get watchdog logfile name and push processModule messages there
   ctk::ScalarPollInput<std::string> logFile { this, "Logfile", "",
     "Name of the external logfile. If empty messages are pushed to cout/cerr" };
 

@@ -60,7 +60,7 @@ void LoggingModule::mainLoop(){
     logging::LogLevel setLevel = static_cast<logging::LogLevel>((uint)logLevel);
     std::stringstream ss;
     ss << level << (std::string)message;
-    if(targetStream == 1 || targetStream == 2){
+    if(targetStream == 0 || targetStream == 1){
       if(!((std::string)logFile).empty() && !file->is_open()){
         file->open((std::string)logFile,  std::ofstream::out | std::ofstream::app);
         if(!file->is_open() && level <= logging::LogLevel::ERROR)
@@ -80,13 +80,13 @@ void LoggingModule::mainLoop(){
           tmpLog = tmpLog.substr(tmpLog.find_first_of("\n")+1, tmpLog.length());
         }
       }
-      if(targetStream == 0 || targetStream ==2){
+      if(targetStream == 0 || targetStream == 2){
         if(level <= logging::LogLevel::ERROR)
           std::cout << ss.str();
         else
           std::cerr << ss.str();
       }
-      if(targetStream == 1 || targetStream == 2){
+      if(targetStream == 0 || targetStream == 1){
         if(file->is_open()){
           (*file) << ss.str().c_str();
           file->flush();
