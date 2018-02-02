@@ -30,46 +30,30 @@ std::ostream& operator<<(std::ostream &os,const LogLevel &level){
   return os;
 }
 
-void logging::formatLogTail(std::istream  &data, std::ostream &os, size_t numberOfLines, size_t maxCharacters){
-  data.seekg(0, std::ios::beg);
-  int nLines = std::count(std::istreambuf_iterator<char>(data),
-               std::istreambuf_iterator<char>(), '\n');
-  data.seekg(0, std::ios::beg);
-  char s[maxCharacters];
-  int line = 0;
+void logging::formatLogTail(std::istream  &data, std::ostream &os, size_t numberOfLines){
+  // move to the end
+  data.seekg(-1,std::ios_base::end);
+  size_t line = 0;
+  // find position to start reading lines
+  while(line < numberOfLines) {
+   data.seekg(-2,std::ios_base::cur);
+   char ch;
+   data.get(ch);
 
-  /* Don't use while(data.getline(2,25), because lines exceeding 256 characters would be dropped */
-  while(data.good()){
-    data.getline(s, maxCharacters);
-    if(data.eof()){
-      if(line != nLines){
-        os << "ERROR->When parsing the log file not all lines where parsed. " << line << "/" << nLines;
-      }
-      break;
-    }
-    line++;
-    // Check if more lines than expected are parsed - this happens if the log file is updated during reading the log file here
-    if((nLines-line) < 0){
-      os << "WARNING->New lines where entered during parsing external log file.";
-      break;
-    }
-    // also allow negative values here in case there are less lines in the data stream compared to the number of lines to be written.
-    if((nLines-line) < (int)numberOfLines){
-      if(data.fail()){
-        os << s << "|\n The above line was cut by logger!" << std::endl;
-      } else {
-        os << s << std::endl;
-      }
-    }
-    if(data.fail()){
-      /* In case the line is longer than maxCharacters getline stopped at the maxCharacters character.
-       * Now continue reading until end of line is reached.
-       */
-      while(data.fail()){
-        data.clear();
-        data.getline(s, maxCharacters);
-      }
-    }
+   if((int)data.tellg() <= 1) {             // If the data was at or before the 0th byte
+     data.seekg(0);                         // The first line is the last line
+     break;
+   }
+   else if(ch == '\n') {
+     line++;
+   }
+  }
+  std::string strline;
+  // read lines
+  for(size_t i = 0; i < numberOfLines; i++){
+    if(!getline(data,strline))
+        break;
+    os << strline << std::endl;
   }
 }
 

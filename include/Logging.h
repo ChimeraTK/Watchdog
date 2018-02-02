@@ -37,11 +37,8 @@ struct Message {
  * \param data The input data stream to be formated (select the requested number of lines + cut long lines).
  * \param os The ostream used to put the selected messages to.
  * \param numberOfLines The number of lines from the input \c data to be put to the output \c os.
- * \param maxCharacters The maximum number of charaters per line. If a line contains more characters, the cutted line will
- * be put to the output \c os and a message is raised.
- *
  */
-void formatLogTail(std::istream  &data, std::ostream &os, size_t numberOfLines = 10, size_t maxCharacters = 256);
+void formatLogTail(std::istream  &data, std::ostream &os, size_t numberOfLines = 10);
 
 std::vector<Message> stripMessages(std::stringstream &msg, size_t maxCharacters = 256);
 
