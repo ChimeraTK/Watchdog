@@ -190,6 +190,9 @@ struct ProcessControlModule : public ProcessInfoModule{
   /** Command used to start the process */
   ctk::ScalarOutput<std::string> processCMD { this, "CMD", "", "Command used to start the process",
     {  "CS", "PROCESS", getName() } };
+  /** Environment variable set for the process */
+  ctk::ScalarOutput<std::string> processENV { this, "ENV", "", "Environment variables of the process",
+    {  "CS", "PROCESS", getName() } };
 #ifdef ENABLE_LOGGING
   /** Log file name. It will be created in the given processPath */
   ctk::ScalarOutput<std::string> processExternalLogfile { this, "ExternalLogfile", "",
@@ -208,6 +211,9 @@ struct ProcessControlModule : public ProcessInfoModule{
     { "PROCESS", getName() } };
   /** Command used to start the process */
   ctk::ScalarPollInput<std::string> processSetCMD { this, "SetCMD", "", "Set the command used to start the process",
+    { "PROCESS", getName() } };
+  /** Command used to start the process */
+  ctk::ScalarPollInput<std::string> processSetENV { this, "SetEnvironment", "", "Set environment variables needed by the process",
     { "PROCESS", getName() } };
 #ifdef ENABLE_LOGGING
   /** Log file name. It will be created in the given processPath */

@@ -12,6 +12,7 @@
 #include <iostream>
 #include <fstream>
 #include <fcntl.h> // open
+#include <unistd.h>
 
 //includes for set_all_close_on_exec
 #define _POSIX_C_SOURCE 200809L
@@ -101,7 +102,8 @@ bool ProcessHandler::isPIDFolderWritable() {
 }
 
 
-size_t ProcessHandler::startProcess(const std::string &path, const std::string &cmd, const std::string &logfile) {
+size_t ProcessHandler::startProcess(const std::string &path, const std::string &cmd, const std::string &logfile,
+    const std::string &environment) {
   if(path.empty() || cmd.empty()) {
     throw std::runtime_error(
         "Path or command not set before starting a process!");
@@ -168,24 +170,48 @@ size_t ProcessHandler::startProcess(const std::string &path, const std::string &
       }
       _exit(0);
     }
+
+    // prepare arguments
     auto args = split_arguments(cmd);
-    char * exec_args[1024];
+    char * exec_args[args.size()];
     int arg_count = 0;
-    if(log == logging::LogLevel::DEBUG)
-      std::cout << logging::LogLevel::DEBUG << name << logging::getTime() << "Going to call: execv(\"" << (path_copy + args.at(0)).c_str();
+    if(log == logging::LogLevel::DEBUG){
+      std::cout << logging::LogLevel::DEBUG << name << logging::getTime() << "Going to call: execve with command:" << (path_copy + args.at(0)).c_str() << std::endl;
+      std::cout << logging::LogLevel::DEBUG << name << logging::getTime() << "Adding arguments: ";
+    }
+
     for(size_t x = 0; x < args.size(); x++) {
       exec_args[arg_count++] = strdup(args[x].c_str());
       if(log == logging::LogLevel::DEBUG)
-        std::cout << "\", \"" << exec_args[x];
+        std::cout << exec_args[x] << ", ";
     }
     exec_args[arg_count++] = 0; // tell it when to stop!
     if(log == logging::LogLevel::DEBUG)
-      std::cout << "\", \"NULL\")" << std::endl;
+      std::cout << "NULL" << std::endl;
 
+
+    // prepare environment
+    auto env_args = split_arguments(environment, ",");
+    if(log == logging::LogLevel::DEBUG)
+          std::cout << logging::LogLevel::DEBUG << name << logging::getTime() << "Adding " << env_args.size() << " environment variables." << std::endl;
+    for(auto &env_arg : env_args) {
+      std::size_t sep = env_arg.find_first_of("=");
+      if(sep != std::string::npos){
+        setenv(env_arg.substr(0,sep).c_str(),env_arg.substr(sep+1,env_arg.length()).c_str(),0);
+        if(log == logging::LogLevel::DEBUG)
+          std::cout << logging::LogLevel::DEBUG << name << logging::getTime() <<
+            "Setting environment variable " << env_arg.substr(0,sep) << ": " << env_arg.substr(sep+1,env_arg.length()) << std::endl;
+      } else if (log == logging::LogLevel::ERROR) {
+        std::cerr << logging::LogLevel::ERROR << name << logging::getTime() <<
+            "Failed to interpret environment string: " << env_arg << std::endl;
+      }
+    }
+    //environ is a variable declared in unistd.h
+    extern char** environ;
 
 		// close file handles when calling execv -> release the OPC UA port
     setAllFHCloseOnExec();
-    execv((path_copy + args.at(0)).c_str(), exec_args);
+    execve((path_copy + args.at(0)).c_str(), exec_args, environ);
     _exit(0);
   } else {
     // Ignore the signal SIGCHLD by the parent since after killing the child it will hang in defunct status since the kernel

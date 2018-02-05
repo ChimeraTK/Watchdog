@@ -89,9 +89,9 @@ std::string space2underscore(std::string text) {
   return text;
 }
 
-std::vector<std::string> split_arguments(const std::string &arguments) {
+std::vector<std::string> split_arguments(const std::string &arguments, const std::string &token) {
   std::vector<std::string> strs;
-  boost::split(strs, arguments, boost::is_any_of("\t "),
+  boost::split(strs, arguments, boost::is_any_of(token.c_str()),
       boost::token_compress_on);
   return strs;
 }

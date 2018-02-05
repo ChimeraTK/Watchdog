@@ -140,11 +140,16 @@ public:
    * \param cmd CMD including command line options.
    * \param logfile Name of the log file. It will be created in the path directory. If
    * that file already exists new output will be appended.
+   * \param environment Set environment variables if needed (e.g. ENSHOST=localhost,
+   * PATH=/home/bin:/home/test/bin). Separate different environments using a comma.
+   * Separate different paths per environment using a colon.
+   *
    * \return PID of the created process
    * \remark The command will not be executated in the working directory of the
    * calling process but in the given path!
    */
-  size_t startProcess(const std::string &path, const std::string &cmd, const std::string &logfile);
+  size_t startProcess(const std::string &path, const std::string &cmd, const std::string &logfile,
+      const std::string &environment = "");
 
   /**
    * \param sig Signal used to kill the process (e.g. SIGINT = 2, SIGKILL = 9)

@@ -53,9 +53,11 @@ std::string space2underscore(std::string text);
 /**
  * Split a string in tokens. Considered delimiters are tabs and spaces.
  * If there is a sequence of delimiters they are treated as one delimiter.
+ * \param arguments The string to be split
+ * \param token The token used to split the string
  * \return Tokens of the split string.
  */
-std::vector<std::string> split_arguments(const std::string &arguments);
+std::vector<std::string> split_arguments(const std::string &arguments, const std::string &token = "\t ");
 
 /**
  * \brief Class that reads static system information from the system by reading

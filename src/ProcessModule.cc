@@ -179,6 +179,7 @@ void ProcessControlModule::mainLoop() {
         try {
           processSetPath.read();
           processSetCMD.read();
+          processSetENV.read();
 #ifdef ENABLE_LOGGING
           processSetExternalLogfile.read();
           (*logging) << getTime() << "Trying to start a new process: " << (std::string)processSetPath << "/" << (std::string)processSetCMD << std::endl;
@@ -193,12 +194,12 @@ void ProcessControlModule::mainLoop() {
 #ifdef ENABLE_LOGGING
           SetOnline(
               process->startProcess((std::string) processSetPath,
-                  (std::string) processSetCMD, (std::string)processSetExternalLogfile));
+                  (std::string) processSetCMD, (std::string)processSetExternalLogfile, (std::string)processSetENV));
           evaluateMessage(handlerMessage);
 #else
           SetOnline(
           process->startProcess((std::string) processSetPath,
-              (std::string) processSetCMD, std::string("")));
+              (std::string) processSetCMD, std::string(""), (std::string)processSetENV));
 
 #endif
           processNChilds = proc_util::getNChilds(processPID);
@@ -269,6 +270,8 @@ void ProcessControlModule::SetOnline(const int &pid){
     processPath.write();
     processCMD = (std::string)processSetCMD;
     processCMD.write();
+    processENV = (std::string)processSetENV;
+    processENV.write();
 #ifdef ENABLE_LOGGING
     (*logging) << getTime() << "Ok process is started successfully" << std::endl;
     sendMessage(logging::LogLevel::INFO);
@@ -293,6 +296,8 @@ void ProcessControlModule::SetOffline(){
   processPath.write();
   processCMD = "";
   processCMD.write();
+  processENV = "";
+  processENV.write();
   /* Don't reset the log file name since the Logger might still try to access it.
      It will be updated once a new process is started!
   processLogfile = "";
