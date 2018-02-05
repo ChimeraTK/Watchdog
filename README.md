@@ -33,7 +33,7 @@ If the watchdog server is started as a service (see above) the latest messages c
     journalctl -ex
     
 Remember this output could be supressed by choosing the logfile as target output stream and setting a logfile name. In this case nothing will be seen using the `journalctl` command, but all output will end up in the logfile. 
-    
+   
 
  
 
