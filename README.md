@@ -23,7 +23,10 @@ In order to check the watchdog service status use the command:
     
     sudo systemctl status chimeratk-watchdog.service
 
-Other options are `stop` used to disable the watchdog service or `start` used to enable it again. If the watchdog server dies for some reason it is restarted 1 minute after it exited. Furthermore the watchdog server will be started automatically during booting the system. The command above can be issued without entering the sudo password, because an according command is added to `/etc/sudoers` during the installation process.
+Other options are `stop` used to disable the watchdog service or `start` used to enable it again. If the watchdog server dies for some reason it is restarted 1 minute after it exited. Furthermore the watchdog server will be started automatically during booting the system. 
+
+## Logging
+The watchdog server logging system uses different severity levels (*DEBUG*, *INFO*, *WARNING*, *ERROR*, *SILENT*). The default severity level is *DEBUG*. The severity level can be set for all process and the watchdog itself individually. Furthermore, the output stream of the logging messages can be set for all preccesses and the watchdog itself individually. By default messages are send to stdout and stderr. If a logfile name for the watchdog is set (*watchdog/SetLogFile*), messages are written to the corresponding logfile in addition. All processes and the watchdog write to the same logfile. The tail of this logfile can be inspected using *watchdog/LogfileTailExternal*. The length of the tail is controlled using *watchdog/SetTailLenght*. In contrast to this tail, the variable *watchdog/LogTail* only includes messages by the watchdog process. Similar each process provides his own messages: *process/LogTail*. The *LogFileTailExternal* variable includes the outpout of the process stared by the watchdog. This requires setting a logfile name for the process to be started (*process/SetLogfileExternal*). Again, for each process you can choose the output stream of the output produced by the started process using (*process/SetTargetStream*) and the severity level (*process/SetLogLevel*).   
 
  
 
