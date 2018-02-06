@@ -66,58 +66,91 @@ IF(DEFINED ENABLE_LOGGING)
   add_definitions(-DENABLE_LOGGING)
 ENDIF(DEFINED ENABLE_LOGGING)
 
-# main server executable
-add_executable(${PROJECT_NAME} ${server_sources} ${library_sources})
-target_link_libraries(${PROJECT_NAME} ${ChimeraTK-ApplicationCore_LIBRARIES} 
-                                      ${ChimeraTK-ControlSystemAdapter-DoocsAdapter_LIBRARIES} 
-                                      ${ChimeraTK-ControlSystemAdapter-OPCUAAdapter_LIBRARIES}
-                                      ${LibXML++_LIBRARIES} 
-                                      procps)
 
-# XML file generation
-add_executable(${PROJECT_NAME}-xmlGenerator ${server_sources} ${library_sources})
-set_target_properties(${PROJECT_NAME}-xmlGenerator PROPERTIES COMPILE_FLAGS "-DGENERATE_XML")
-target_link_libraries(${PROJECT_NAME}-xmlGenerator ${ChimeraTK-ApplicationCore_LIBRARIES} 
-                                                   ${LibXML++_LIBRARIES} 
-                                                   procps) 
-
-# Create the executable for automated unit testing.
-add_executable(test_procReader ${CMAKE_SOURCE_DIR}/test/test_procReader.cc ${library_sources})
-target_link_libraries(test_procReader ${ChimeraTK-ApplicationCore_LIBRARIES} 
-                                      ${LibXML++_LIBRARIES} 
-                                      procps 
-                                      ${Boost_LIBRARIES})
-add_test(test_procReader test_procReader)
-
-add_executable(test_processModule ${CMAKE_SOURCE_DIR}/test/test_processModule.cc ${library_sources})
-target_link_libraries(test_processModule ${ChimeraTK-ApplicationCore_LIBRARIES} 
-                                      ${LibXML++_LIBRARIES} 
-                                      procps 
-                                      ${Boost_LIBRARIES})
-add_test(test_processModule test_processModule)
-
-add_executable(test_loggingModule ${CMAKE_SOURCE_DIR}/test/test_loggingModule.cc ${library_sources})
-target_link_libraries(test_loggingModule ${ChimeraTK-ApplicationCore_LIBRARIES} 
-                                      ${LibXML++_LIBRARIES} 
-                                      procps 
-                                      ${Boost_LIBRARIES})
-add_test(test_loggingModule test_loggingModule)
-
-add_executable(test_watchdog ${CMAKE_SOURCE_DIR}/test/test_watchdog.cc ${library_sources})
-target_link_libraries(test_watchdog ${ChimeraTK-ApplicationCore_LIBRARIES} 
-                                      ${LibXML++_LIBRARIES} 
-                                      procps 
-                                      ${Boost_LIBRARIES})
+message("CMAKE_BUILD_TYPE = ${CMAKE_BUILD_TYPE}")
+IF(CMAKE_BUILD_TYPE MATCHES Debug)
+  add_library(${PROJECT_NAME}lib SHARED ${library_sources} )
+  set_target_properties(${PROJECT_NAME}lib PROPERTIES VERSION ${${PROJECT_NAME}_FULL_LIBRARY_VERSION}
+                                                    SOVERSION ${${PROJECT_NAME}_SOVERSION})
+  target_link_libraries(${PROJECT_NAME}lib ${Boost_LIBRARIES}
+                                           ${ChimeraTK-ApplicationCore_LIBRARIES}
+                                           procps
+                                           ${Boost_process_LIBRARIES})
+  
+  # main server executable
+  add_executable(${PROJECT_NAME} ${server_sources})
+  target_link_libraries(${PROJECT_NAME} ${ChimeraTK-ApplicationCore_LIBRARIES} 
+                                        ${ChimeraTK-ControlSystemAdapter-DoocsAdapter_LIBRARIES} 
+                                        ${ChimeraTK-ControlSystemAdapter-OPCUAAdapter_LIBRARIES}
+                                        ${LibXML++_LIBRARIES} 
+                                        procps
+                                        ${PROJECT_NAME}lib)
+  
+  # XML file generation
+  add_executable(${PROJECT_NAME}-xmlGenerator ${server_sources})
+  set_target_properties(${PROJECT_NAME}-xmlGenerator PROPERTIES COMPILE_FLAGS "-DGENERATE_XML")
+  target_link_libraries(${PROJECT_NAME}-xmlGenerator ${ChimeraTK-ApplicationCore_LIBRARIES} 
+                                                     ${LibXML++_LIBRARIES} 
+                                                     procps
+                                                     ${PROJECT_NAME}lib) 
+  
+  # Create the executable for automated unit testing.
+  add_executable(test_procReader ${CMAKE_SOURCE_DIR}/test/test_procReader.cc)
+  target_link_libraries(test_procReader ${ChimeraTK-ApplicationCore_LIBRARIES} 
+                                        ${LibXML++_LIBRARIES} 
+                                        procps 
+                                        ${Boost_LIBRARIES}
+                                        ${PROJECT_NAME}lib)
+  add_test(test_procReader test_procReader)
+  
+  add_executable(test_processModule ${CMAKE_SOURCE_DIR}/test/test_processModule.cc)
+  target_link_libraries(test_processModule ${ChimeraTK-ApplicationCore_LIBRARIES} 
+                                        ${LibXML++_LIBRARIES} 
+                                        procps 
+                                        ${Boost_LIBRARIES}
+                                        ${PROJECT_NAME}lib)
+  add_test(test_processModule test_processModule)
+  
+  add_executable(test_loggingModule ${CMAKE_SOURCE_DIR}/test/test_loggingModule.cc)
+  target_link_libraries(test_loggingModule ${ChimeraTK-ApplicationCore_LIBRARIES} 
+                                        ${LibXML++_LIBRARIES} 
+                                        procps 
+                                        ${Boost_LIBRARIES}
+                                        ${PROJECT_NAME}lib)
+  add_test(test_loggingModule test_loggingModule)
+  
+  add_executable(test_watchdog ${CMAKE_SOURCE_DIR}/test/test_watchdog.cc)
+  target_link_libraries(test_watchdog ${ChimeraTK-ApplicationCore_LIBRARIES} 
+                                        ${LibXML++_LIBRARIES} 
+                                        procps 
+                                        ${Boost_LIBRARIES}
+                                        ${PROJECT_NAME}lib)
+ELSE()
+  # main server executable
+  add_executable(${PROJECT_NAME} ${server_sources} ${library_sources})
+  target_link_libraries(${PROJECT_NAME} ${ChimeraTK-ApplicationCore_LIBRARIES} 
+                                        ${ChimeraTK-ControlSystemAdapter-DoocsAdapter_LIBRARIES} 
+                                        ${ChimeraTK-ControlSystemAdapter-OPCUAAdapter_LIBRARIES}
+                                        ${LibXML++_LIBRARIES} 
+                                        procps)
+  
+  # XML file generation
+  add_executable(${PROJECT_NAME}-xmlGenerator ${server_sources} ${library_sources})
+  set_target_properties(${PROJECT_NAME}-xmlGenerator PROPERTIES COMPILE_FLAGS "-DGENERATE_XML")
+  target_link_libraries(${PROJECT_NAME}-xmlGenerator ${ChimeraTK-ApplicationCore_LIBRARIES} 
+                                                     ${LibXML++_LIBRARIES} 
+                                                     procps) 
+ENDIF(CMAKE_BUILD_TYPE MATCHES Debug)
 
 # The make coverage command is only available in debug mode
-IF(CMAKE_BUILD_TYPE STREQUAL "Debug")
+IF(CMAKE_BUILD_TYPE MATCHES Debug)
   configure_file(cmake/Makefile.coverage.in ${PROJECT_BINARY_DIR}/Makefile.coverage @ONLY)
   add_custom_target(coverage
     make -f Makefile.coverage
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     COMMENT "Generating test coverage documentation" VERBATIM
   )
-ENDIF(CMAKE_BUILD_TYPE STREQUAL "Debug")
+ENDIF(CMAKE_BUILD_TYPE MATCHES Debug)
 
 FILE( COPY ${CMAKE_SOURCE_DIR}/configs/WatchdogServer_processes.xml DESTINATION ${PROJECT_BINARY_DIR})
 IF(ADAPTER STREQUAL "OPCUA")
