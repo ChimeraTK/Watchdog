@@ -115,6 +115,16 @@ void ProcessInfoModule::terminate(){
 }
 
 void ProcessControlModule::mainLoop() {
+#ifdef ENABLE_LOGGING
+  logging = new std::stringstream();
+  std::stringstream handlerMessage;
+#else
+  logging = &std::cerr;
+#endif
+  (*logging) << getTime() << "New ProcessModule started!" << std::endl;
+#ifdef ENABLE_LOGGING
+  sendMessage(logging::LogLevel::INFO);
+#endif
   SetOffline();
   processRestarts = 0;
   processRestarts.write();
@@ -123,12 +133,6 @@ void ProcessControlModule::mainLoop() {
   processSetPath.read();
   processSetCMD.read();
 
-#ifdef ENABLE_LOGGING
-  logging = new std::stringstream();
-  std::stringstream handlerMessage;
-#else
-  logging = &std::cerr;
-#endif
   try{
 #ifdef ENABLE_LOGGING
     process.reset(new ProcessHandler("", getName(), false, processPID, handlerMessage));
@@ -203,8 +207,11 @@ void ProcessControlModule::mainLoop() {
               (std::string) processSetCMD, std::string(""), (std::string)processSetENV,processOverwriteENV));
 
 #endif
-          processNChilds = proc_util::getNChilds(processPID);
+          processNChilds = proc_util::getNChilds(processPID, handlerMessage);
           processNChilds.write();
+#ifdef ENABLE_LOGGING
+          sendMessage(logging::LogLevel::DEBUG);
+#endif
         } catch(std::runtime_error &e) {
           (*logging) << getTime() << e.what() << std::endl;
 #ifdef ENABLE_LOGGING
@@ -244,7 +251,11 @@ void ProcessControlModule::mainLoop() {
         sendMessage(logging::LogLevel::INFO);
 #endif
         killSig.read();
-        process->setSigNum(killSig);
+        //ToDo: Set default to 2!
+        if(killSig < 1)
+          process->setSigNum(2);
+        else
+          process->setSigNum(killSig);
         process.reset(nullptr);
 #ifdef ENABLE_LOGGING
         evaluateMessage(handlerMessage);

@@ -41,17 +41,14 @@ bool isProcessRunning(const int &PID) {
   return true;
 }
 
-size_t getNChilds(const size_t &PGID) {
+size_t getNChilds(const size_t &PGID, std::ostream &os) {
   std::lock_guard<std::mutex> lock(proc_mutex);
   PROCTAB* proc = openproc(PROC_FILLMEM | PROC_FILLSTAT | PROC_FILLSTATUS);
   proc_t* proc_info;
   size_t nChild = 0;
   while((proc_info = readproc(proc, NULL)) != NULL) {
-    if(PGID == (unsigned) proc_info->pgrp) {
-#ifdef DEBUG
-      std::cout << "Found child for PGID: " << PGID << std::endl;
-      std::cout << "Childs for PID: " << proc_info->tid << std::endl;
-#endif
+    if(PGID == (unsigned) proc_info->pgrp && PGID != (unsigned)proc_info->tid) {
+      os << "Found child for PGID: " << PGID << " with PID: " << proc_info->tid << std::endl;
       nChild++;
     }
     freeproc(proc_info);

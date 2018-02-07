@@ -13,6 +13,7 @@
 #include <memory>
 #include <mutex>
 #include <vector>
+#include <iostream>
 #include <proc/readproc.h>
 
 /**
@@ -41,8 +42,9 @@ namespace proc_util{
   /**
    * Read the number of processes that belong to the same process group id (PGID).
    * \param PGID The process group id used to look for processes
+   * \param os Stream used to print messages.
    */
-  size_t getNChilds(const size_t &PGID);
+  size_t getNChilds(const size_t &PGID, std::ostream &os = std::cout);
 };
 
 /**
