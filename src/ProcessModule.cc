@@ -274,7 +274,7 @@ void ProcessControlModule::SetOnline(const int &pid){
     processENV = (std::string)processSetENV;
     processENV.write();
 #ifdef ENABLE_LOGGING
-    (*logging) << getTime() << "Ok process is started successfully" << std::endl;
+    (*logging) << getTime() << "Ok process is started successfully with PID: " << processPID << std::endl;
     sendMessage(logging::LogLevel::INFO);
 #endif
   } else {
@@ -322,9 +322,9 @@ void ProcessControlModule::Failed(){
 
 void ProcessControlModule::CheckIsOnline(const int pid){
   if(!proc_util::isProcessRunning(pid)) {
-    SetOffline();
     (*logging) << getTime()
         << "Child process with PID " << processPID << " is not running, but it should run!" << std::endl;
+    SetOffline();
 #ifdef ENABLE_LOGGING
     sendMessage(logging::LogLevel::ERROR);
 #endif
