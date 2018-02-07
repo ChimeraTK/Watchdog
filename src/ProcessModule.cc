@@ -201,13 +201,14 @@ void ProcessControlModule::mainLoop() {
               process->startProcess((std::string) processSetPath,
                   (std::string) processSetCMD, (std::string)processSetExternalLogfile, (std::string)processSetENV, processOverwriteENV));
           evaluateMessage(handlerMessage);
+          processNChilds = proc_util::getNChilds(processPID, handlerMessage);
+          sendMessage(logging::LogLevel::DEBUG);
 #else
           SetOnline(
           process->startProcess((std::string) processSetPath,
               (std::string) processSetCMD, std::string(""), (std::string)processSetENV,processOverwriteENV));
-
+          processNChilds = proc_util::getNChilds(processPID);
 #endif
-          processNChilds = proc_util::getNChilds(processPID, handlerMessage);
           processNChilds.write();
 #ifdef ENABLE_LOGGING
           sendMessage(logging::LogLevel::DEBUG);
