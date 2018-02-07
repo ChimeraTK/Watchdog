@@ -180,6 +180,7 @@ void ProcessControlModule::mainLoop() {
           processSetPath.read();
           processSetCMD.read();
           processSetENV.read();
+          processOverwriteENV.read();
 #ifdef ENABLE_LOGGING
           processSetExternalLogfile.read();
           (*logging) << getTime() << "Trying to start a new process: " << (std::string)processSetPath << "/" << (std::string)processSetCMD << std::endl;
@@ -194,12 +195,12 @@ void ProcessControlModule::mainLoop() {
 #ifdef ENABLE_LOGGING
           SetOnline(
               process->startProcess((std::string) processSetPath,
-                  (std::string) processSetCMD, (std::string)processSetExternalLogfile, (std::string)processSetENV));
+                  (std::string) processSetCMD, (std::string)processSetExternalLogfile, (std::string)processSetENV, processOverwriteENV));
           evaluateMessage(handlerMessage);
 #else
           SetOnline(
           process->startProcess((std::string) processSetPath,
-              (std::string) processSetCMD, std::string(""), (std::string)processSetENV));
+              (std::string) processSetCMD, std::string(""), (std::string)processSetENV,processOverwriteENV));
 
 #endif
           processNChilds = proc_util::getNChilds(processPID);

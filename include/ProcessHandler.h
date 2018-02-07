@@ -143,13 +143,14 @@ public:
    * \param environment Set environment variables if needed (e.g. ENSHOST=localhost,
    * PATH=/home/bin:/home/test/bin). Separate different environments using a comma.
    * Separate different paths per environment using a colon.
-   *
+   * \param overwriteENV If true the environment variables are overwritten. Else they
+   * are extended.
    * \return PID of the created process
    * \remark The command will not be executated in the working directory of the
    * calling process but in the given path!
    */
   size_t startProcess(const std::string &path, const std::string &cmd, const std::string &logfile,
-      const std::string &environment = "");
+      const std::string &environment = "", const bool &overwriteENV = false);
 
   /**
    * \param sig Signal used to kill the process (e.g. SIGINT = 2, SIGKILL = 9)

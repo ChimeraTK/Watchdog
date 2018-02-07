@@ -103,7 +103,7 @@ bool ProcessHandler::isPIDFolderWritable() {
 
 
 size_t ProcessHandler::startProcess(const std::string &path, const std::string &cmd, const std::string &logfile,
-    const std::string &environment) {
+    const std::string &environment, const bool &overwriteENV) {
   if(path.empty() || cmd.empty()) {
     throw std::runtime_error(
         "Path or command not set before starting a process!");
@@ -197,7 +197,7 @@ size_t ProcessHandler::startProcess(const std::string &path, const std::string &
     for(auto &env_arg : env_args) {
       std::size_t sep = env_arg.find_first_of("=");
       if(sep != std::string::npos){
-        setenv(env_arg.substr(0,sep).c_str(),env_arg.substr(sep+1,env_arg.length()).c_str(),0);
+        setenv(env_arg.substr(0,sep).c_str(),env_arg.substr(sep+1,env_arg.length()).c_str(),overwriteENV);
         if(log == logging::LogLevel::DEBUG)
           std::cout << logging::LogLevel::DEBUG << name << logging::getTime() <<
             "Setting environment variable " << env_arg.substr(0,sep) << ": " << env_arg.substr(sep+1,env_arg.length()) << std::endl;

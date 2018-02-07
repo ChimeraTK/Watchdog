@@ -212,8 +212,12 @@ struct ProcessControlModule : public ProcessInfoModule{
   /** Command used to start the process */
   ctk::ScalarPollInput<std::string> processSetCMD { this, "SetCMD", "", "Set the command used to start the process",
     { "PROCESS", getName() } };
+  //ToDo: Use config file to allow setting different environment variables with individual options to overwrite/not overwrite (see ConfigReader module in ApplicationCore)
   /** Command used to start the process */
   ctk::ScalarPollInput<std::string> processSetENV { this, "SetEnvironment", "", "Set environment variables needed by the process",
+    { "PROCESS", getName() } };
+  ctk::ScalarPollInput<int> processOverwriteENV { this, "OverwriteEnvironment", "",
+    "If true the environmet variables are overwritten. Else they are extended.",
     { "PROCESS", getName() } };
 #ifdef ENABLE_LOGGING
   /** Log file name. It will be created in the given processPath */

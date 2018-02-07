@@ -121,6 +121,7 @@ void WatchdogServer::defineConnections() {
     cs[item.getName()]("SetCMD") >> item.processSetCMD;
     cs[item.getName()]("SetPath") >> item.processSetPath;
     cs[item.getName()]("SetEnvironment") >> item.processSetENV;
+    cs[item.getName()]("OverwriteEnvironment") >> item.processOverwriteENV;
     cs[item.getName()]("killSig") >> item.killSig;
     cs[item.getName()]("pidOffset") >> item.pidOffset;
 
