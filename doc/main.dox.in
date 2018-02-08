@@ -16,8 +16,10 @@ will be created that can be used to control one process. This is done using the 
 Here \c cmd can also include arguments to be passed to the program. If \c enableProcess is set true a new
 process is created using \c fork in combination with \c execv. A detailed documentation is given in 
 the documentation of the class ProcessHandler, which is used for the process control. If starting the process fails
-the server will retry to start the process 5 times (Failed shows the number of fails in the control system).
-In order to try again 5 times one has to set enableProcess to flase and true again. 
+the server will retry to start the process (SetMaxFails controls how often restarts are tried, Failed shows the number of fails in the control system).
+In order to try again one has to set enableProcess to flase and true again. The same is true if the process is ended from 
+outside the watchog. In that case the watchdog restarts the process. The number of restarts is counted and the maximum allowed
+number of resets can be set by the user.
 
 It might happen that a started process also starts child processes. The number of processes started is given in the control
 system (nChilds). All process statistics are shown for the first child process. If you want to see the statistics for 

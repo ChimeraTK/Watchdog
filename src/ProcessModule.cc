@@ -153,33 +153,47 @@ void ProcessControlModule::mainLoop() {
     sendMessage(logging::LogLevel::ERROR);
 #endif
   }
+  stop =false;
   while(true) {
     trigger.read();
     enableProcess.read();
+    processMaxFails.read();
+    processMaxRestarts.read();
     // reset number of failed tries and restarts in case the process is set offline
     if(!enableProcess) {
       processNFailed = 0;
       processNFailed.write();
       processRestarts = 0;
       processRestarts.write();
+      stop = false;
     }
 
     /*
-     * don't do anything in case failed more than 4 times
-     * or if the server was restarted more than 100 times
+     * don't do anything in case failed more than the user set limit
+     * or if the server was restarted more than the user set limit
      * -> to reset turn off/on the process
      */
-    if(processNFailed > 4 || processRestarts > 100) {
+    if(stop) {
+    (*logging) << getTime() << "Process sleeping. Fails: " << processNFailed << "/" << processMaxFails
+          << ", Restarts: " << processRestarts << "/" << processMaxRestarts << std::endl;
+#ifdef ENABLE_LOGGING
+      sendMessage(logging::LogLevel::INFO);
+#endif
       usleep(200000);
       continue;
     }
 
     if(processPID > 0 && enableProcess) {
       CheckIsOnline(processPID);
+      if(processRestarts > processMaxRestarts){
+        processRestarts -= 1;
+        processRestarts.write();
+        stop = true;
+      }
     }
 
     if(enableProcess) {
-      if(processPID < 0) {
+      if(processPID < 0 && !stop) {
         try {
           processSetPath.read();
           processSetCMD.read();
@@ -210,9 +224,6 @@ void ProcessControlModule::mainLoop() {
           processNChilds = proc_util::getNChilds(processPID);
 #endif
           processNChilds.write();
-#ifdef ENABLE_LOGGING
-          sendMessage(logging::LogLevel::DEBUG);
-#endif
         } catch(std::runtime_error &e) {
           (*logging) << getTime() << e.what() << std::endl;
 #ifdef ENABLE_LOGGING
@@ -221,7 +232,7 @@ void ProcessControlModule::mainLoop() {
           Failed();
           SetOffline();
         }
-      } else {
+      } else if (processPID > 0){
 #ifdef ENABLE_LOGGING
         (*logging) << getTime() << "Process is running..." << processIsRunning << " PID: " << processPID << std::endl;
         sendMessage(logging::LogLevel::DEBUG);
@@ -320,19 +331,27 @@ void ProcessControlModule::SetOffline(){
 }
 
 void ProcessControlModule::Failed(){
-  processNFailed = processNFailed + 1;
-  processNFailed.write();
-  if(processNFailed == 5){
-    (*logging) << getTime() <<  "Failed to start the process " << (std::string)processSetPath << "/" << (std::string)processSetCMD << " 5 times."
+  if(!stop && processNFailed == processMaxFails){
+    stop = true;
+    processRestarts -= 1;
+    processRestarts.write();
+    (*logging) << getTime() <<  "Failed to start the process " << (std::string)processSetPath << "/" << (std::string)processSetCMD << " " << processMaxFails << " times."
         << " It will not be started again until you reset the process by switching it off and on again." << std::endl;
 #ifdef ENABLE_LOGGING
     sendMessage(logging::LogLevel::ERROR);
 #endif
+  } else if (processNFailed <= processMaxFails){
+    processNFailed = processNFailed + 1;
+    processNFailed.write();
   }
   sleep(2);
 }
 
 void ProcessControlModule::CheckIsOnline(const int pid){
+#ifdef ENABLE_LOGGING
+        (*logging) << getTime() << "Checking process status for process: " << pid << std::endl;
+        sendMessage(logging::LogLevel::DEBUG);
+#endif
   if(!proc_util::isProcessRunning(pid)) {
     (*logging) << getTime()
         << "Child process with PID " << processPID << " is not running, but it should run!" << std::endl;

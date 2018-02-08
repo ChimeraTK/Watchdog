@@ -122,6 +122,8 @@ void WatchdogServer::defineConnections() {
     cs[item.getName()]("SetPath") >> item.processSetPath;
     cs[item.getName()]("SetEnvironment") >> item.processSetENV;
     cs[item.getName()]("OverwriteEnvironment") >> item.processOverwriteENV;
+    cs[item.getName()]("SetMaxFails") >> item.processMaxFails;
+    cs[item.getName()]("SetMaxRestarts") >> item.processMaxRestarts;
     cs[item.getName()]("killSig") >> item.killSig;
     cs[item.getName()]("pidOffset") >> item.pidOffset;
 

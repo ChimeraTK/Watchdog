@@ -219,6 +219,13 @@ struct ProcessControlModule : public ProcessInfoModule{
   ctk::ScalarPollInput<int> processOverwriteENV { this, "OverwriteEnvironment", "",
     "If true the environmet variables are overwritten. Else they are extended.",
     { "PROCESS", getName() } };
+
+  ctk::ScalarPollInput<int> processMaxFails { this, "MaxFails", "",
+    "Set the maximum number of allowed fails.",
+    { "PROCESS", getName() } };
+  ctk::ScalarPollInput<int> processMaxRestarts { this, "MaxRestarts", "",
+    "Set the maximum number of allowed restarts.",
+    { "PROCESS", getName() } };
 #ifdef ENABLE_LOGGING
   /** Log file name. It will be created in the given processPath */
   ctk::ScalarPollInput<std::string> processSetExternalLogfile { this, "SetExternalLogfile", "", "Set the name of the logfile"
@@ -280,6 +287,8 @@ struct ProcessControlModule : public ProcessInfoModule{
    * Application core main loop.
    */
   void mainLoop();
+private:
+  bool stop;
 };
 
 #endif /* INCLUDE_PROCESSMODULE_H_ */
