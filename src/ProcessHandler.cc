@@ -13,11 +13,18 @@
 #include <fstream>
 #include <fcntl.h> // open
 #include <unistd.h>
+#include <sys/wait.h>
 
 //includes for set_all_close_on_exec
 #define _POSIX_C_SOURCE 200809L
 #include <fcntl.h>
 #include <sys/resource.h>
+
+void handle_sigchld(int sig) {
+  int saved_errno = errno;
+  while (waitpid((pid_t)(-1), 0, WNOHANG) > 0) {}
+  errno = saved_errno;
+}
 
 ProcessHandler::ProcessHandler(const std::string &_path, const std::string &_PIDFileName, const bool _deletePIDFile, int &_PID, std::ostream &_stream, const std::string &_name):
  pid(-1), pidFile(_PIDFileName + ".PID"), pidDirectory(_path), deletePIDFile(_deletePIDFile), signum(SIGINT),
@@ -57,11 +64,13 @@ bool ProcessHandler::changeDirectory(){
 void ProcessHandler::cleanup() {
   if(pid > 0 && proc_util::isProcessRunning(pid)){
     if(log == logging::LogLevel::DEBUG){
-      os  << logging::LogLevel::DEBUG << name << logging::getTime() << "Going to kill (SIGINT) process in the destructor of ProcessHandler for process: "
+      os  << logging::LogLevel::DEBUG << name << logging::getTime() << "Going to kill (" << signum << ") process in the destructor of ProcessHandler for process: "
           << pid << std::endl;
     }
     kill(-pid, signum);
-    usleep(200000);
+    // allow 1s for terminating the process, else it will be killed
+    // \ToDo: Verify that 1s is ok...
+    sleep(1);
     if(proc_util::isProcessRunning(pid)) {
       if(log == logging::LogLevel::DEBUG){
         os << logging::LogLevel::DEBUG << name << logging::getTime() << "Going to kill (SIGKILL) process in the destructor of ProcessHandler for process: "
@@ -79,6 +88,8 @@ void ProcessHandler::cleanup() {
         os << logging::LogLevel::INFO << name << logging::getTime() << "Ok process was terminated."  << std::endl;
       }
     }
+  } else if(pid > 0 && log == logging::LogLevel::DEBUG) {
+    os  << logging::LogLevel::DEBUG << name << logging::getTime() << "Destructor called for the handler. Seems like process with PID: " << pid << " died (no attemp to kill it)." << std::endl;
   }
   if(!deletePIDFile)
     remove(pidFile.c_str());
@@ -214,9 +225,15 @@ size_t ProcessHandler::startProcess(const std::string &path, const std::string &
     execve((path_copy + args.at(0)).c_str(), exec_args, environ);
     _exit(0);
   } else {
-    // Ignore the signal SIGCHLD by the parent since after killing the child it will hang in defunct status since the kernel
-    // thinks that the parent expects a status
-    signal(SIGCHLD, SIG_IGN);
+  // see http://www.microhowto.info/howto/reap_zombie_processes_using_a_sigchld_handler.html
+    struct sigaction sa;
+    sa.sa_handler = &handle_sigchld;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = SA_RESTART | SA_NOCLDSTOP | SA_NOCLDWAIT;
+    if (sigaction(SIGCHLD, &sa, 0) == -1) {
+      perror(0);
+      exit(1);
+    }
     sleep(1);
     if(readTempPID(pid)) {
       if(log == logging::LogLevel::DEBUG)
