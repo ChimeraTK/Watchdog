@@ -177,7 +177,7 @@ void ProcessControlModule::mainLoop() {
     (*logging) << getTime() << "Process sleeping. Fails: " << processNFailed << "/" << processMaxFails
           << ", Restarts: " << processRestarts << "/" << processMaxRestarts << std::endl;
 #ifdef ENABLE_LOGGING
-      sendMessage(logging::LogLevel::INFO);
+      sendMessage(logging::LogLevel::DEBUG);
 #endif
       usleep(200000);
       continue;

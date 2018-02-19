@@ -104,7 +104,7 @@ void SystemInfoModule::mainLoop() {
     // get system uptime
     try {
       uptime(&uptime_secs, &idle_secs);
-
+      //\ToDo: Use stoul once unsigned long is available
       uptime_secTotal = std::stoi(std::to_string(uptime_secs));
       uptime_day     = std::stoi(std::to_string(uptime_secTotal / 86400));
       uptime_hour = std::stoi(

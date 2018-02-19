@@ -63,6 +63,8 @@ std::vector<Message> logging::stripMessages(std::stringstream &msg, size_t maxCh
   while(msg.good()){
     Message singleMsg;
     msg.getline(s, maxCharacters);
+    if(std::string(s).empty())
+      continue;
     if(msg.eof()){
       break;
     }
