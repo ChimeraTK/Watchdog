@@ -10,6 +10,7 @@
 
 #undef GENERATE_XML
 #include <ChimeraTK/ApplicationCore/ApplicationCore.h>
+#include <ChimeraTK/ApplicationCore/ConfigReader.h>
 
 #include "SystemInfoModule.h"
 #include "ProcessModule.h"
@@ -44,10 +45,8 @@ struct TimerModule: public ctk::ApplicationModule {
 /**
  * \brief The watchdog application
  *
- * So far from the watchdog_server_processes.xml file only the process name is used.
- * The initial values are not used so far, since these values can not be set in the constructor.
- * They need to be set at a later stage, which requires rephrasing the xml.
- * \todo Check if initial values are needed?
+ * So far from the WatchdogServer_processes.xml file only the process name is used.
+ * \ToDo: Check if initial values are needed?
  */
 struct WatchdogServer: public ctk::Application {
   WatchdogServer();
@@ -67,6 +66,8 @@ struct WatchdogServer: public ctk::Application {
   std::vector<ProcessControlModule> processes;
 
   ProcessInfoModule watchdog{this, "watchdog", "Module monitoring the watchdog process"};
+
+  ctk::ConfigReader config{this, "Configuration", "WatchdogServer_processes.xml"};
 
 #ifdef ENABLE_LOGGING
   std::vector<LoggingModule> processesLog;

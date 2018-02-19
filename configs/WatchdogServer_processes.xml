@@ -1,9 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<watchdog>
-  <process name="IN1-MB01"/>
-  <process name="IN1-MB02"/>
-  <process name="LA1-RC01"/>
-  <process name="LA1-RC11"/>
-  <process name="LA2-RC01"/>
-  <process name="LA2-RC11"/>
-</watchdog>
+<configuration>
+  <variable name="processes" type="string">
+    <value i="0" v="PROCESS_1"/>
+    <value i="1" v="PROCESS_2"/>
+  </variable>
+</configuration>

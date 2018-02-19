@@ -7,7 +7,7 @@
 
 #include "WatchdogServer.h"
 
-#include <libxml++/libxml++.h>
+//#include <libxml++/libxml++.h>
 
 void TimerModule::mainLoop() {
   while(true) {
@@ -24,46 +24,20 @@ void TimerModule::mainLoop() {
 
 WatchdogServer::WatchdogServer() :
     Application("WatchdogServer") {
-  std::string fileName("WatchdogServer_processes.xml");
-  // parse the file into a DOM structure
-  xmlpp::DomParser parser;
-  try {
-    parser.parse_file(fileName);
-    // get root element
-    const auto root = parser.get_document()->get_root_node();
-    if(root->get_name() != "watchdog") {
-      throw xmlpp::exception(
-          "Expected 'watchdog' tag instead of: " + root->get_name());
-    }
-
-    // parsing loop
-    for(const auto& child : root->get_children()) {
-      // cast into element, ignore if not an element (e.g. comment)
-      const xmlpp::Element *element = dynamic_cast<const xmlpp::Element*>(child);
-      if(!element)
-        continue;
-      // parse the element
-      if(element->get_name() == "process") {
-        auto nameAttr = element->get_attribute("name");
-        if(!nameAttr) {
-          std::cerr
-              << "Missing name attribute of 'process' tag. Going to skip one the process elements in the xml file: "
-              << fileName << std::endl;
-        } else {
-          processes.emplace_back(this, nameAttr->get_value().data(), "process");
-          processes.back().logging = nullptr;
+  try{
+    auto strProcesses = config.get<std::vector<std::string>>("processes");
+    for(auto &processName : strProcesses) {
+      std::cout << "Adding process: " << processName << std::endl;
+      processes.emplace_back(this, processName, "process");
+      processes.back().logging = nullptr;
 #ifdef ENABLE_LOGGING
-          processesLog.emplace_back(this, (nameAttr->get_value() + "-Log").data(), "process log");
-          processesLogExternal.emplace_back(this, (nameAttr->get_value() + "-LogExternal").data(), "process external log");
+      processesLog.emplace_back(this, processName + "-Log", "process log");
+      processesLogExternal.emplace_back(this, processName + "-LogExternal", "process external log");
 #endif
-        }
-      }
-
     }
-
-  } catch(xmlpp::exception &e) {
-    std::cerr << "Error opening the xml file '" + fileName + "': " + e.what()
-        << std::endl;
+  } catch (std::out_of_range &e){
+    std::cerr << "Error in the xml file 'WatchdogServer_processes.xml': " << e.what()
+            << std::endl;
     std::cout << "I will create only one process named PROCESS..." << std::endl;
     processes.emplace_back(this, "PROCESS", "Test process");
     processes.back().logging = nullptr;
@@ -72,6 +46,7 @@ WatchdogServer::WatchdogServer() :
     processesLogExternal.emplace_back(this, "PROCESS", "Test process external log");
 #endif
   }
+
   ProcessHandler::setupHandler();
 }
 
@@ -106,6 +81,10 @@ void WatchdogServer::defineConnections() {
   cs[systemInfo.getName()]("SetLogLevel") >> systemInfoLog.logLevel;
   systemInfoLog.findTag("CS").connectTo(cs[systemInfo.getName()]);
 
+
+  //ToDo: Include after bug in OPC UA Adapter was fixed
+  // publish configuration
+//  config.connectTo(cs["Configuration"]);
 
   auto log = processesLog.begin();
   auto logExternal = processesLogExternal.begin();
