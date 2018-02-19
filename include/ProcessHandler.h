@@ -33,6 +33,9 @@
  * if a process with the stored pid is still running.
  * If this is the case it is killed. First the process is killed using SIGINT
  * and if that fails SIGKILL is used.
+ *
+ * \attention Use the setupHandler() function once to define a handler for the
+ * SIGCHLD signal!
  */
 struct ProcessHandler {
 private:
@@ -174,6 +177,15 @@ public:
    * Depending on the level messages are put to the ostream.
    */
   void SetLogLevel(const logging::LogLevel &level){log = level;}
+
+
+  /**
+   * Setup handler for SIGCHLD signals.
+   *
+   * This function should be called once before using the ProcessHandler. It is not done automatically,
+   * because if multiple handlers are used there is no need to call this function multiple times.
+   */
+  static void setupHandler();
 
 };
 

@@ -72,6 +72,7 @@ WatchdogServer::WatchdogServer() :
     processesLogExternal.emplace_back(this, "PROCESS", "Test process external log");
 #endif
   }
+  ProcessHandler::setupHandler();
 }
 
 void WatchdogServer::defineConnections() {

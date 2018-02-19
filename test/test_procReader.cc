@@ -19,6 +19,7 @@ using namespace boost::unit_test_framework;
 using namespace std;
 
 BOOST_AUTO_TEST_CASE( testProcessHelper){
+  ProcessHandler::setupHandler();
 	std::unique_ptr<ProcessHandler> p(new ProcessHandler("", "test"));
 	size_t pid = -1;
 	try{

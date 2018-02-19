@@ -26,6 +26,18 @@ void handle_sigchld(int sig) {
   errno = saved_errno;
 }
 
+void ProcessHandler::setupHandler(){
+// see http://www.microhowto.info/howto/reap_zombie_processes_using_a_sigchld_handler.html
+  struct sigaction sa;
+  sa.sa_handler = &handle_sigchld;
+  sigemptyset(&sa.sa_mask);
+  sa.sa_flags = SA_RESTART | SA_NOCLDSTOP | SA_NOCLDWAIT;
+  if (sigaction(SIGCHLD, &sa, 0) == -1) {
+    perror(0);
+    exit(1);
+  }
+}
+
 ProcessHandler::ProcessHandler(const std::string &_path, const std::string &_PIDFileName, const bool _deletePIDFile, int &_PID, std::ostream &_stream, const std::string &_name):
  pid(-1), pidFile(_PIDFileName + ".PID"), pidDirectory(_path), deletePIDFile(_deletePIDFile), signum(SIGINT),
  os(_stream), log(logging::LogLevel::DEBUG), name(_name + "/ProcessHandler: "){
@@ -133,10 +145,14 @@ size_t ProcessHandler::startProcess(const std::string &path, const std::string &
     ss << "Failed to change to the directory where to create the PID file: " << pidDirectory;
     throw std::runtime_error(ss.str());
   }
+  // empty streams before forking to have empty copies in the child.
+  std::cout.clear();
+  std::cerr.clear();
+  std::cout.flush();
+  std::cerr.flush();
 
   pid_t p = fork();
   if(p == 0) {
-
     if(logfile.empty()){
       if(log <= logging::LogLevel::WARNING)
         std::cout << logging::LogLevel::WARNING << name << logging::getTime() << "No log file name is set. Process output is dumped to stout/stderr." << std::endl;
@@ -225,15 +241,6 @@ size_t ProcessHandler::startProcess(const std::string &path, const std::string &
     execve((path_copy + args.at(0)).c_str(), exec_args, environ);
     _exit(0);
   } else {
-  // see http://www.microhowto.info/howto/reap_zombie_processes_using_a_sigchld_handler.html
-    struct sigaction sa;
-    sa.sa_handler = &handle_sigchld;
-    sigemptyset(&sa.sa_mask);
-    sa.sa_flags = SA_RESTART | SA_NOCLDSTOP | SA_NOCLDWAIT;
-    if (sigaction(SIGCHLD, &sa, 0) == -1) {
-      perror(0);
-      exit(1);
-    }
     sleep(1);
     if(readTempPID(pid)) {
       if(log == logging::LogLevel::DEBUG)
