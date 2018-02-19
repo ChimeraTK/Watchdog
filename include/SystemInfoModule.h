@@ -70,7 +70,7 @@ public:
       const std::string &description, bool eliminateHierarchy = false,
       const std::unordered_set<std::string> &tags = { });
 
-  ctk::ScalarPushInput<int> trigger { this, "trigger", "",
+  ctk::ScalarPushInput<uint> trigger { this, "trigger", "",
       "Trigger used to update the watchdog" };
   /**
    * \name Static system information (read only once)

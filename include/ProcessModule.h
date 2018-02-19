@@ -34,7 +34,7 @@ namespace ctk = ChimeraTK;
 struct ProcessInfoModule : public ctk::ApplicationModule {
   using ctk::ApplicationModule::ApplicationModule;
 
-  ctk::ScalarPushInput<int> trigger { this, "trigger", "",
+  ctk::ScalarPushInput<uint> trigger { this, "trigger", "",
       "Trigger used to update the watchdog" };
   /**
    * \name Process parameter and status
@@ -45,7 +45,7 @@ struct ProcessInfoModule : public ctk::ApplicationModule {
     { "CS", "PROCESS", getName() } };
 
   /** Time since process is running */
-  ctk::ScalarOutput<int> runtime { this, "runtime", "s", "Time since process is running",
+  ctk::ScalarOutput<uint> runtime { this, "runtime", "s", "Time since process is running",
     { "CS", "PROCESS", getName() } };
 #ifdef ENABLE_LOGGING
   /** Message to be send to the logging module */
@@ -220,10 +220,10 @@ struct ProcessControlModule : public ProcessInfoModule{
     "If true the environmet variables are overwritten. Else they are extended.",
     { "PROCESS", getName() } };
 
-  ctk::ScalarPollInput<int> processMaxFails { this, "MaxFails", "",
+  ctk::ScalarPollInput<uint> processMaxFails { this, "MaxFails", "",
     "Set the maximum number of allowed fails.",
     { "PROCESS", getName() } };
-  ctk::ScalarPollInput<int> processMaxRestarts { this, "MaxRestarts", "",
+  ctk::ScalarPollInput<uint> processMaxRestarts { this, "MaxRestarts", "",
     "Set the maximum number of allowed restarts.",
     { "PROCESS", getName() } };
 #ifdef ENABLE_LOGGING
@@ -233,25 +233,25 @@ struct ProcessControlModule : public ProcessInfoModule{
     { "PROCESS", getName() } };
 #endif
   /** Start the process */
-  ctk::ScalarPollInput<int> enableProcess { this, "startProcess", "", "Start the process",
+  ctk::ScalarPollInput<uint> enableProcess { this, "startProcess", "", "Start the process",
     { "PROCESS", getName() } };
   /** Signal used to kill the process (2: SIGINT, 9: SIGKILL) */
-  ctk::ScalarPollInput<int> killSig { this, "killSig", "", "Signal used to kill the process (2: SIGINT, 9: SIGKILL)",
+  ctk::ScalarPollInput<uint> killSig { this, "killSig", "", "Signal used to kill the process (2: SIGINT, 9: SIGKILL)",
     { "PROCESS", getName() } };
   /** PID offset used when monitoring the started process */
-  ctk::ScalarPollInput<int> pidOffset { this, "pidOffset", "", "PID offset used when monitoring the started process",
+  ctk::ScalarPollInput<uint> pidOffset { this, "pidOffset", "", "PID offset used when monitoring the started process",
     { "PROCESS", getName() } };
   /** Process status 0: not running, 1: running */
-  ctk::ScalarOutput<int> processIsRunning { this, "IsRunning", "", "Process status 0: not running, 1: running",
+  ctk::ScalarOutput<uint> processIsRunning { this, "IsRunning", "", "Process status 0: not running, 1: running",
       { "CS", "PROCESS", getName() } };
   /** Number of failed restarts */
-  ctk::ScalarOutput<int> processNFailed { this, "Failed", "", "Number of failed starts/restarts",
+  ctk::ScalarOutput<uint> processNFailed { this, "Failed", "", "Number of failed starts/restarts",
     { "CS", "PROCESS", getName() } };   
   /** Number of started processes */
-  ctk::ScalarOutput<int> processNChilds { this, "nChilds", "", "Number of started processes",
+  ctk::ScalarOutput<uint> processNChilds { this, "nChilds", "", "Number of started processes",
     { "CS", "PROCESS", getName() } };
   /** Number of time the process was automatically */
-  ctk::ScalarOutput<int> processRestarts { this, "Restarts", "", "Number of time the process was automatically "
+  ctk::ScalarOutput<uint> processRestarts { this, "Restarts", "", "Number of time the process was automatically "
           "restarted by the watchdog since server start.",
     { "CS", "PROCESS", getName() } };
   /** @} */

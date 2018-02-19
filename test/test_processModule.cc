@@ -26,7 +26,10 @@ using namespace boost::unit_test_framework;
  * blocking read!
  */
 struct testApp : public ChimeraTK::Application {
-  testApp() : Application("test"){ process.logging = 0;}
+  testApp() : Application("test"){
+    process.logging = 0;
+    ProcessHandler::setupHandler();
+  }
   ~testApp() {
     shutdown();
   }
@@ -55,6 +58,7 @@ struct testApp : public ChimeraTK::Application {
     cs["Process"]("killSig") >> process.killSig;
     cs["Process"]("pidOffset") >> process.pidOffset;
     cs["Process"]("externalLogFile") >> process.processSetExternalLogfile;
+    cs["Process"]("maxFails") >> process.processMaxFails;
     process.findTag("CS").connectTo(cs["Process"]);
 
     cs("SetLogLevel") >> logging.logLevel;
@@ -73,10 +77,10 @@ BOOST_AUTO_TEST_CASE( testStart) {
   ChimeraTK::TestFacility tf;
 
   // Get the trigger variable thats blocking the application (i.e. ProcessControlModule)
-  auto writeTrigger = tf.getScalar<int>("trigger/");
+  auto writeTrigger = tf.getScalar<uint>("trigger/");
   auto processCMD = tf.getScalar<std::string>("Process/SetCMD");
   auto processPath = tf.getScalar<std::string>("Process/SetPath");
-  auto enable = tf.getScalar<int>("Process/enableProcess");
+  auto enable = tf.getScalar<uint>("Process/enableProcess");
 
   processPath = std::string("/bin/");
   processPath.write();
@@ -88,7 +92,7 @@ BOOST_AUTO_TEST_CASE( testStart) {
   writeTrigger = 1;
   writeTrigger.write();
   tf.stepApplication();
-  BOOST_CHECK_EQUAL(tf.readScalar<int>("Process/IsRunning"), 1);
+  BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/IsRunning"), 1);
 }
 
 
@@ -99,24 +103,30 @@ BOOST_AUTO_TEST_CASE( testFailOnWrongDirectory) {
   ChimeraTK::TestFacility tf;
 
   // Get the trigger variable thats blocking the application (i.e. ProcessControlModule)
-  auto writeTrigger = tf.getScalar<int>("trigger/");
+  auto writeTrigger = tf.getScalar<uint>("trigger/");
   auto processCMD = tf.getScalar<std::string>("Process/SetCMD");
   auto processPath = tf.getScalar<std::string>("Process/SetPath");
-  auto enable = tf.getScalar<int>("Process/enableProcess");
+  auto enable = tf.getScalar<uint>("Process/enableProcess");
+  auto logLevel = tf.getScalar<uint>("SetLogLevel/");
+  auto maxFails = tf.getScalar<uint>("Process/maxFails");
 
+  tf.runApplication();
   processPath = std::string("/etc/bin");
   processPath.write();
   processCMD = std::string("sleep 3");
   processCMD.write();
   enable = 1;
   enable.write();
-  tf.runApplication();
+  logLevel = 0;
+  logLevel.write();
+  maxFails = 5;
+  maxFails.write();
   //  test status two times, because it happened that it only worked the first time
   for(size_t i = 1; i < 3 ; i++){
-    usleep(10000);
     writeTrigger = i;
     writeTrigger.write();
     tf.stepApplication();
-    BOOST_CHECK_EQUAL(tf.readScalar<int>("Process/Failed"), i);
+    usleep(10000);
+    BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/Failed"), i);
   }
 }

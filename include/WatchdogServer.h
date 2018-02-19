@@ -29,10 +29,10 @@ struct TimerModule: public ctk::ApplicationModule {
    * \remark
    * Observe this variable by other modules to obtain a trigger
    */
-  ctk::ScalarOutput<int> trigger { this, "trigger", "", "Trigger counter",
+  ctk::ScalarOutput<uint> trigger { this, "trigger", "", "Trigger counter",
     { "Timer" }};
 
-  ctk::ScalarPollInput<int> update {this , "update", "", "Specify the amount of time given in seconds between update triggers.",
+  ctk::ScalarPollInput<uint> update {this , "update", "", "Specify the amount of time given in seconds between update triggers.",
     { "Timer" }};
 
   /**
