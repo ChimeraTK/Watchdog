@@ -409,6 +409,7 @@ std::string ProcessInfoModule::getTime(){
 }
 
 void ProcessControlModule::terminate(){
+  process->Disconnect();
   process.reset(nullptr);
   ProcessInfoModule::terminate();
 }

@@ -79,12 +79,12 @@ private:
   int pid; ///< The pid of the last process that was started.
   std::string pidFile; ///< Name of the temporary file that holds the child PID
   std::string pidDirectory; ///< Path where to create PID files.
-  bool        deletePIDFile; ///< If true the PID file is deleted after reading the PID.
+  bool deletePIDFile; ///< If true the PID file is deleted after reading the PID.
   int signum;///< Signal used to stop a process
   std::ostream &os; ///< Stream used to send messages
   logging::LogLevel log;///< The current log level
   const std::string name; ///< Name of this class
-
+  bool connected; ///< If false no cleanup is performed on destructor call
 public:
   /**
    * Constructor.
@@ -186,6 +186,8 @@ public:
    * because if multiple handlers are used there is no need to call this function multiple times.
    */
   static void setupHandler();
+
+  void Disconnect();
 
 };
 

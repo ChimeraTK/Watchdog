@@ -8,6 +8,7 @@ WorkingDirectory=/var/lib/chimeratk/@PROJECT_NAME@/
 ExecStart=/usr/bin/watchdog-server
 Restart=always
 RestartSec=1min
+KillMode=process
 
 [Install]
 WantedBy=multi-user.target

@@ -40,7 +40,7 @@ void ProcessHandler::setupHandler(){
 
 ProcessHandler::ProcessHandler(const std::string &_path, const std::string &_PIDFileName, const bool _deletePIDFile, int &_PID, std::ostream &_stream, const std::string &_name):
  pid(-1), pidFile(_PIDFileName + ".PID"), pidDirectory(_path), deletePIDFile(_deletePIDFile), signum(SIGINT),
- os(_stream), log(logging::LogLevel::DEBUG), name(_name + "/ProcessHandler: "){
+ os(_stream), log(logging::LogLevel::DEBUG), name(_name + "/ProcessHandler: "), connected(true){
   _PID = -1;
   if(checkRunningProcess(_PID))
     pid = _PID;
@@ -48,12 +48,13 @@ ProcessHandler::ProcessHandler(const std::string &_path, const std::string &_PID
 
 ProcessHandler::ProcessHandler(const std::string &_path, const std::string &_PIDFileName, const bool _deletePIDFile, std::ostream &_stream, const std::string &_name):
  pid(-1), pidFile(_PIDFileName + ".PID"), pidDirectory(_path), deletePIDFile(_deletePIDFile), signum(SIGINT),
- os(_stream), log(logging::LogLevel::DEBUG), name(_name + "/ProcessHandler: ") {
+ os(_stream), log(logging::LogLevel::DEBUG), name(_name + "/ProcessHandler: "), connected(true) {
 };
 
 
 ProcessHandler::~ProcessHandler() {
-  cleanup();
+  if(connected)
+    cleanup();
 }
 
 bool ProcessHandler::changeDirectory(){
@@ -306,5 +307,12 @@ void ProcessHandler::setAllFHCloseOnExec()
         fd != STDOUT_FILENO &&
         fd != STDERR_FILENO)
       fcntl(fd, F_SETFD, FD_CLOEXEC);
+}
+
+void ProcessHandler::Disconnect(){
+  connected = false;
+  if(log == logging::LogLevel::DEBUG)
+    os << logging::LogLevel::DEBUG << name << logging::getTime() << "Process is disconnected. It is no longer controlled by the ProcessHandler!"
+        " You have to take care of it on your own. PID is: " << pid << std::endl;
 }
 
