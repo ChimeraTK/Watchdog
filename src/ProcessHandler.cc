@@ -92,11 +92,8 @@ void ProcessHandler::cleanup() {
       kill(-pid, SIGKILL);
       usleep(200000);
       if(proc_util::isProcessRunning(pid)) {
-        std::stringstream ss;
-        ss << "When cleaning up the ProcessHandler the process ";
-        ss << pid;
-        ss << " could not be stopped. Even using signal SIGKILL!";
-        throw std::runtime_error(ss.str());
+        os << logging::LogLevel::ERROR << name << logging::getTime() << "When cleaning up the ProcessHandler the process " << pid <<
+            " could not be stopped. Even using signal SIGKILL!" << std::endl;
       } else {
         os << logging::LogLevel::INFO << name << logging::getTime() << "Ok process was terminated."  << std::endl;
       }
