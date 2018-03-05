@@ -11,9 +11,11 @@
 #undef GENERATE_XML
 #include <ChimeraTK/ApplicationCore/ApplicationCore.h>
 #include <ChimeraTK/ApplicationCore/ConfigReader.h>
+#include <ChimeraTK/ApplicationCore/MicroDAQ.h>
 
 #include "SystemInfoModule.h"
 #include "ProcessModule.h"
+
 
 #ifdef ENABLE_LOGGING
 #include "LoggingModule.h"
@@ -31,6 +33,10 @@ struct TimerModule: public ctk::ApplicationModule {
    * Observe this variable by other modules to obtain a trigger
    */
   ctk::ScalarOutput<uint> trigger { this, "trigger", "", "Trigger counter",
+    { "Timer" }};
+
+  /** \FixMe  Workaround for the microDAQ module, which needs an int */
+  ctk::ScalarOutput<int> itrigger { this, "itrigger", "", "Trigger counter",
     { "Timer" }};
 
   ctk::ScalarPollInput<uint> update {this , "update", "", "Specify the amount of time given in seconds between update triggers.",
@@ -96,6 +102,8 @@ struct WatchdogServer: public ctk::Application {
 
   LoggingModule systemInfoLog{this, "systeminfoLog", "Logging module of the system information module"};
 #endif
+
+  ctk::MicroDAQ microDAQ;
   /**
    * Use either
    * - ctk::ControlSystemModule cs;

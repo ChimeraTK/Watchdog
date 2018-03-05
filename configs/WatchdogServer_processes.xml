@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <configuration>
+  <variable name="enableMicroDAQ" type="int32" value="0" />
   <variable name="processes" type="string">
     <value i="0" v="PROCESS_1"/>
     <value i="1" v="PROCESS_2"/>

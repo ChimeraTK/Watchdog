@@ -90,17 +90,17 @@ public:
   ctk::ScalarOutput<int> maxMem { this, "maxMem", "kB",
       "Maximum available memory", { "CS", "SYS" } };
   ctk::ScalarOutput<int> freeMem { this, "freeMem", "kB", "Free memory",
-    { "CS", "SYS" } };
+    { "CS", "SYS", "DAQ" } };
   ctk::ScalarOutput<int> cachedMem { this, "cachedMem", "kB", "Cached memory",
     { "CS", "SYS" } };
   ctk::ScalarOutput<int> usedMem { this, "usedMem", "kB", "Used memory",
-    { "CS", "SYS" } };
+    { "CS", "SYS", "DAQ"} };
   ctk::ScalarOutput<int> maxSwap { this, "maxSwap", "kB", "Swap size",
     { "CS", "SYS" } };
   ctk::ScalarOutput<int> freeSwap { this, "freeSwap", "kB", "Free swap",
-    { "CS", "SYS" } };
+    { "CS", "SYS", "DAQ" } };
   ctk::ScalarOutput<int> usedSwap { this, "usedSwap", "kB", "Used swap",
-    { "CS", "SYS" } };
+    { "CS", "SYS", "DAQ" } };
   //\todo: Implement the following as long!
   ctk::ScalarOutput<int> startTime { this, "startTime", "s", "start time of system with respect to EPOCH",
       { "CS", "SYS" } };
@@ -118,9 +118,9 @@ public:
     { "CS", "SYS" } };
   std::unique_ptr<ctk::ArrayOutput<double> > cpu_use;
   ctk::ScalarOutput<double> cpu_useTotal {this, "cpuTotal", "%", "Total CPU usage",
-    { "CS", "SYS" } };
+    { "CS", "SYS", "DAQ" } };
   ctk::ArrayOutput<double> loadAvg{ this, "loadAvg", "", 3, "Average load within last min, 5min, 15min",
-    { "CS", "SYS" } };
+    { "CS", "SYS", "DAQ" } };
   /** @} */
 
   /**

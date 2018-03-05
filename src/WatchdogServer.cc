@@ -14,6 +14,8 @@ void TimerModule::mainLoop() {
     update.read();
     trigger = trigger + 1;
     trigger.write();
+    itrigger = trigger;
+    itrigger.write();
     if(update < 1){
       sleep(3);
     } else {
@@ -131,7 +133,28 @@ void WatchdogServer::defineConnections() {
     logExternal++;
 #endif
   }
+  /*
+   *  Micro DAQ system
+   */
 
+  if(config.get<int>("enableMicroDAQ") != 0) {
+
+    microDAQ = ctk::MicroDAQ(this, "MicroDAQ", "Local ringbuffer DAQ system");
+    microDAQ.addSource(watchdog.findTag("DAQ"), watchdog.getName());
+    microDAQ.addSource(systemInfo.findTag("DAQ"), systemInfo.getName());
+    for(auto &item : processes) {
+      microDAQ.addSource(item.findTag("DAQ"), item.getName());
+    }
+
+    // configuration of the DAQ system itself
+    timer.itrigger >> microDAQ.trigger;
+    microDAQ.findTag("MicroDAQ.CONFIG").connectTo(cs["MicroDAQ"]);
+
+    cs["MicroDAQ"]("nMaxFiles") >> microDAQ.nMaxFiles;
+    cs["MicroDAQ"]("nTriggersPerFile") >> microDAQ.nTriggersPerFile;
+    cs["MicroDAQ"]("enable") >> microDAQ.enable;
+
+  }
   dumpConnections();
 
 }

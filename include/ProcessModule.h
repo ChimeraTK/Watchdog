@@ -42,11 +42,11 @@ struct ProcessInfoModule : public ctk::ApplicationModule {
    */
   /** PID of the process */
   ctk::ScalarOutput<int> processPID { this, "PID", "", "PID of the process",
-    { "CS", "PROCESS", getName() } };
+    { "CS", "PROCESS", getName() , "DAQ"} };
 
   /** Time since process is running */
   ctk::ScalarOutput<uint> runtime { this, "runtime", "s", "Time since process is running",
-    { "CS", "PROCESS", getName() } };
+    { "CS", "PROCESS", getName(), "DAQ" } };
 #ifdef ENABLE_LOGGING
   /** Message to be send to the logging module */
   ctk::ScalarOutput<std::string> message { this, "message", "", "Message of the module to the logging System",
@@ -102,7 +102,7 @@ struct ProcessInfoModule : public ctk::ApplicationModule {
 
   //\ToDo Use unsigned long
   ctk::ScalarOutput<int> mem { this, "mem", "kB", "Memory used by the process",
-    { "CS", "PROCESS", getName() } };
+    { "CS", "PROCESS", getName(), "DAQ" } };
 
   //\todo Use long
   /** kernel scheduling priority */
@@ -120,13 +120,13 @@ struct ProcessInfoModule : public ctk::ApplicationModule {
    * The process time includes utime, stime, sutime, sctime.
    */
   ctk::ScalarOutput<double> pcpu { this, "pcpu", "%", "Actual CPU usage",
-    { "CS", "PROCESS", getName() } };
+    { "CS", "PROCESS", getName(), "DAQ" } };
   /**
    * CPU usage averaged over the whole runtime of the process.
    * The process time includes utime, stime, sutime, sctime.
    */
   ctk::ScalarOutput<double> avpcpu { this, "avpcpu", "%", "Average CPU usage",
-    { "CS", "PROCESS", getName() } };
+    { "CS", "PROCESS", getName(), "DAQ" } };
   /** @} */
 
   /**
@@ -243,17 +243,17 @@ struct ProcessControlModule : public ProcessInfoModule{
     { "PROCESS", getName() } };
   /** Process status 0: not running, 1: running */
   ctk::ScalarOutput<uint> processIsRunning { this, "IsRunning", "", "Process status 0: not running, 1: running",
-      { "CS", "PROCESS", getName() } };
+      { "CS", "PROCESS", getName(), "DAQ" } };
   /** Number of failed restarts */
   ctk::ScalarOutput<uint> processNFailed { this, "Failed", "", "Number of failed starts/restarts",
-    { "CS", "PROCESS", getName() } };   
+    { "CS", "PROCESS", getName(), "DAQ" } };
   /** Number of started processes */
   ctk::ScalarOutput<uint> processNChilds { this, "nChilds", "", "Number of started processes",
-    { "CS", "PROCESS", getName() } };
+    { "CS", "PROCESS", getName(), "DAQ" } };
   /** Number of time the process was automatically */
   ctk::ScalarOutput<uint> processRestarts { this, "Restarts", "", "Number of time the process was automatically "
           "restarted by the watchdog since server start.",
-    { "CS", "PROCESS", getName() } };
+    { "CS", "PROCESS", getName(), "DAQ" } };
   /** @} */
 
   /**
