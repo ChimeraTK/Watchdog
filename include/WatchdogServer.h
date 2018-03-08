@@ -39,7 +39,7 @@ struct TimerModule: public ctk::ApplicationModule {
   ctk::ScalarOutput<int> itrigger { this, "itrigger", "", "Trigger counter",
     { "Timer" }};
 
-  ctk::ScalarPollInput<uint> update {this , "update", "", "Specify the amount of time given in seconds between update triggers.",
+  ctk::ScalarPollInput<uint> update {this , "update", "s", "Specify the amount of time given in seconds between update triggers.",
     { "Timer" }};
 
   /**
