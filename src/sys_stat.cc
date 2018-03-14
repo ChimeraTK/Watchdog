@@ -31,7 +31,8 @@ bool isProcessRunning(const int &PID) {
   pid_t pid = PID;
   PROCTAB* proc = openproc(PROC_FILLSTAT | PROC_PID, &pid, NULL);
   proc_t* proc_info = readproc(proc, NULL);
-  if(proc_info == NULL){
+  // Check in addition if the tid is correct. It happened that the pointer was not NULL but the process was dead.
+  if(proc_info == NULL || proc_info->tid != pid){
     freeproc(proc_info);
     closeproc(proc);
     return false;
@@ -70,7 +71,7 @@ std::shared_ptr<proc_t> getInfo(const size_t &PID) {
     closeproc(proc);
     std::stringstream ss;
     ss << "Process " << PID << " not found when trying to read process information.";
-    throw std::runtime_error("Process not found.");
+    throw std::runtime_error(ss.str());
   }
   result.reset(new proc_t(*proc_info));
   freeproc(proc_info);
