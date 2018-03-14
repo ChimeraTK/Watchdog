@@ -135,10 +135,10 @@ void ProcessControlModule::mainLoop() {
 
   try{
 #ifdef ENABLE_LOGGING
-    process.reset(new ProcessHandler("", getName(), false, processPID, handlerMessage));
+    process.reset(new ProcessHandler(getName(), false, processPID, handlerMessage));
     evaluateMessage(handlerMessage);
 #else
-    process.reset(new ProcessHandler("", getName(), false, processPID, std::cout));
+    process.reset(new ProcessHandler(getName(), false, processPID, std::cout));
 #endif
     if(processPID > 0){
       (*logging) << getTime() << "Found process that is still running. PID is: " << processPID << std::endl;
@@ -154,6 +154,7 @@ void ProcessControlModule::mainLoop() {
 #endif
   }
   stop =false;
+  restartRequired = false;
   while(true) {
     trigger.read();
     enableProcess.read();
@@ -166,6 +167,7 @@ void ProcessControlModule::mainLoop() {
       processRestarts = 0;
       processRestarts.write();
       stop = false;
+      restartRequired = false;
     }
 
     /*
@@ -174,7 +176,7 @@ void ProcessControlModule::mainLoop() {
      * -> to reset turn off/on the process
      */
     if(stop) {
-    (*logging) << getTime() << "Process sleeping. Fails: " << processNFailed << "/" << processMaxFails
+      (*logging) << getTime() << "Process sleeping. Fails: " << processNFailed << "/" << processMaxFails
           << ", Restarts: " << processRestarts << "/" << processMaxRestarts << std::endl;
 #ifdef ENABLE_LOGGING
       sendMessage(logging::LogLevel::DEBUG);
@@ -183,17 +185,55 @@ void ProcessControlModule::mainLoop() {
       continue;
     }
 
+    /**
+     * Check if restart is required
+     */
     if(processPID > 0 && enableProcess) {
       CheckIsOnline(processPID);
-      if(processRestarts > processMaxRestarts){
-        processRestarts -= 1;
-        processRestarts.write();
-        stop = true;
+      if(!processIsRunning){
+        if(processMaxRestarts == 0){
+          stop = true;
+          (*logging) << getTime() << "Maximum number of restarts is 0. Process will not be started again." << std::endl;
+#ifdef ENABLE_LOGGING
+          sendMessage(logging::LogLevel::WARNING);
+#endif
+          restartRequired = false;
+        } else {
+          restartRequired = true;
+        }
       }
+    }
+
+    /**
+     * If starting a process fails and max restarts is 0 stop.
+     */
+    if(processMaxRestarts == 0 && restartRequired){
+      restartRequired = false;
+      stop = true;
+    }
+
+    /**
+     * Check number of restarts in case it is set
+     */
+    if(processMaxRestarts != 0 && processRestarts == processMaxRestarts){
+      (*logging) << getTime() << "Maximum number of restarts reached. Restarts: " << processRestarts << "/" << processMaxRestarts << std::endl;
+#ifdef ENABLE_LOGGING
+      sendMessage(logging::LogLevel::WARNING);
+#endif
+      stop = true;
+      process.reset(nullptr);
+#ifdef ENABLE_LOGGING
+      evaluateMessage(handlerMessage);
+#endif
     }
 
     if(enableProcess) {
       if(processPID < 0 && !stop) {
+        if(restartRequired){
+          processRestarts += 1;
+          processRestarts.write();
+          restartRequired = false;
+        }
         try {
           processSetPath.read();
           processSetCMD.read();
@@ -204,9 +244,9 @@ void ProcessControlModule::mainLoop() {
           (*logging) << getTime() << "Trying to start a new process: " << (std::string)processSetPath << "/" << (std::string)processSetCMD << std::endl;
           sendMessage(logging::LogLevel::INFO);
           // log level of the process handler is DEBUG per default. So all messages will end up here
-          process.reset(new ProcessHandler("", getName(), false, handlerMessage, this->getName()));
+          process.reset(new ProcessHandler(getName(), false, handlerMessage, this->getName()));
 #else
-          process.reset(new ProcessHandler("", getName(), false, std::cout, this->getName()));
+          process.reset(new ProcessHandler(getName(), false, std::cout, this->getName()));
 #endif
 
 
@@ -272,7 +312,6 @@ void ProcessControlModule::mainLoop() {
 #ifdef ENABLE_LOGGING
         evaluateMessage(handlerMessage);
 #endif
-        usleep(200000);
         SetOffline();
       }
     }
@@ -331,18 +370,18 @@ void ProcessControlModule::SetOffline(){
 }
 
 void ProcessControlModule::Failed(){
+  processNFailed = processNFailed + 1;
+  processNFailed.write();
   if(!stop && processNFailed == processMaxFails){
     stop = true;
-    processRestarts -= 1;
-    processRestarts.write();
+    restartRequired = false;
     (*logging) << getTime() <<  "Failed to start the process " << (std::string)processSetPath << "/" << (std::string)processSetCMD << " " << processMaxFails << " times."
         << " It will not be started again until you reset the process by switching it off and on again." << std::endl;
 #ifdef ENABLE_LOGGING
     sendMessage(logging::LogLevel::ERROR);
 #endif
-  } else if (processNFailed <= processMaxFails){
-    processNFailed = processNFailed + 1;
-    processNFailed.write();
+  } else {
+    restartRequired = true;
   }
   sleep(2);
 }
@@ -359,17 +398,6 @@ void ProcessControlModule::CheckIsOnline(const int pid){
 #ifdef ENABLE_LOGGING
     sendMessage(logging::LogLevel::ERROR);
 #endif
-    processRestarts += 1;
-    processRestarts.write();
-    if(processRestarts > 100){
-      (*logging) << getTime()
-            << "The process " << (std::string)processSetPath << "/" << (std::string)processSetCMD << " was restarted 100 times."
-            << " It will not be started again until you reset the process by switching it off and on again." << std::endl;
-#ifdef ENABLE_LOGGING
-      sendMessage(logging::LogLevel::ERROR);
-#endif
-    }
-
   } else {
     processIsRunning = 1;
     processIsRunning.write();

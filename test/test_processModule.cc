@@ -4,6 +4,10 @@
  *
  *  Created on: Jan 15, 2018
  *      Author: zenker
+ *
+ *  Call with option --log_level=message to see messages from the tests.
+ *  Select tests using e.g. --run_test=testFailOnWrongDirectory
+ *
  */
 #define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MODULE ProcessModuleTest
@@ -59,6 +63,7 @@ struct testApp : public ChimeraTK::Application {
     cs["Process"]("pidOffset") >> process.pidOffset;
     cs["Process"]("externalLogFile") >> process.processSetExternalLogfile;
     cs["Process"]("maxFails") >> process.processMaxFails;
+    cs["Process"]("maxRestarts") >> process.processMaxRestarts;
     process.findTag("CS").connectTo(cs["Process"]);
 
     cs("SetLogLevel") >> logging.logLevel;
@@ -92,12 +97,19 @@ BOOST_AUTO_TEST_CASE( testStart) {
   writeTrigger = 1;
   writeTrigger.write();
   tf.stepApplication();
+  usleep(200000);
   BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/IsRunning"), 1);
+  enable = 0;
+  enable.write();
+  writeTrigger = 1;
+  writeTrigger.write();
+  tf.stepApplication();
+  usleep(200000);
 }
 
 
-BOOST_AUTO_TEST_CASE( testFailOnWrongDirectory) {
-  BOOST_TEST_MESSAGE("Start testing if wrong path does not trigger failed status.");
+BOOST_AUTO_TEST_CASE( testCounter) {
+  BOOST_TEST_MESSAGE("Start restart and fail counter.");
   testApp app;
   app.defineConnections();
   ChimeraTK::TestFacility tf;
@@ -107,26 +119,91 @@ BOOST_AUTO_TEST_CASE( testFailOnWrongDirectory) {
   auto processCMD = tf.getScalar<std::string>("Process/SetCMD");
   auto processPath = tf.getScalar<std::string>("Process/SetPath");
   auto enable = tf.getScalar<uint>("Process/enableProcess");
-  auto logLevel = tf.getScalar<uint>("SetLogLevel/");
   auto maxFails = tf.getScalar<uint>("Process/maxFails");
-
-  tf.runApplication();
+  auto maxRestarts = tf.getScalar<uint>("Process/maxRestarts");
+  BOOST_TEST_MESSAGE("Test maxrestarts==2, maxfails==2 with failing process.");
   processPath = std::string("/etc/bin");
   processPath.write();
-  processCMD = std::string("sleep 3");
+  processCMD = std::string("sleep 1");
   processCMD.write();
   enable = 1;
   enable.write();
-  logLevel = 0;
-  logLevel.write();
-  maxFails = 5;
+  maxFails = 2;
   maxFails.write();
-  //  test status two times, because it happened that it only worked the first time
-  for(size_t i = 1; i < 3 ; i++){
+  maxRestarts = 2;
+  maxRestarts.write();
+  tf.runApplication();
+  for(size_t i = 1; i < 5 ; i++){
     writeTrigger = i;
     writeTrigger.write();
     tf.stepApplication();
-    usleep(10000);
-    BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/Failed"), i);
+    if(i > 2)
+      BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/Failed"), 2);
+    else
+      BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/Failed"), i);\
+    if(i > 2)
+      BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/Restarts"), 1);
+    else
+      BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/Restarts"), i-1);
+  }
+
+  BOOST_TEST_MESSAGE("Reset and test maxrestarts==2, maxfails==5 with failing process.");
+  enable = 0;
+  enable.write();
+  writeTrigger = 1;
+  writeTrigger.write();
+  tf.stepApplication();
+  maxFails = 5;
+  maxFails.write();
+  enable = 1;
+  enable.write();
+  for(int i = 0; i < 4; i++){
+    writeTrigger = 1;
+    writeTrigger.write();
+    tf.stepApplication();
+  }
+  BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/Failed"), 3);
+  BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/Restarts"), 2);
+
+
+  BOOST_TEST_MESSAGE("Reset and test maxrestarts==0, maxfails==0 with failing process.");
+  enable = 0;
+  enable.write();
+  writeTrigger = 1;
+  writeTrigger.write();
+  tf.stepApplication();
+  enable = 1;
+  enable.write();
+  maxFails = 0;
+  maxFails.write();
+  maxRestarts = 0;
+  maxRestarts.write();
+  writeTrigger = 1;
+  writeTrigger.write();
+  tf.stepApplication();
+  for(int i = 0; i < 3; i++){
+    writeTrigger = 1;
+    writeTrigger.write();
+    tf.stepApplication();
+    BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/Failed"), 1);
+    BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/Restarts"), 0);
+  }
+  BOOST_TEST_MESSAGE("Reset and test maxrestarts==0, maxfails==0.");
+  enable = 0;
+  enable.write();
+  processPath = std::string("/bin");
+  processPath.write();
+  writeTrigger = 1;
+  writeTrigger.write();
+  tf.stepApplication();
+  enable = 1;
+  enable.write();
+  for(int i = 0; i < 3; i++){
+    writeTrigger = 1;
+    writeTrigger.write();
+    tf.stepApplication();
+    BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/Failed"), 0);
+    BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/Restarts"), 0);
+    sleep(2);
   }
 }

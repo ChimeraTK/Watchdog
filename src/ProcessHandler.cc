@@ -38,16 +38,20 @@ void ProcessHandler::setupHandler(){
   }
 }
 
-ProcessHandler::ProcessHandler(const std::string &_path, const std::string &_PIDFileName, const bool _deletePIDFile, int &_PID, std::ostream &_stream, const std::string &_name):
- pid(-1), pidFile(_PIDFileName + ".PID"), pidDirectory(_path), deletePIDFile(_deletePIDFile), signum(SIGINT),
+ProcessHandler::ProcessHandler(const std::string &_PIDFileName, const bool _deletePIDFile, int &_PID, std::ostream &_stream, const std::string &_name):
+ pid(-1), pidFile("/tmp/" + _PIDFileName + ".PID"), deletePIDFile(_deletePIDFile), signum(SIGINT),
  os(_stream), log(logging::LogLevel::DEBUG), name(_name + "/ProcessHandler: "), connected(true){
   _PID = -1;
-  if(checkRunningProcess(_PID))
-    pid = _PID;
+  if(readTempPID(_PID)){
+    if(proc_util::isProcessRunning(_PID))
+      pid = _PID;
+    else
+      _PID = -1;
+  }
 };
 
-ProcessHandler::ProcessHandler(const std::string &_path, const std::string &_PIDFileName, const bool _deletePIDFile, std::ostream &_stream, const std::string &_name):
- pid(-1), pidFile(_PIDFileName + ".PID"), pidDirectory(_path), deletePIDFile(_deletePIDFile), signum(SIGINT),
+ProcessHandler::ProcessHandler(const std::string &_PIDFileName, const bool _deletePIDFile, std::ostream &_stream, const std::string &_name):
+ pid(-1), pidFile("/tmp/" + _PIDFileName + ".PID"), deletePIDFile(_deletePIDFile), signum(SIGINT),
  os(_stream), log(logging::LogLevel::DEBUG), name(_name + "/ProcessHandler: "), connected(true) {
 };
 
@@ -55,23 +59,6 @@ ProcessHandler::ProcessHandler(const std::string &_path, const std::string &_PID
 ProcessHandler::~ProcessHandler() {
   if(connected)
     cleanup();
-}
-
-bool ProcessHandler::changeDirectory(){
-  std::string pidDir = pidDirectory;
-  if(pidDirectory.back() != '/')
-    pidDir.append(std::string("/").c_str());
-  if(!isPIDFolderWritable()){
-    throw std::runtime_error("Folder where to store the PID file is not writable!");
-  }
-  if(chdir(pidDir.c_str())) {
-    if(log <= logging::LogLevel::ERROR){
-      os << logging::LogLevel::ERROR << name << logging::getTime() << "Failed to change to pid file directory: " << pidDir << std::endl;
-    }
-    return false;
-  } else {
-    return true;
-  }
 }
 
 void ProcessHandler::cleanup() {
@@ -105,23 +92,13 @@ void ProcessHandler::cleanup() {
     remove(pidFile.c_str());
 }
 
-bool ProcessHandler::checkRunningProcess(int &PID){
-  if(pidDirectory.empty()){
-    return readTempPID(PID);
-  } else if (changeDirectory()){
-    return readTempPID(PID);
-  }
-  return false;
-}
-
 bool ProcessHandler::isPIDFolderWritable() {
-    if(access(pidDirectory.c_str(), W_OK) == 0) {
+    if(access("/tmp", W_OK) == 0) {
         return true;
     } else {
         return false;
     }
 }
-
 
 size_t ProcessHandler::startProcess(const std::string &path, const std::string &cmd, const std::string &logfile,
     const std::string &environment, const bool &overwriteENV) {
@@ -138,9 +115,9 @@ size_t ProcessHandler::startProcess(const std::string &path, const std::string &
     cleanup();
   }
 
-  if(!pidDirectory.empty() && !changeDirectory()){
+  if(!isPIDFolderWritable()){
     std::stringstream ss;
-    ss << "Failed to change to the directory where to create the PID file: " << pidDirectory;
+    ss << "Failed to change to the directory where to create the PID file (/tmp).";
     throw std::runtime_error(ss.str());
   }
   // empty streams before forking to have empty copies in the child.

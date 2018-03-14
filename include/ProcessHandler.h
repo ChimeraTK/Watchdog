@@ -21,8 +21,10 @@
  * process does not know the child process and its pid. Therefore,
  * the child creates a file that contains the PID. The parent
  * process reads the PID from that file.
- * By default the file is created in the directory where the main
- * thread is executed and the file is deleted if the started process
+ * The file is created in the /tmp directory of the system.
+ * In case the system reboots /tmp is cleaned and therefor it can not
+ * happen, that the PID read from the PID file is given to another process
+ * after system boot. The file is also deleted if the started process
  * is killed using killProcess. Else the file is not deleted.
  * If e.g. the watchdog is killed, the process that was started before
  * by its ProcessHandler can not be terminated and could still be running.
@@ -61,24 +63,12 @@ private:
   void cleanup();
 
   /**
-   * Try do move to the directory where to store the PID file.
-   * \throw runtime_error In case the directory is not writable
+   * Check if /tmp is writable.
    */
-  bool changeDirectory();
-
-  /**
-   * Check if a PID exists and read the PID.
-   * Check if a process is running, that has the PID from the PID file.
-   * \param PID In case there is a running process its PID is stored
-   * \return True in case a running process was found.
-   */
-  bool checkRunningProcess(int &PID);
-
   bool isPIDFolderWritable();
 
   int pid; ///< The pid of the last process that was started.
   std::string pidFile; ///< Name of the temporary file that holds the child PID
-  std::string pidDirectory; ///< Path where to create PID files.
   bool deletePIDFile; ///< If true the PID file is deleted after reading the PID.
   int signum;///< Signal used to stop a process
   std::ostream &os; ///< Stream used to send messages
@@ -90,8 +80,6 @@ public:
    * Constructor.
    * It is checked if a process is already running. This is done by testing if the
    * PID file already exists and a process with the PID read from the PID file is found.
-   * \param path This is the path where to store the PID file. If an empty string is
-   * entered the directory where the main thread is started is used.
    * \param PIDFileName the name of the PID file -> will result in: PIDFileName.PID
    * \param os The ostream used to send status messages and errors.
    * \param deletePIDFile If true the PID file deleted directly after reading the PID.
@@ -102,13 +90,11 @@ public:
    * ProcessHandler is not terminated correctly and started again.
    * \param PID The PID is set in case a running process was found. Else it is set to -1.
    */
-  ProcessHandler(const std::string &path, const std::string &PIDFileName,
+  ProcessHandler(const std::string &PIDFileName,
       const bool deletePIDFile, int &PID, std::ostream &os, const std::string &name = "");
 
   /**
      * Constructor.
-     * \param path This is the path where to store the PID file. If an empty string is
-     * entered the directory where the main thread is started is used.
      * \param PIDFileName the name of the PID file -> will result in: PIDFileName.PID
      * \param os The ostream used to send status messages and errors.
      * \param deletePIDFile If true the PID file deleted directly after reading the PID.
@@ -118,7 +104,7 @@ public:
      * with the same PID file settings. But you can not check for a running process if the
      * ProcessHandler is not terminated correctly and started again.
      */
-  ProcessHandler(const std::string &path, const std::string &PIDFileName,
+  ProcessHandler(const std::string &PIDFileName,
        const bool deletePIDFile = false, std::ostream &os = std::cout, const std::string &name = "");
   ~ProcessHandler();
 

@@ -289,6 +289,7 @@ struct ProcessControlModule : public ProcessInfoModule{
   void mainLoop();
 private:
   bool stop;
+  bool restartRequired;
 };
 
 #endif /* INCLUDE_PROCESSMODULE_H_ */
