@@ -27,7 +27,7 @@ another child process increase the pidOffset paramter (0 for the first process) 
 processes.  
 
 In order to control more than only one process a dedicated \c xml file needs to be provided. 
-Its name is watchdog_server_processes.xml and the contend should look like this:
+Its name is WatchdogServerConfig.xml and the contend should look like this:
 \code
  <?xml version="1.0" encoding="UTF-8" ?>
 <watchdog>
@@ -38,10 +38,10 @@ Its name is watchdog_server_processes.xml and the contend should look like this:
 In the example above two processes are created. Each of the processes is required to have a unique name assigned.
 Further information like an inital path or an initial command are not added to the init file for the following reason. 
 If the server crashes or is restarted all variable values are taken from the persistancy file of the server during the restart. 
-If one would overwrite the \c path or \c cmd variable with the one from the \c  watchdog_server_processes.xml file the shown 
+If one would overwrite the \c path or \c cmd variable with the one from the \c  WatchdogServerConfig.xml file the shown 
 information would not be true in any case. If the user changed the path or command during the run time of the server 
 and started the process its is indicated in the watchdog. After a restart still the watchdog would show that the process
-is running, but \c path or \c cmd would show wrong values taken from the \c  watchdog_server_processes.xml file.
+is running, but \c path or \c cmd would show wrong values taken from the \c  WatchdogServerConfig.xml file.
 
 \remark 
 For each process a link in the proc directory is created! Thus one can access the path \c /proc/self/ without knowing the 

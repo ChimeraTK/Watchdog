@@ -3,7 +3,7 @@ The watchdog server is used to monitor the system, the watchdog itself and addit
 
 ## Details about the watchdog server and its operation
 
-Before starting the watchdog server the number of processes to be controlled needs to be fixed. This is done by modifying the config file `WatchdogServer_processes.xml` (installed in `/etc/chimeratk/watchdog-server/`). 
+Before starting the watchdog server the number of processes to be controlled needs to be fixed. This is done by modifying the config file `WatchdogServerConfig.xml` (installed in `/etc/chimeratk/watchdog-server/`). 
 Here you only need to give a name to the process to be added. All process specific settings are done via the watchdog server when it is started.
  
 In the server settings you can set a path (`SetPath`), where to execute the program specified in the CMD variable. You can also append command line arguments to the commad set in `SetCMD`. In order to add environment settings use `SetEnvironment`, e.g. `"ENSHOST=localhost"`. Separate multiple variables in the environment with a comma and multiple entries per variable with a colon, e.g. `"ENSHOST=localhost,PYTHONPATH=/locationA:/locationB"`.  
@@ -11,15 +11,15 @@ So far it is not possible to add processes dynamically.
 
 Further information are given in the doxygen documentation of the project.
 
-**In order to add a process you need to stop (see below) the watchdog server and modify the file  WatchdogServer_processes.xml.**
+**In order to add a process you need to stop (see below) the watchdog server and modify the file  WatchdogServerConfig.xml.**
 
 For integration tasks all server variables can be found in `/etc/chimeratk/watchdog-server/WatchdogServer.xml`. 
-It is created during the install process. Once you edit `WatchdogServer_processes.xml` the variable tree of the server changes. In that case use `watchdog-server-xmlGenerator` to recreate `/etc/chimeratk/watchdog-server/WatchdogServer.xml` with an updates variable tree.
+It is created during the install process. Once you edit `WatchdogServerConfig.xml` the variable tree of the server changes. In that case use `watchdog-server-xmlGenerator` to recreate `/etc/chimeratk/watchdog-server/WatchdogServer.xml` with an updates variable tree.
 This is the reason why also `watchdog-server-xmlGenerator` is installed and not just a single `/etc/chimeratk/watchdog-server/WatchdogServer.xml` file.
 
 ### MicroDAQ
 
-It also possible to aquire parameters of the watchdog in a file, produced by the `MicroDAQ` module from `ApplicationCore`. In order to enable this feature the  `WatchdogServer_processes.xml` file needs to be cahnged accordingly.
+It also possible to aquire parameters of the watchdog in a file, produced by the `MicroDAQ` module from `ApplicationCore`. In order to enable this feature the  `WatchdogServerConfig.xml` file needs to be cahnged accordingly.
 
 ## Watchdog server service
 The watchdog server will be started automatically after the package is installed if systemd is available on the host system. 

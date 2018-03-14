@@ -153,7 +153,7 @@ IF(CMAKE_BUILD_TYPE MATCHES Debug)
   )
 ENDIF(CMAKE_BUILD_TYPE MATCHES Debug)
 
-FILE( COPY ${CMAKE_SOURCE_DIR}/configs/WatchdogServer_processes.xml DESTINATION ${PROJECT_BINARY_DIR})
+FILE( COPY ${CMAKE_SOURCE_DIR}/configs/WatchdogServerConfig.xml DESTINATION ${PROJECT_BINARY_DIR})
 IF(ADAPTER STREQUAL "OPCUA")
   FILE( COPY ${CMAKE_SOURCE_DIR}/configs/WatchdogServer_mapping.xml DESTINATION ${PROJECT_BINARY_DIR})
 ELSEIF(ADAPTER STREQUAL "DOOCS")
@@ -190,7 +190,7 @@ endif()
 # install config files to /etc/... This allows the user to change config files and keeping these changes even if a new version of the 
 # package is installed. 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/configs/chimeratk-watchdog.service.in ${CMAKE_CURRENT_BINARY_DIR}/chimeratk-watchdog.service @ONLY)
-install(FILES ${CMAKE_SOURCE_DIR}/configs/WatchdogServer_processes.xml
+install(FILES ${CMAKE_SOURCE_DIR}/configs/WatchdogServerConfig.xml
         DESTINATION /etc/chimeratk/${PROJECT_NAME})
 # move systemd service file to /var similar to other system services        
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/chimeratk-watchdog.service

@@ -51,8 +51,7 @@ struct TimerModule: public ctk::ApplicationModule {
 /**
  * \brief The watchdog application
  *
- * So far from the WatchdogServer_processes.xml file only the process name is used.
- * \ToDo: Check if initial values are needed?
+ * WatchdogServerConfig.xml file is used to read process names and microDAQ enable/disabel is used.
  */
 struct WatchdogServer: public ctk::Application {
   WatchdogServer();
@@ -73,7 +72,7 @@ struct WatchdogServer: public ctk::Application {
 
   ProcessInfoModule watchdog{this, "watchdog", "Module monitoring the watchdog process"};
 
-  ctk::ConfigReader config{this, "Configuration", "WatchdogServer_processes.xml"};
+  ctk::ConfigReader config{this, "Configuration", "WatchdogServerConfig.xml"};
 
 #ifdef ENABLE_LOGGING
   std::vector<LoggingModule> processesLog;
