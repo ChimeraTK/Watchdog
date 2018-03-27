@@ -254,6 +254,9 @@ struct ProcessControlModule : public ProcessInfoModule{
   ctk::ScalarOutput<uint> processRestarts { this, "Restarts", "", "Number of time the process was automatically "
           "restarted by the watchdog since server start.",
     { "CS", "PROCESS", getName(), "DAQ" } };
+  ctk::ScalarPollInput<uint> bootDelay { this, "BootDelay", "s", "This delay is used at server start. Use this to delay the process start with"
+      "respect to other processes.",
+    { "CS", "PROCESS", getName(), "DAQ"} };
   /** @} */
 
   /**

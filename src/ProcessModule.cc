@@ -132,6 +132,7 @@ void ProcessControlModule::mainLoop() {
   // check for left over processes reading the persist file
   processSetPath.read();
   processSetCMD.read();
+  bootDelay.read();
 
   try{
 #ifdef ENABLE_LOGGING
@@ -146,6 +147,14 @@ void ProcessControlModule::mainLoop() {
       sendMessage(logging::LogLevel::INFO);
 #endif
       SetOnline(processPID);
+    } else {
+      if(bootDelay > 0){
+        (*logging) << getTime() << "Process sleeping before starting main loop. Delay: " << bootDelay << "s." <<  std::endl;
+#ifdef ENABLE_LOGGING
+        sendMessage(logging::LogLevel::INFO);
+#endif
+        sleep(bootDelay);
+      }
     }
   } catch (std::runtime_error &e){
     (*logging) << getTime() << " Failed to check for existing processes. Message:\n" << e.what() << std::endl;
@@ -153,6 +162,7 @@ void ProcessControlModule::mainLoop() {
     sendMessage(logging::LogLevel::ERROR);
 #endif
   }
+
   stop =false;
   restartRequired = false;
   while(true) {
