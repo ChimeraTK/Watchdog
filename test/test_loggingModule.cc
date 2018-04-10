@@ -35,7 +35,7 @@ struct testApp : public ChimeraTK::Application {
   ChimeraTK::ControlSystemModule cs;
 
 
-  void defineConnections(){
+  void defineConnections() override{
     /**
      * Connect a control system variable to the ProcessControlModule instead of the trigger module.
      * Now there is a blocking read in the ProcessControlModule, which is used to step through the

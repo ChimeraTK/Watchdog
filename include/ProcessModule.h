@@ -132,7 +132,7 @@ struct ProcessInfoModule : public ctk::ApplicationModule {
   /**
    * Application core main loop.
    */
-  virtual void mainLoop();
+  void mainLoop() override;
 
   /**
    * Fill process information read via proc interface.
@@ -162,7 +162,7 @@ struct ProcessInfoModule : public ctk::ApplicationModule {
    */
   std::string getTime();
 
-  void terminate();
+  void terminate() override;
 };
 
 
@@ -177,7 +177,7 @@ struct ProcessControlModule : public ProcessInfoModule{
   /* Use terminate function to delete the ProcessHandler, since it is using a local stringstream constructed in the main loop
    * which is not existing at the time the ProcessHandler destructor is called!
    */
-  void terminate();
+  void terminate() override;
 
   /**
    * \name Process control parameter (static during process execution)
@@ -289,7 +289,7 @@ struct ProcessControlModule : public ProcessInfoModule{
   /**
    * Application core main loop.
    */
-  void mainLoop();
+  void mainLoop() override;
 private:
   bool stop;
   bool restartRequired;

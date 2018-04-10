@@ -45,13 +45,13 @@ struct TimerModule: public ctk::ApplicationModule {
   /**
    * Application core main loop.
    */
-  void mainLoop();
+  void mainLoop() override;
 };
 
 /**
  * \brief The watchdog application
  *
- * WatchdogServerConfig.xml file is used to read process names and microDAQ enable/disabel is used.
+ * WatchdogServerConfig.xml file is used to read process names and microDAQ enable/disable is used.
  */
 struct WatchdogServer: public ctk::Application {
   WatchdogServer();
@@ -122,7 +122,7 @@ struct WatchdogServer: public ctk::Application {
   TimerModule timer { this, "timer",
       "Module used to trigger the watchdog update" };
 
-  void defineConnections();
+  void defineConnections() override;
 
 };
 

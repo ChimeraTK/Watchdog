@@ -72,7 +72,7 @@ struct testWD: public ctk::Application {
     shutdown();
   }
 
-  void defineConnections(){
+  void defineConnections() override{
     for(auto it = systemInfo.strInfos.begin(), ite = systemInfo.strInfos.end();
         it != ite; it++) {
       it->second >> cs["SYS"](space2underscore(it->first));

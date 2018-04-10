@@ -146,9 +146,9 @@ public:
    * Main loop function.
    * Reads number of cores and system clock ticks and other static parameter only once before the loop.
    */
-  void mainLoop();
+  void mainLoop() override;
 
-  void terminate();
+  void terminate() override;
 
   std::string getTime();
 

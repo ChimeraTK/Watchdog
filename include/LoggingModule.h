@@ -8,8 +8,6 @@
 #ifndef INCLUDE_LOGGINGMODULE_H_
 #define INCLUDE_LOGGINGMODULE_H_
 
-#include <queue>
-
 #undef GENERATE_XML
 #include <ChimeraTK/ApplicationCore/ApplicationCore.h>
 #include "Logging.h"
@@ -45,7 +43,7 @@ struct LogFileModule: public ctk::ApplicationModule {
   /**
    * Application core main loop.
    */
-  virtual void mainLoop();
+  void mainLoop() override;
 
   void terminate();
 
