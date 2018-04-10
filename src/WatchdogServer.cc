@@ -38,7 +38,7 @@ WatchdogServer::WatchdogServer() :
 #endif
     }
   } catch (std::out_of_range &e){
-    std::cerr << "Error in the xml file 'WatchdogServer_processes.xml': " << e.what()
+    std::cerr << "Error in the xml file 'WatchdogServerConfig.xml': " << e.what()
             << std::endl;
     std::cout << "I will create only one process named PROCESS..." << std::endl;
     processes.emplace_back(this, "PROCESS", "Test process");
