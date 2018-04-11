@@ -160,22 +160,9 @@ ELSEIF(ADAPTER STREQUAL "DOOCS")
   FILE( COPY ${CMAKE_SOURCE_DIR}/configs/${PROJECT_NAME}.conf DESTINATION ${PROJECT_BINARY_DIR})
 ENDIF()
 
-find_package(Doxygen)
-if(DOXYGEN_FOUND)
-  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/doc/Doxyfile.in ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY)
-  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/doc/main.dox.in ${CMAKE_CURRENT_BINARY_DIR}/main.dox @ONLY)
-  
-  add_custom_target(doc ${DOC_DEPENDENCY}
-    ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    )
-  #note the / after ${CMAKE_BINARY_DIR}/doc/. This causes the directory to be renamed to the destination, not copied into
-  install(DIRECTORY ${CMAKE_BINARY_DIR}/doc/ DESTINATION share/doc/${PROJECT_NAME}-${${PROJECT_NAME}_SOVERSION}
-          COMPONENT doc
-          OPTIONAL)
-else(DOXYGEN_FOUND)
-  message("Doxygen not found, documentation cannot be build.")
-endif(DOXYGEN_FOUND)
+# add a target to generate API documentation with Doxygen
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/main.dox.in ${CMAKE_CURRENT_BINARY_DIR}/main.dox @ONLY)
+include(cmake/enable_doxygen_documentation.cmake)
 
 # Install the executable, server information and the RPC_LIBNO file
 if("${CMAKE_INSTALL_PREFIX}" STREQUAL "/export/doocs/server")
