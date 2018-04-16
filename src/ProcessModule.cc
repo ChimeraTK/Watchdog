@@ -231,10 +231,7 @@ void ProcessControlModule::mainLoop() {
       sendMessage(logging::LogLevel::WARNING);
 #endif
       stop = true;
-      process.reset(nullptr);
-#ifdef ENABLE_LOGGING
-      evaluateMessage(handlerMessage);
-#endif
+      resetProcessHandler(&handlerMessage);
     }
 
     if(enableProcess) {
@@ -312,16 +309,10 @@ void ProcessControlModule::mainLoop() {
             << processPID << std::endl;
         sendMessage(logging::LogLevel::INFO);
 #endif
-        killSig.read();
-        //ToDo: Set default to 2!
-        if(killSig < 1)
-          process->setSigNum(2);
-        else
-          process->setSigNum(killSig);
-        process.reset(nullptr);
-#ifdef ENABLE_LOGGING
-        evaluateMessage(handlerMessage);
-#endif
+        // Here the process is stopped in case enableProcess is set to 0. If it is already reset due to restart stop don't do anything here
+        if(process.get() != nullptr){
+          resetProcessHandler(&handlerMessage);
+        }
         SetOffline();
       }
     }
@@ -412,6 +403,20 @@ void ProcessControlModule::CheckIsOnline(const int pid){
     processIsRunning = 1;
     processIsRunning.write();
   }
+}
+
+
+void ProcessControlModule::resetProcessHandler(std::stringstream* handlerMessage){
+  killSig.read();
+  //ToDo: Set default to 2!
+  if(killSig < 1)
+    process->setSigNum(2);
+  else
+    process->setSigNum(killSig);
+  process.reset(nullptr);
+#ifdef ENABLE_LOGGING
+  evaluateMessage(*handlerMessage);
+#endif
 }
 
 #ifdef ENABLE_LOGGING

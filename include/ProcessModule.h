@@ -287,6 +287,11 @@ struct ProcessControlModule : public ProcessInfoModule{
   void CheckIsOnline(const int pid);
 
   /**
+   * Set kill signal according to user setting set in killSig. After reset the ProcessHandler.
+   */
+  void resetProcessHandler(std::stringstream* handlerMessage);
+
+  /**
    * Application core main loop.
    */
   void mainLoop() override;
