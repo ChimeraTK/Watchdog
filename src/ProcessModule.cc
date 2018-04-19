@@ -229,9 +229,12 @@ void ProcessControlModule::mainLoop() {
       (*logging) << getTime() << "Maximum number of restarts reached. Restarts: " << processRestarts << "/" << processMaxRestarts << std::endl;
 #ifdef ENABLE_LOGGING
       sendMessage(logging::LogLevel::WARNING);
+      resetProcessHandler(&handlerMessage);
+#else
+      resetProcessHandler(nullptr);
 #endif
       stop = true;
-      resetProcessHandler(&handlerMessage);
+
     }
 
     if(enableProcess) {
@@ -311,7 +314,11 @@ void ProcessControlModule::mainLoop() {
 #endif
         // Here the process is stopped in case enableProcess is set to 0. If it is already reset due to restart stop don't do anything here
         if(process.get() != nullptr){
+#ifdef ENABLE_LOGGING
           resetProcessHandler(&handlerMessage);
+#else
+          resetProcessHandler(nullptr);
+#endif
         }
         SetOffline();
       }
