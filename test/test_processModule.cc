@@ -94,14 +94,12 @@ BOOST_AUTO_TEST_CASE( testStart) {
   enable = 1;
   enable.write();
   tf.runApplication();
-  writeTrigger = 1;
   writeTrigger.write();
   tf.stepApplication();
   usleep(200000);
   BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/IsRunning"), 1);
   enable = 0;
   enable.write();
-  writeTrigger = 1;
   writeTrigger.write();
   tf.stepApplication();
   usleep(200000);
@@ -134,7 +132,6 @@ BOOST_AUTO_TEST_CASE( testCounter) {
   maxRestarts.write();
   tf.runApplication();
   for(size_t i = 1; i < 5 ; i++){
-    writeTrigger = i;
     writeTrigger.write();
     tf.stepApplication();
     if(i > 2)
@@ -158,7 +155,6 @@ BOOST_AUTO_TEST_CASE( testCounter) {
   enable = 1;
   enable.write();
   for(int i = 0; i < 4; i++){
-    writeTrigger = 1;
     writeTrigger.write();
     tf.stepApplication();
   }
@@ -169,7 +165,6 @@ BOOST_AUTO_TEST_CASE( testCounter) {
   BOOST_TEST_MESSAGE("Reset and test maxrestarts==0, maxfails==0 with failing process.");
   enable = 0;
   enable.write();
-  writeTrigger = 1;
   writeTrigger.write();
   tf.stepApplication();
   enable = 1;
@@ -178,11 +173,9 @@ BOOST_AUTO_TEST_CASE( testCounter) {
   maxFails.write();
   maxRestarts = 0;
   maxRestarts.write();
-  writeTrigger = 1;
   writeTrigger.write();
   tf.stepApplication();
   for(int i = 0; i < 3; i++){
-    writeTrigger = 1;
     writeTrigger.write();
     tf.stepApplication();
     BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/Failed"), 1);
@@ -193,17 +186,40 @@ BOOST_AUTO_TEST_CASE( testCounter) {
   enable.write();
   processPath = std::string("/bin");
   processPath.write();
-  writeTrigger = 1;
   writeTrigger.write();
   tf.stepApplication();
   enable = 1;
   enable.write();
   for(int i = 0; i < 3; i++){
-    writeTrigger = 1;
     writeTrigger.write();
     tf.stepApplication();
     BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/Failed"), 0);
     BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/Restarts"), 0);
     sleep(2);
   }
+
+  BOOST_TEST_MESSAGE("Reset and test maxrestarts==2, maxfails==0 + check status after last restart/process end.");
+  enable = 0;
+  enable.write();
+  writeTrigger.write();
+  tf.stepApplication();
+  enable = 1;
+  enable.write();
+  maxFails = 0;
+  maxFails.write();
+  maxRestarts = 2;
+  maxRestarts.write();
+  writeTrigger.write();
+  tf.stepApplication();
+  for(int i = 0; i < 3; i++){
+    writeTrigger.write();
+    tf.stepApplication();
+    BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/Failed"), 0);
+    BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/Restarts"), i);
+    BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/IsRunning"), 1);
+    sleep(2);
+  }
+  writeTrigger.write();
+  tf.stepApplication();
+  BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/IsRunning"), 0);
 }
