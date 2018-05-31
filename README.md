@@ -34,7 +34,7 @@ Other options are `stop` used to disable the watchdog service or `start` used to
 ### RPC bind 
 If some processes started by the watchdog server require `rpcbind` the service file has to adopted in order to start `rpcbind` before the watchdog server.
 
-    #/var/lib/chimeratk/watchdog-server/chimeratk-watchdog.service
+    #/etc/chimeratk/watchdog-server/chimeratk-watchdog.service
     [Unit]
     Description=ChimeraTK Watchdog Server
     Wants=rpcbind.service
