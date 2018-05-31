@@ -179,9 +179,9 @@ endif()
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/configs/chimeratk-watchdog.service.in ${CMAKE_CURRENT_BINARY_DIR}/chimeratk-watchdog.service @ONLY)
 install(FILES ${CMAKE_SOURCE_DIR}/configs/WatchdogServerConfig.xml
         DESTINATION /etc/chimeratk/${PROJECT_NAME})
-# move systemd service file to /var similar to other system services        
+# most systemd service files are stored in /var, but here we want to allow the user to change it -> install to /etc/... like other conf files        
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/chimeratk-watchdog.service
-        DESTINATION /var/lib/chimeratk/${PROJECT_NAME})
+        DESTINATION /etc/chimeratk/${PROJECT_NAME})
 IF(ADAPTER STREQUAL "OPCUA")
   install( FILES ${CMAKE_SOURCE_DIR}/configs/WatchdogServer_mapping.xml DESTINATION /etc/chimeratk/${PROJECT_NAME})
 ELSEIF(ADAPTER STREQUAL "DOOCS")
