@@ -17,11 +17,15 @@ For integration tasks all server variables can be found in `/etc/chimeratk/watch
 It is created during the install process. Once you edit `WatchdogServerConfig.xml` the variable tree of the server changes. In that case use `watchdog-server-xmlGenerator` to recreate `/etc/chimeratk/watchdog-server/WatchdogServer.xml` with an updated variable tree.
 This is the reason why also `watchdog-server-xmlGenerator` is installed in addition to the  `/etc/chimeratk/watchdog-server/WatchdogServer.xml` file.
 
+When upgrading the watchdag server package the persist file is temporaryly copied to `/etc/chimeratk/watchdog-server/` and treated as configuration file. In consequence the persist file is the same after upgrading the watchdog server packge. This is also true if the watchdog server package is removed and installed again later. Only purging the watchdog server package will remove the persist file and all the other configuration files.
+
 ### MicroDAQ
 
 It also possible to aquire parameters of the watchdog in a file, produced by the `MicroDAQ` module from `ApplicationCore`. In order to enable this feature the  `WatchdogServerConfig.xml` file needs to be cahnged accordingly.
 
     <variable name="enableMicroDAQ" type="int32" value="1" />
+    
+If MicroDAQ is enabled the collected data are stored in `/var/lib/chimeratk/watchdog-server/uDAQ`. In order to change this location put a symbilc link named `uDAQ` there. If you upgrade the watchdog server the uDAQ folder will be kept, whereas in case of removing the watchdog server package the folder or symlink `uDAQ` is removed too.
 
 ## Watchdog server service
 The watchdog server will be started automatically after the package is installed if systemd is available on the host system. 
