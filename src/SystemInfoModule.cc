@@ -8,11 +8,14 @@
 #include "SystemInfoModule.h"
 
 #include <sstream>
+#include <fstream>
 
 #include <proc/readproc.h>
 #include <proc/sysinfo.h>
 
 #include "sys_stat.h"
+
+#include "boost/date_time/posix_time/posix_time.hpp"
 
 SystemInfoModule::SystemInfoModule(EntityOwner *owner, const std::string &name,
     const std::string &description, bool eliminateHierarchy,

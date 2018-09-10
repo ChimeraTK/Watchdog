@@ -9,6 +9,8 @@
 #define INCLUDE_LOGGINGMODULE_H_
 
 #undef GENERATE_XML
+
+#include <fstream>
 #include <ChimeraTK/ApplicationCore/ApplicationCore.h>
 #include "Logging.h"
 

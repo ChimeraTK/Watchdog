@@ -8,6 +8,7 @@
 #include "ProcessModule.h"
 #include <signal.h>
 
+#include "boost/date_time/posix_time/posix_time.hpp"
 
 void ProcessInfoModule::mainLoop(){
   processPID = getpid();

@@ -38,7 +38,7 @@ ELSE()
                       "   -DADAPTER=OPCUA to use OPC-UA")
 ENDIF()
 
-FIND_PACKAGE(Boost COMPONENTS unit_test_framework)
+FIND_PACKAGE(Boost COMPONENTS unit_test_framework date_time)
 ENABLE_TESTING()
 
 FIND_PACKAGE(PkgConfig REQUIRED)

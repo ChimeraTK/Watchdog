@@ -15,7 +15,7 @@
 #include "WatchdogServer.h"
 #include "ChimeraTK/ApplicationCore/TestFacility.h"
 #include <ChimeraTK/ApplicationCore/ConfigReader.h>
-#include <mtca4u/RegisterPath.h>
+#include <ChimeraTK/RegisterPath.h>
 #include <libxml++/libxml++.h>
 
 #include <boost/test/unit_test.hpp>
@@ -164,7 +164,7 @@ BOOST_AUTO_TEST_CASE( testPerformance) {
   // Get the trigger variable thats blocking the application (i.e. ProcessControlModule)
   auto writeTrigger = tf.getScalar<uint>("trigger/");
   auto logFile = tf.getScalar<std::string>("watchdog/SetLogFile");
-  mtca4u::ScalarRegisterAccessor<uint> targetStream[8] = {
+  ChimeraTK::ScalarRegisterAccessor<uint> targetStream[8] = {
   tf.getScalar<uint>("IN1-MB01/SetTargetStream"),
   tf.getScalar<uint>("IN1-MB02/SetTargetStream"),
   tf.getScalar<uint>("LA1-RC01/SetTargetStream"),
