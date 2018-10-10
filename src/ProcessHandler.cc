@@ -20,7 +20,7 @@
 #include <fcntl.h>
 #include <sys/resource.h>
 
-void handle_sigchld(int sig) {
+void handle_sigchld(int /*sig*/) {
   int saved_errno = errno;
   while (waitpid((pid_t)(-1), 0, WNOHANG) > 0) {}
   errno = saved_errno;

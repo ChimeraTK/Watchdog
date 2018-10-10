@@ -35,7 +35,7 @@ namespace proc_util{
   /**
    * Read procps information of a certain process.
    * \param PID pid of the process to be considered.
-   * \thows std::runtime_error In case no process with the given PID exists.
+   * \throws std::runtime_error In case no process with the given PID exists.
    */
   std::shared_ptr<proc_t> getInfo(const size_t &PID);
 
