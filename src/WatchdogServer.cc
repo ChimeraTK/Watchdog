@@ -85,7 +85,7 @@ WatchdogServer::WatchdogServer() :
     std::cout << "Adding filesystem monitor for: " << mountPoint.first << " mounted at: " << mountPoint.second << " -->" << name << std::endl;
     fsMonitors.emplace_back(mountPoint.first, mountPoint.second, this, name, "Filesystem monitor");
 #ifdef ENABLE_LOGGING
-    processesLog.emplace_back(this, "fsLogging", "File system monitor log");
+    processesLog.emplace_back(this, name + "-Log", "File system monitor log");
 #endif
   }
   auto net = findNetworkDevices();
@@ -94,7 +94,7 @@ WatchdogServer::WatchdogServer() :
     std::cout << "Adding network monitor for device: " << dev << " -->" << name << std::endl;
     networkMonitors.emplace_back(dev, this, name, "Network monitor");
   #ifdef ENABLE_LOGGING
-    processesLog.emplace_back(this, "netLogging", "Network monitor log");
+    processesLog.emplace_back(this, name + "-Log", "Network monitor log");
   #endif
   }
   ProcessHandler::setupHandler();
