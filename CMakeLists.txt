@@ -126,6 +126,8 @@ IF(CMAKE_BUILD_TYPE MATCHES Debug)
                                         procps 
                                         ${Boost_LIBRARIES}
                                         ${PROJECT_NAME}lib)
+                                        
+  install(TARGETS ${PROJECT_NAME}lib LIBRARY DESTINATION  lib)
 
 ELSE()
   # main server executable
