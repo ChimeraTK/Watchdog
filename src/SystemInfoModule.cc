@@ -93,7 +93,7 @@ void SystemInfoModule::mainLoop() {
       freeSwap  = std::stoi(std::to_string(kb_swap_free));
       usedSwap  = std::stoi(std::to_string(maxSwap - freeSwap));
     } catch(std::exception &e) {
-      (*logging) << getTime(this) << "Conversion failed: " << e.what() << std::endl;
+      (*logging) << getTime(this) << "meminfo conversion failed: " << e.what() << std::endl;
 #ifdef ENABLE_LOGGING
       sendMessage(logging::LogLevel::ERROR);
 #endif
@@ -113,7 +113,7 @@ void SystemInfoModule::mainLoop() {
       uptime_sec = std::stoi(std::to_string(
           uptime_secTotal - (uptime_day * 86400) - (uptime_hour * 3600) - (uptime_min*60)));
     } catch(std::exception &e) {
-      (*logging) << getTime(this) << "Conversion failed: " << e.what() << std::endl;
+      (*logging) << getTime(this) << "uptime conversion failed: " << e.what() << std::endl;
 #ifdef ENABLE_LOGGING
       sendMessage(logging::LogLevel::ERROR);
 #endif
@@ -310,8 +310,11 @@ void FileSystemModule::mainLoop(){
         sendMessage(logging::LogLevel::DEBUG);
 #endif
       }
-
-      writeAll();
+      disk_size.write();
+      disk_free.write();
+      disk_user.write();
+      disk_usage.write();
+//      writeAll();
     }
   }
 }
