@@ -212,7 +212,7 @@ void WatchdogServer::defineConnections() {
   }
 
   //\FixMe: Remove once MicroDAQ is using uint
-  microDAQ.trigger >> conversion.triggerIn;
+  trigger.tick >> conversion.triggerIn;
   /*
    *  Micro DAQ system
    */
