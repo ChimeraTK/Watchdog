@@ -40,6 +40,7 @@ void ProcessInfoModule::FillProcInfo(const std::shared_ptr<proc_t> &info){
     auto now = boost::posix_time::microsec_clock::local_time();
     int old_time = 0;
     try {
+      //\FixMe: Exception is thrown on server start -> find out why.
       old_time = std::stoi(std::to_string(utime + stime + cutime + cstime));
       utime = std::stoi(std::to_string(info->utime));
       stime = std::stoi(std::to_string(info->stime));
