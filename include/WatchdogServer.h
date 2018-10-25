@@ -12,6 +12,7 @@
 #include <ChimeraTK/ApplicationCore/ApplicationCore.h>
 #include <ChimeraTK/ApplicationCore/ConfigReader.h>
 #include <ChimeraTK/ApplicationCore/MicroDAQ.h>
+#include "ChimeraTK/ApplicationCore/PeriodicTrigger.h"
 
 #include "SystemInfoModule.h"
 #include "ProcessModule.h"
@@ -22,31 +23,6 @@
 #endif
 
 namespace ctk = ChimeraTK;
-
-/**
- * \brief This module is used to trigger the mainloops of the modules to go on.
- */
-struct TimerModule: public ctk::ApplicationModule {
-  using ctk::ApplicationModule::ApplicationModule;
-  /**
-   * \remark
-   * Observe this variable by other modules to obtain a trigger
-   */
-  ctk::ScalarOutput<uint> trigger { this, "trigger", "", "Trigger counter",
-    { "Timer" }};
-
-  /** \FixMe  Workaround for the microDAQ module, which needs an int */
-  ctk::ScalarOutput<int> itrigger { this, "itrigger", "", "Trigger counter",
-    { "Timer" }};
-
-  ctk::ScalarPollInput<uint> update {this , "update", "s", "Specify the amount of time given in seconds between update triggers.",
-    { "Timer" }};
-
-  /**
-   * Application core main loop.
-   */
-  void mainLoop() override;
-};
 
 /**
  * \brief The watchdog application
@@ -69,6 +45,16 @@ struct WatchdogServer: public ctk::Application {
    * If that file is not found only one process named PROCESS is added.
    */
   std::vector<ProcessControlModule> processes;
+
+  /**
+   * Modules monitoring disks usage of system drives.
+   */
+  std::vector<FileSystemModule> fsMonitors;
+
+  /**
+   * Modules monitoring disks usage of system drives.
+   */
+  std::vector<NetworkModule> networkMonitors;
 
   ProcessInfoModule watchdog{this, "watchdog", "Module monitoring the watchdog process"};
 
@@ -119,8 +105,7 @@ struct WatchdogServer: public ctk::Application {
    */
   ctk::ControlSystemModule cs;
 
-  TimerModule timer { this, "timer",
-      "Module used to trigger the watchdog update" };
+  ctk::PeriodicTrigger trigger{this, "Trigger", "Trigger used for other modules"};
 
   void defineConnections() override;
 

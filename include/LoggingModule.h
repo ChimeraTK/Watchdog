@@ -27,7 +27,7 @@ namespace ctk = ChimeraTK;
 struct LogFileModule: public ctk::ApplicationModule {
   using ctk::ApplicationModule::ApplicationModule;
 
-  ctk::ScalarPushInput<uint> trigger { this, "trigger", "",
+  ctk::ScalarPushInput<size_t> trigger { this, "trigger", "",
     "Trigger used to update the watchdog" };
 
   ctk::ScalarPollInput<std::string> logFile { this, "logFile", "",

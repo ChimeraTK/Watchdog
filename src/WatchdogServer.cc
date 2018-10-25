@@ -7,21 +7,51 @@
 
 #include "WatchdogServer.h"
 
-//#include <libxml++/libxml++.h>
+#include "boost/filesystem.hpp"
 
-void TimerModule::mainLoop() {
-  while(true) {
-    update.read();
-    trigger = trigger + 1;
-    trigger.write();
-    itrigger = trigger;
-    itrigger.write();
-    if(update < 1){
-      sleep(3);
-    } else {
-      sleep(update);
+namespace bfs = boost::filesystem;
+
+/*
+ * Select all mount points that mount a physical hard drive on the local machine.
+ * The boot partition is not selected.
+ */
+std::vector<std::pair<std::string, std::string> > findMountPoints(){
+  std::vector<std::pair<std::string, std::string> > out;
+  std::ifstream in("/proc/mounts");
+  std::string strin[4];
+  int iin[2];
+  while(in.good()){
+    in >> strin[0] >> strin[1] >> strin[2] >> strin[3] >> iin[0] >> iin[1];
+    bfs::path p(strin[0]);
+    if(strin[0].substr(0,5).compare("/dev/") == 0){
+      if(strin[1].substr(0,6).compare("/boot/") != 0){
+        out.push_back(std::make_pair(p.filename().string(),strin[1]));
+      }
     }
   }
+  in.close();
+  return out;
+}
+
+/*
+ * Select all non virtual network adapter.
+ */
+std::vector<std::string> findNetworkDevices(){
+  std::vector<std::string> out;
+  bfs::path p("/sys/class/net");
+  try {
+    if (exists(p)){    // does p actually exist?
+      if (is_directory(p)){      // is p a directory?
+        for(auto i = bfs::directory_iterator(p); i != bfs::directory_iterator(); i++){
+          if(bfs::canonical(i->path()).string().find("virtual") == std::string::npos)
+            out.push_back(i->path().filename().string());
+        }
+      }
+    }
+  } catch (const bfs::filesystem_error& ex) {
+    std::cout << ex.what() << '\n';
+  }
+  return out;
 }
 
 WatchdogServer::WatchdogServer() :
@@ -44,11 +74,28 @@ WatchdogServer::WatchdogServer() :
     processes.emplace_back(this, "PROCESS", "Test process");
     processes.back().logging = nullptr;
 #ifdef ENABLE_LOGGING
-    processesLog.emplace_back(this, "PROCESS", "Test process log");
-    processesLogExternal.emplace_back(this, "PROCESS", "Test process external log");
+    processesLog.emplace_back(this, "PROCESS", "Process log");
+    processesLogExternal.emplace_back(this, "PROCESS", "Process external log");
 #endif
   }
-
+  auto fs = findMountPoints();
+  for(auto &mountPoint : fs){
+    std::string name = std::string("fs.")+mountPoint.first;
+    std::cout << "Adding filesystem monitor for: " << mountPoint.first << " mounted at: " << mountPoint.second << " -->" << name << std::endl;
+    fsMonitors.emplace_back(mountPoint.first, mountPoint.second, this, name, "Filesystem monitor");
+#ifdef ENABLE_LOGGING
+    processesLog.emplace_back(this, "fsLogging", "File system monitor log");
+#endif
+  }
+  auto net = findNetworkDevices();
+  for(auto &dev : net){
+    std::string name = std::string("net.")+dev;
+    std::cout << "Adding network monitor for device: " << dev << " -->" << name << std::endl;
+    networkMonitors.emplace_back(dev, this, name, "Network monitor");
+  #ifdef ENABLE_LOGGING
+    processesLog.emplace_back(this, "netLogging", "Network monitor log");
+  #endif
+  }
   ProcessHandler::setupHandler();
 }
 
@@ -58,8 +105,8 @@ void WatchdogServer::defineConnections() {
     it->second >> cs["SYS"](space2underscore(it->first));
   }
   systemInfo.findTag("CS").connectTo(cs[systemInfo.getName()]);
-  timer.trigger >> systemInfo.trigger;
-  cs[timer.getName()]("UpdateTime") >> timer.update;
+  trigger.tick >> systemInfo.trigger;
+  cs["configuration"]("UpdateTime") >> trigger.timeout;
 
 	watchdog.findTag("CS").connectTo(cs[watchdog.getName()]);
 #ifdef ENABLE_LOGGING
@@ -73,7 +120,7 @@ void WatchdogServer::defineConnections() {
 
   cs[watchdog.getName()]("SetLogFile") >> watchdogLogFile.logFile;
   cs[watchdog.getName()]("SetLogTailLengthExternal") >> watchdogLogFile.tailLength;
-  timer.trigger >> watchdogLogFile.trigger;
+  trigger.tick >> watchdogLogFile.trigger;
   watchdogLogFile.findTag("CS").connectTo(cs[watchdog.getName()]);
 
   systemInfo.findTag("Logging").connectTo(systemInfoLog);
@@ -95,7 +142,7 @@ void WatchdogServer::defineConnections() {
 	systemInfo.ticksPerSecond >> watchdog.ticksPerSecond;
   systemInfo.uptime_secTotal >> watchdog.sysUpTime;
   systemInfo.startTime >> watchdog.sysStartTime;
-  timer.trigger >> watchdog.trigger;
+  trigger.tick >> watchdog.trigger;
 
 
   for(auto &item : processes) {
@@ -113,7 +160,7 @@ void WatchdogServer::defineConnections() {
     systemInfo.ticksPerSecond >> item.ticksPerSecond;
     systemInfo.uptime_secTotal >> item.sysUpTime;
     systemInfo.startTime >> item.sysStartTime;
-    timer.trigger >> item.trigger;
+    trigger.tick >> item.trigger;
 
 #ifdef ENABLE_LOGGING
     cs[item.getName()]("SetLogfileExternal") >> item.processSetExternalLogfile;
@@ -126,11 +173,40 @@ void WatchdogServer::defineConnections() {
     (*log).findTag("CS").connectTo(cs[item.getName()]);
     item.processExternalLogfile >> (*logExternal).logFile;
     cs[item.getName()]("SetLogTailLengthExternal") >> (*logExternal).tailLength;
-    timer.trigger >> (*logExternal).trigger;
+    trigger.tick >> (*logExternal).trigger;
     (*logExternal).findTag("CS").connectTo(cs[item.getName()]);
 
     log++;
     logExternal++;
+#endif
+  }
+  for(auto &item : fsMonitors){
+    item.findTag("CS").connectTo(cs[item.getName()]);
+    trigger.tick >> item.trigger;
+#ifdef ENABLE_LOGGING
+    item.message >> (*log).message;
+    item.messageLevel >> (*log).messageLevel;
+    cs[watchdog.getName()]("SetLogFile") >> (*log).logFile;
+    cs[item.getName()]("SetLogLevel") >> (*log).logLevel;
+    cs[item.getName()]("SetLogTailLength") >> (*log).tailLength;
+    cs[item.getName()]("SetTargetStream") >> (*log).targetStream;
+    (*log).findTag("CS").connectTo(cs[item.getName()]);
+    log++;
+#endif
+  }
+
+  for(auto &item : networkMonitors){
+    item.findTag("CS").connectTo(cs[item.getName()]);
+    trigger.tick >> item.trigger;
+#ifdef ENABLE_LOGGING
+    item.message >> (*log).message;
+    item.messageLevel >> (*log).messageLevel;
+    cs[watchdog.getName()]("SetLogFile") >> (*log).logFile;
+    cs[item.getName()]("SetLogLevel") >> (*log).logLevel;
+    cs[item.getName()]("SetLogTailLength") >> (*log).tailLength;
+    cs[item.getName()]("SetTargetStream") >> (*log).targetStream;
+    (*log).findTag("CS").connectTo(cs[item.getName()]);
+    log++;
 #endif
   }
   /*
@@ -147,7 +223,7 @@ void WatchdogServer::defineConnections() {
     }
 
     // configuration of the DAQ system itself
-    timer.itrigger >> microDAQ.trigger;
+    trigger.tick >> microDAQ.trigger;
     microDAQ.findTag("MicroDAQ.CONFIG").connectTo(cs["MicroDAQ"]);
 
     cs["MicroDAQ"]("nMaxFiles") >> microDAQ.nMaxFiles;

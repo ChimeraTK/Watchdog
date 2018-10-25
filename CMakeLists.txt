@@ -4,8 +4,8 @@ cmake_minimum_required(VERSION 2.8)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/Modules)
 
 set(${PROJECT_NAME}_MAJOR_VERSION 00)
-set(${PROJECT_NAME}_MINOR_VERSION 02)
-set(${PROJECT_NAME}_PATCH_VERSION 04)
+set(${PROJECT_NAME}_MINOR_VERSION 03)
+set(${PROJECT_NAME}_PATCH_VERSION 01)
 include(cmake/set_version_numbers.cmake)
 
 # Moderate version of the compiler flags
@@ -22,7 +22,7 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 --coverage")
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--export-dynamic -Wl,--no-as-needed")
 
 include(cmake/add_dependency.cmake)
-add_dependency(ChimeraTK-ApplicationCore 00.05 REQUIRED)
+add_dependency(ChimeraTK-ApplicationCore 01.01 REQUIRED)
 
 find_library(procps NAMES procps REQUIRED)
 
@@ -38,7 +38,7 @@ ELSE()
                       "   -DADAPTER=OPCUA to use OPC-UA")
 ENDIF()
 
-FIND_PACKAGE(Boost COMPONENTS unit_test_framework date_time)
+FIND_PACKAGE(Boost COMPONENTS unit_test_framework date_time filesystem)
 ENABLE_TESTING()
 
 FIND_PACKAGE(PkgConfig REQUIRED)
@@ -126,6 +126,7 @@ IF(CMAKE_BUILD_TYPE MATCHES Debug)
                                         procps 
                                         ${Boost_LIBRARIES}
                                         ${PROJECT_NAME}lib)
+
 ELSE()
   # main server executable
   add_executable(${PROJECT_NAME} ${server_sources} ${library_sources})

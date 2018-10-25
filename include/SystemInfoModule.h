@@ -70,7 +70,7 @@ public:
       const std::string &description, bool eliminateHierarchy = false,
       const std::unordered_set<std::string> &tags = { });
 
-  ctk::ScalarPushInput<uint> trigger { this, "trigger", "",
+  ctk::ScalarPushInput<size_t> trigger { this, "trigger", "",
       "Trigger used to update the watchdog" };
   /**
    * \name Static system information (read only once)
@@ -148,10 +148,198 @@ public:
    */
   void mainLoop() override;
 
+  /**
+   * Clean up ostream pointer and terminate the application module.
+   */
   void terminate() override;
 
-  std::string getTime();
 
+
+};
+
+/*
+ * Return the current time in a formatted way:
+ * WATCHDOG_SERVER: 2018-Oct-25 11:22:29.411611  -> "module name" ->
+ * This is used to be prepended to logging messages.
+ */
+std::string getTime(ctk::ApplicationModule* mod);
+
+extern std::mutex fs_mutex; ///< This mutex is used when reading filesystem information via statfs
+
+/**
+ * \brief Module reading file system information (size, available space)
+ *
+ * Hard disk devices are mounted at a certain location. The statfs that is used
+ * internally to read information needs the mount point and not the device itself.
+ * E.g. /dev/sdb1 mounted at /media/data -> statfs works on /media/data.
+ * Therefore the module might be used multiple times for different mount point to
+ * be monitored.
+ */
+struct FileSystemModule : public ctk::ApplicationModule {
+  /**
+   * Constructor.
+   * \param devName The name of the device (e.g. /dev/sdb1 -> sdb1)
+   * \param mntPoint The mount point of the device (e.g. / for the root directory)
+   */
+  FileSystemModule(const std::string &devName, const std::string &mntPoint, EntityOwner *owner, const std::string &name,
+        const std::string &description, bool eliminateHierarchy = false,
+        const std::unordered_set<std::string> &tags = { });
+
+  /**
+   * Publish the device name although it is also encoded in the path by
+   * the watchdog  sever.
+   */
+  ctk::ScalarOutput<std::string> deviceName { this, "deviceName", "", "Name of the device",
+        { "CS", "SYS", "DAQ"} };
+  ctk::ScalarOutput<std::string> mountPoint { this, "mountPoint", "", "Mount point of the device",
+          { "CS", "SYS", "DAQ"} };
+  ctk::ScalarOutput<double> disk_size { this, "size", "GiB", "Mount point of the device",
+          { "CS", "SYS", "DAQ"} };
+  ctk::ScalarOutput<double> disk_free { this, "free", "GiB", "Free disk space",
+          { "CS", "SYS", "DAQ"} };
+  ctk::ScalarOutput<double> disk_user { this, "freeUser", "GiB", "Free disk space available for the user",
+          { "CS", "SYS", "DAQ"} };
+  ctk::ScalarOutput<double> disk_usage { this, "usage", "%", "Disk usage with respect to the space available to the user",
+          { "CS", "SYS", "DAQ"} };
+//
+  ctk::ScalarPushInput<size_t> trigger { this, "trigger", "",
+      "Trigger used to update the watchdog" };
+
+  const double GiB = 1./ 1024/1024/1024; ///< Conversion to GiB (not to be mixed up with GB!)
+
+  std::string tmp[2]; ///<Temporary store device name and mount point
+  /**
+   * \name Logging
+   * @{
+   */
+  std::ostream *logging;
+#ifdef ENABLE_LOGGING
+  /** Message to be send to the logging module */
+  ctk::ScalarOutput<std::string> message { this, "message", "", "Message of the module to the logging System",
+      { "Logging", "SYS", getName() } };
+
+  /** Message to be send to the logging module */
+  ctk::ScalarOutput<uint> messageLevel { this, "messageLevel", "", "Logging level of the message",
+      { "Logging", "SYS", getName() } };
+
+  void sendMessage(const logging::LogLevel &level = logging::LogLevel::INFO);
+
+#endif
+  /** @} */
+
+  /**
+   * Main loop function.
+   */
+  void mainLoop() override;
+
+  /**
+   * Clean up ostream pointer and terminate the application module.
+   */
+  void terminate() override;
+
+  /**
+   * Use statfs to read information about the device.
+   * Since this might not be thread safe a mutex is used here.
+   */
+  bool read();
+};
+
+/**
+ * \brief Module reading information of a network adapter.
+ *
+ * Parameters that are observed are:
+ * - received data (byte, packates)
+ * - transmitted data (byte, packates)
+ * - dropped data (transmitted and received)
+ * - collisions
+ *
+ *
+ * Hard disk devices are mounted at a certain location. The statfs that is used
+ * internally to read information needs the mount point and not the device itself.
+ * E.g. /dev/sdb1 mounted at /media/data -> statfs works on /media/data.
+ * Therefore the module might be used multiple times for different mount point to
+ * be monitored.
+ */
+struct NetworkModule : public ctk::ApplicationModule {
+  NetworkModule(const std::string &device, EntityOwner *owner, const std::string &name,
+        const std::string &description, bool eliminateHierarchy = false,
+        const std::unordered_set<std::string> &tags = { });
+
+  /**
+   * Publish the device name although it is also encoded in the path by
+   * the watchdog  sever.
+   */
+  ctk::ScalarOutput<std::string> deviceName { this, "device", "", "Name of the device",
+        { "CS", "SYS", "DAQ"} };
+
+  /*
+   * Use a vector to handle all output variables of the module for easy
+   * filling.
+   */
+  std::vector<ctk::ScalarOutput<double> > data;
+
+  ctk::ScalarPushInput<size_t> trigger { this, "trigger", "",
+      "Trigger used to update the watchdog" };
+
+  const double MiB = 1./ 1024/1024; ///< Conversion to MiB (not to be mixed up with MB!)
+
+  std::string tmp; ///<Temporary store device name
+
+  struct raw{
+    std::vector<unsigned long long> data; ///< Used to store raw data read from sys files
+    std::vector<std::string> files;///< Names of the sys files used to get networking information
+    std::vector<boost::posix_time::ptime> time;///< Safe individual time stamps of reading a certain sys file
+    raw(const std::string &device){
+      data = std::vector<unsigned long long>(7);
+      std::string src_base("/sys/class/net/");
+      files.push_back(src_base+device+"/statistics/rx_packets");
+      files.push_back(src_base+device+"/statistics/tx_packets");
+      files.push_back(src_base+device+"/statistics/rx_bytes");
+      files.push_back(src_base+device+"/statistics/tx_bytes");
+      files.push_back(src_base+device+"/statistics/rx_dropped");
+      files.push_back(src_base+device+"/statistics/tx_dropped");
+      files.push_back(src_base+device+"/statistics/collisions");
+      time = std::vector<boost::posix_time::ptime>(7);
+    }
+    raw() = default;
+  };
+
+  raw previousData; ///< Last data collected
+
+  /**
+   * \name Logging
+   * @{
+   */
+  std::ostream *logging;
+#ifdef ENABLE_LOGGING
+  /** Message to be send to the logging module */
+  ctk::ScalarOutput<std::string> message { this, "message", "", "Message of the module to the logging System",
+      { "Logging", "SYS", getName() } };
+
+  /** Message to be send to the logging module */
+  ctk::ScalarOutput<uint> messageLevel { this, "messageLevel", "", "Logging level of the message",
+      { "Logging", "SYS", getName() } };
+
+  void sendMessage(const logging::LogLevel &level = logging::LogLevel::INFO);
+
+#endif
+  /** @} */
+
+  /**
+   * Main loop function.
+   */
+  void mainLoop() override;
+
+  /**
+   * Clean up ostream pointer and terminate the application module.
+   */
+  void terminate() override;
+
+  /**
+   * Use statfs to read information about the device.
+   * Since this might not be thread safe a mutex is used here.
+   */
+  bool read();
 };
 
 #endif /* INCLUDE_SYSTEMINFOMODULE_H_ */
