@@ -61,12 +61,18 @@ void LoggingModule::mainLoop(){
     std::stringstream ss;
     ss << level << (std::string)message;
     if(targetStream == 0 || targetStream == 1){
+      if(((std::string)logFile).compare(currentFile.c_str()) != 0 && file->is_open()){
+        // new log file name was set during runtime
+        file->close();
+      }
       if(!((std::string)logFile).empty() && !file->is_open()){
         file->open((std::string)logFile,  std::ofstream::out | std::ofstream::app);
         if(!file->is_open() && level <= logging::LogLevel::ERROR)
           std::cerr << logging::LogLevel::ERROR << this->getName() << "LoggingModule failed to open log file for writing: " << (std::string)logFile << std::endl;
-        else if (file->is_open() && level <= logging::LogLevel::INFO)
+        else if (file->is_open() && level <= logging::LogLevel::INFO){
           std::cout << logging::LogLevel::INFO << this->getName() << " Opened log file for writing: " << (std::string)logFile << std::endl;
+          currentFile = (std::string)logFile;
+        }
       }
     }
     if(level >= setLevel){

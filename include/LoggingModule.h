@@ -99,6 +99,8 @@ struct LoggingModule: public ctk::ApplicationModule {
 
   std::unique_ptr<std::ofstream> file; ///< Log file where to write log messages
 
+  std::string currentFile; ///<Name of the current log file
+
   /**
    * Application core main loop.
    */
