@@ -14,18 +14,19 @@ namespace bfs = boost::filesystem;
 /*
  * Select all mount points that mount a physical hard drive on the local machine.
  * The boot partition is not selected.
+ * Only devices that include /dev/sd are considered.
  */
-std::vector<std::pair<std::string, std::string> > findMountPoints(){
-  std::vector<std::pair<std::string, std::string> > out;
+std::set<std::pair<std::string, std::string> > findMountPoints(){
+  std::set<std::pair<std::string, std::string> > out;
   std::ifstream in("/proc/mounts");
   std::string strin[4];
   int iin[2];
   while(in.good()){
     in >> strin[0] >> strin[1] >> strin[2] >> strin[3] >> iin[0] >> iin[1];
     bfs::path p(strin[0]);
-    if(strin[0].substr(0,5).compare("/dev/") == 0){
+    if(strin[0].substr(0,7).compare("/dev/sd") == 0){
       if(strin[1].substr(0,6).compare("/boot/") != 0){
-        out.push_back(std::make_pair(p.filename().string(),strin[1]));
+        out.insert(std::make_pair(p.filename().string(),strin[1]));
       }
     }
   }
@@ -36,15 +37,15 @@ std::vector<std::pair<std::string, std::string> > findMountPoints(){
 /*
  * Select all non virtual network adapter.
  */
-std::vector<std::string> findNetworkDevices(){
-  std::vector<std::string> out;
+std::set<std::string> findNetworkDevices(){
+  std::set<std::string> out;
   bfs::path p("/sys/class/net");
   try {
     if (exists(p)){    // does p actually exist?
       if (is_directory(p)){      // is p a directory?
         for(auto i = bfs::directory_iterator(p); i != bfs::directory_iterator(); i++){
           if(bfs::canonical(i->path()).string().find("virtual") == std::string::npos)
-            out.push_back(i->path().filename().string());
+            out.insert(i->path().filename().string());
         }
       }
     }
