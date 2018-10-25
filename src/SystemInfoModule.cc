@@ -291,7 +291,7 @@ void FileSystemModule::mainLoop(){
   while(1){
     trigger.read();
     if(read()){
-      disk_usage = disk_user/disk_size*100.;
+      disk_usage = (disk_size-disk_user)/disk_size*100.;
       if(disk_usage > 95){
         (*logging) << getTime(this) << "More than 95% (" << disk_usage << "%) of "
             << (std::string)deviceName << " mounted at " << (std::string)mountPoint << " are used!" << std::endl;
