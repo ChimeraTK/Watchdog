@@ -24,6 +24,30 @@
 
 namespace ctk = ChimeraTK;
 
+/*
+ * Module used to convert trigger signal from PeriodicTrigger for MicroDAQ
+ * \FixMe: Remove once MicroDAQ is using uint
+ */
+struct ConversionModule : public ctk::ApplicationModule{
+  using ctk::ApplicationModule::ApplicationModule;
+
+  ctk::ScalarPushInput<uint64_t> triggerIn { this, "triggerIn", "",
+      "Trigger from the PeriodicTrigger Module" };
+  ctk::ScalarOutput<int> triggerOut { this, "triggerOut", "",
+      "Trigger for the MicroDAQ module" };
+  /**
+   * Application core main loop.
+   */
+  virtual void mainLoop(){
+    while(1){
+      triggerIn.read();
+      triggerOut = triggerIn;
+      triggerOut.write();
+    }
+  }
+};
+
+
 /**
  * \brief The watchdog application
  *
@@ -87,6 +111,12 @@ struct WatchdogServer: public ctk::Application {
 
   LoggingModule systemInfoLog{this, "systeminfoLog", "Logging module of the system information module"};
 #endif
+
+  /*
+   * Module used to convert trigger signal from PeriodicTrigger for MicroDAQ
+   * \FixMe: Remove once MicroDAQ is using uint
+   */
+  ConversionModule conversion;
 
   ctk::MicroDAQ microDAQ;
   /**

@@ -34,7 +34,7 @@ namespace ctk = ChimeraTK;
 struct ProcessInfoModule : public ctk::ApplicationModule {
   using ctk::ApplicationModule::ApplicationModule;
 
-  ctk::ScalarPushInput<size_t> trigger { this, "trigger", "",
+  ctk::ScalarPushInput<uint64_t> trigger { this, "trigger", "",
       "Trigger used to update the watchdog" };
   /**
    * \name Process parameter and status

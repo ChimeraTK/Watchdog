@@ -70,7 +70,7 @@ public:
       const std::string &description, bool eliminateHierarchy = false,
       const std::unordered_set<std::string> &tags = { });
 
-  ctk::ScalarPushInput<size_t> trigger { this, "trigger", "",
+  ctk::ScalarPushInput<uint64_t> trigger { this, "trigger", "",
       "Trigger used to update the watchdog" };
   /**
    * \name Static system information (read only once)
@@ -202,7 +202,7 @@ struct FileSystemModule : public ctk::ApplicationModule {
   ctk::ScalarOutput<double> disk_usage { this, "usage", "%", "Disk usage with respect to the space available to the user",
           { "CS", "SYS", "DAQ"} };
 //
-  ctk::ScalarPushInput<size_t> trigger { this, "trigger", "",
+  ctk::ScalarPushInput<uint64_t> trigger { this, "trigger", "",
       "Trigger used to update the watchdog" };
 
   const double GiB = 1./ 1024/1024/1024; ///< Conversion to GiB (not to be mixed up with GB!)
@@ -278,7 +278,7 @@ struct NetworkModule : public ctk::ApplicationModule {
    */
   std::vector<ctk::ScalarOutput<double> > data;
 
-  ctk::ScalarPushInput<size_t> trigger { this, "trigger", "",
+  ctk::ScalarPushInput<uint64_t> trigger { this, "trigger", "",
       "Trigger used to update the watchdog" };
 
   const double MiB = 1./ 1024/1024; ///< Conversion to MiB (not to be mixed up with MB!)

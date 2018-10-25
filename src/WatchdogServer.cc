@@ -210,10 +210,12 @@ void WatchdogServer::defineConnections() {
     log++;
 #endif
   }
+
+  //\FixMe: Remove once MicroDAQ is using uint
+  microDAQ.trigger >> conversion.triggerIn;
   /*
    *  Micro DAQ system
    */
-
   if(config.get<int>("enableMicroDAQ") != 0) {
 
     microDAQ = ctk::MicroDAQ(this, "MicroDAQ", "Local ringbuffer DAQ system");
@@ -224,7 +226,7 @@ void WatchdogServer::defineConnections() {
     }
 
     // configuration of the DAQ system itself
-    trigger.tick >> microDAQ.trigger;
+    conversion.triggerOut >> microDAQ.trigger;
     microDAQ.findTag("MicroDAQ.CONFIG").connectTo(cs["MicroDAQ"]);
 
     cs["MicroDAQ"]("nMaxFiles") >> microDAQ.nMaxFiles;
