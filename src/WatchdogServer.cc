@@ -211,13 +211,13 @@ void WatchdogServer::defineConnections() {
 #endif
   }
 
-  //\FixMe: Remove once MicroDAQ is using uint
-  trigger.tick >> conversion.triggerIn;
   /*
    *  Micro DAQ system
    */
   if(config.get<int>("enableMicroDAQ") != 0) {
-
+    conversion = ConversionModule{this, "Conversion", "Module used to do the trigger conversion"};
+    //\FixMe: Remove once MicroDAQ is using uint
+    trigger.tick >> conversion.triggerIn;
     microDAQ = ctk::MicroDAQ(this, "MicroDAQ", "Local ringbuffer DAQ system");
     microDAQ.addSource(watchdog.findTag("DAQ"), watchdog.getName());
     microDAQ.addSource(systemInfo.findTag("DAQ"), systemInfo.getName());
