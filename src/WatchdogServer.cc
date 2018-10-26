@@ -224,7 +224,12 @@ void WatchdogServer::defineConnections() {
     for(auto &item : processes) {
       microDAQ.addSource(item.findTag("DAQ"), item.getName());
     }
-
+    for(auto &item : networkMonitors) {
+      microDAQ.addSource(item.findTag("DAQ"), item.getName());
+    }
+    for(auto &item : fsMonitors) {
+      microDAQ.addSource(item.findTag("DAQ"), item.getName());
+    }
     // configuration of the DAQ system itself
     conversion.triggerOut >> microDAQ.trigger;
     microDAQ.findTag("MicroDAQ.CONFIG").connectTo(cs["MicroDAQ"]);
