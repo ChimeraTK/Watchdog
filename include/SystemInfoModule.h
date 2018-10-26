@@ -190,9 +190,9 @@ struct FileSystemModule : public ctk::ApplicationModule {
    * the watchdog  sever.
    */
   ctk::ScalarOutput<std::string> deviceName { this, "deviceName", "", "Name of the device",
-        { "CS", "SYS", "DAQ"} };
+        { "CS", "SYS"} };
   ctk::ScalarOutput<std::string> mountPoint { this, "mountPoint", "", "Mount point of the device",
-          { "CS", "SYS", "DAQ"} };
+          { "CS", "SYS"} };
   ctk::ScalarOutput<double> disk_size { this, "size", "GiB", "Mount point of the device",
           { "CS", "SYS", "DAQ"} };
   ctk::ScalarOutput<double> disk_free { this, "free", "GiB", "Free disk space",
@@ -270,7 +270,7 @@ struct NetworkModule : public ctk::ApplicationModule {
    * the watchdog  sever.
    */
   ctk::ScalarOutput<std::string> deviceName { this, "device", "", "Name of the device",
-        { "CS", "SYS", "DAQ"} };
+        { "CS", "SYS"} };
 
   /*
    * Use a vector to handle all output variables of the module for easy
