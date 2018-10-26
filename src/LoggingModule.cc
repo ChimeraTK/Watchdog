@@ -56,6 +56,8 @@ void LoggingModule::mainLoop(){
     readAll();
     if(targetStream == 3)
       continue;
+    if(((std::string)message).empty())
+      continue;
     logging::LogLevel level = static_cast<logging::LogLevel>((uint)messageLevel);
     logging::LogLevel setLevel = static_cast<logging::LogLevel>((uint)logLevel);
     std::stringstream ss;
