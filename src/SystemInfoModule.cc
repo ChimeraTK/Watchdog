@@ -47,7 +47,9 @@ void SystemInfoModule::mainLoop() {
     strInfos.at(it->first).write();
   }
   nCPU = sysInfo.getNCpu();
+  nCPU.write();
   ticksPerSecond = sysconf(_SC_CLK_TCK);
+  ticksPerSecond.write();
 
   if(lastInfo.size() != (unsigned) (nCPU + 1)) {
     (*logging) << getName() << "Size of lastInfo: " << lastInfo.size()
@@ -79,7 +81,9 @@ void SystemInfoModule::mainLoop() {
   auto now = boost::posix_time::second_clock::local_time();
   startTime = boost::posix_time::to_time_t(now) - std::stoi(std::to_string(uptime_secs));
   startTimeStr = boost::posix_time::to_simple_string(boost::posix_time::from_time_t(startTime));
-
+  startTime.write();
+  startTimeStr.write();
+  
   while(true) {
     trigger.read();
 
@@ -98,7 +102,14 @@ void SystemInfoModule::mainLoop() {
       sendMessage(logging::LogLevel::ERROR);
 #endif
     }
-
+    maxMem   .write();
+    freeMem  .write();
+    cachedMem.write();
+    usedMem  .write();
+    maxSwap  .write();
+    freeSwap .write();
+    usedSwap .write();
+    
     // get system uptime
     try {
       uptime(&uptime_secs, &idle_secs);
@@ -125,13 +136,19 @@ void SystemInfoModule::mainLoop() {
     loadavg(&v_tmp[0], &v_tmp[1], &v_tmp[2]);
     loadAvg = v_tmp;
 
+    uptime_secTotal.write();
+    uptime_sec.write();
+    uptime_day.write();
+    uptime_hour.write();
+    uptime_min.write();
+    loadAvg.write();
+    
     calculatePCPU();
 
 #ifdef ENABLE_LOGGING
     (*logging) << getTime(this) << "System data updated" << std::endl;
     sendMessage(logging::LogLevel::DEBUG);
 #endif
-    writeAll();
   }
 }
 
@@ -314,7 +331,6 @@ void FileSystemModule::mainLoop(){
       disk_free.write();
       disk_user.write();
       disk_usage.write();
-//      writeAll();
     }
   }
 }
@@ -393,10 +409,13 @@ bool NetworkModule::read(){
 
 void NetworkModule::mainLoop(){
   deviceName = tmp;
+  deviceName.write();
   while(1){
     trigger.read();
     if(read()){
-      writeAll();
+      for(auto &i : data){
+        i.write();
+      }
     }
   }
 }
