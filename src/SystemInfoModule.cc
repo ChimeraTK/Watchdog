@@ -304,7 +304,8 @@ bool FileSystemModule::read(){
 void FileSystemModule::mainLoop(){
   deviceName = tmp[0];
   mountPoint = tmp[1];
-
+  deviceName.write();
+  mountPoint.write();
   while(1){
     trigger.read();
     if(read()){
