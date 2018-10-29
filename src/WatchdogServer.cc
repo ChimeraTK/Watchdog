@@ -79,23 +79,27 @@ WatchdogServer::WatchdogServer() :
     processesLogExternal.emplace_back(this, "PROCESS", "Process external log");
 #endif
   }
+  size_t i =0;
   auto fs = findMountPoints();
   for(auto &mountPoint : fs){
-    std::string name = std::string("fs.")+mountPoint.first;
+    std::string name = std::string("fs/")+std::to_string(i);
     std::cout << "Adding filesystem monitor for: " << mountPoint.first << " mounted at: " << mountPoint.second << " -->" << name << std::endl;
     fsMonitors.emplace_back(mountPoint.first, mountPoint.second, this, name, "Filesystem monitor");
 #ifdef ENABLE_LOGGING
     processesLog.emplace_back(this, name + "-Log", "File system monitor log");
 #endif
+    i++;
   }
+  i = 0;
   auto net = findNetworkDevices();
   for(auto &dev : net){
-    std::string name = std::string("net.")+dev;
+    std::string name = std::string("net/")+std::to_string(i);
     std::cout << "Adding network monitor for device: " << dev << " -->" << name << std::endl;
     networkMonitors.emplace_back(dev, this, name, "Network monitor");
   #ifdef ENABLE_LOGGING
     processesLog.emplace_back(this, name + "-Log", "Network monitor log");
   #endif
+    i++;
   }
   ProcessHandler::setupHandler();
 }
@@ -239,7 +243,6 @@ void WatchdogServer::defineConnections() {
     cs["MicroDAQ"]("enable") >> microDAQ.enable;
 
   }
-  dumpConnections();
-
+//  dumpConnections();
 }
 
