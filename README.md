@@ -21,11 +21,21 @@ When upgrading the watchdag server package the persist file is temporaryly copie
 
 ### MicroDAQ
 
-It also possible to aquire parameters of the watchdog in a file, produced by the `MicroDAQ` module from `ApplicationCore`. In order to enable this feature the  `WatchdogServerConfig.xml` file needs to be cahnged accordingly.
+It also possible to aquire parameters of the watchdog in a file, produced by the `MicroDAQ` module from `ApplicationCore`. In order to enable this feature the  `WatchdogServerConfig.xml` file needs to be changed accordingly.
 
     <variable name="enableMicroDAQ" type="int32" value="1" />
     
 If MicroDAQ is enabled the collected data are stored in `/var/lib/chimeratk/watchdog-server/uDAQ`. In order to change this location put a symbilc link named `uDAQ` there. If you upgrade the watchdog server the uDAQ folder will be kept, whereas in case of removing the watchdog server package the folder or symlink `uDAQ` is removed too.
+
+### Server history
+
+It is possible to create a history of selected variables by the server. The history of variables is enabled in the code by adding the tag `History`. In the `WatchdogServerConfig.xml` file the history can be enabled and the length can be set:
+
+    <variable name="enableServerHistory" type="int32" value="1" />
+    <variable name="serverHistoryLength" type="int32" value="1200" /> 
+    
+All history traces are out into `history` and named like the feeding server variables. In case of feeding arrays a history arry for each array element is created and the element
+index is appended to the hiostory trace name.
 
 ## Watchdog server service
 The watchdog server will be started automatically after the package is installed if systemd is available on the host system. 

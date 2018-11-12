@@ -23,6 +23,7 @@ namespace ctk = ChimeraTK;
  *
  * Some of them are static and only read once (e.g. processor model).
  * Others are watched continuously (e.g. uptime, work load...).
+ * The "SYS" tag is used for all variables that are updated in the main loop.
  * \todo Implement proper data types instead of using int for all of them!
  */
 class SystemInfoModule: public ctk::ApplicationModule {
@@ -78,9 +79,9 @@ public:
    */
   std::map<std::string, ctk::ScalarOutput<std::string> > strInfos;
   ctk::ScalarOutput<int> ticksPerSecond { this, "ticksPerSecond", "Hz",
-      "Number of clock ticks per second" }; ///< Number of clock ticks per second
+      "Number of clock ticks per second",  { "CS" }}; ///< Number of clock ticks per second
   ctk::ScalarOutput<int> nCPU { this, "nCPU", "", "Number of CPUs",
-    { "CS", "SYS" } };
+    { "CS" } };
   /** @} */
   /**
    * \name Non static system information
@@ -90,20 +91,22 @@ public:
   ctk::ScalarOutput<int> maxMem { this, "maxMem", "kB",
       "Maximum available memory", { "CS", "SYS" } };
   ctk::ScalarOutput<int> freeMem { this, "freeMem", "kB", "Free memory",
-    { "CS", "SYS", "DAQ" } };
+    { "CS", "SYS", "DAQ", "History" } };
   ctk::ScalarOutput<int> cachedMem { this, "cachedMem", "kB", "Cached memory",
     { "CS", "SYS" } };
   ctk::ScalarOutput<int> usedMem { this, "usedMem", "kB", "Used memory",
-    { "CS", "SYS", "DAQ"} };
+    { "CS", "SYS", "DAQ", "History"} };
   ctk::ScalarOutput<int> maxSwap { this, "maxSwap", "kB", "Swap size",
     { "CS", "SYS" } };
   ctk::ScalarOutput<int> freeSwap { this, "freeSwap", "kB", "Free swap",
     { "CS", "SYS", "DAQ" } };
   ctk::ScalarOutput<int> usedSwap { this, "usedSwap", "kB", "Used swap",
-    { "CS", "SYS", "DAQ" } };
+    { "CS", "SYS", "DAQ", "History" } };
+  ctk::ScalarOutput<double> memoryUsage { this, "memoryUsage", "%", "Relative memory usage",
+      { "CS", "SYS", "DAQ", "History" } };
   //\todo: Implement the following as long!
   ctk::ScalarOutput<int> startTime { this, "startTime", "s", "start time of system with respect to EPOCH",
-      { "CS", "SYS" } };
+      { "CS" } };
   ctk::ScalarOutput<std::string> startTimeStr { this, "startTimeStr", "", "startTimeStr",
         { "CS", "SYS" } };
   ctk::ScalarOutput<int> uptime_secTotal { this, "uptimeSecTotal", "s", "Total uptime",
@@ -118,9 +121,9 @@ public:
     { "CS", "SYS" } };
   std::unique_ptr<ctk::ArrayOutput<double> > cpu_use;
   ctk::ScalarOutput<double> cpu_useTotal {this, "cpuTotal", "%", "Total CPU usage",
-    { "CS", "SYS", "DAQ" } };
+    { "CS", "SYS", "DAQ", "History" } };
   ctk::ArrayOutput<double> loadAvg{ this, "loadAvg", "", 3, "Average load within last min, 5min, 15min",
-    { "CS", "SYS", "DAQ" } };
+    { "CS", "SYS", "DAQ", "History" } };
   /** @} */
 
   /**
@@ -131,11 +134,11 @@ public:
 #ifdef ENABLE_LOGGING
   /** Message to be send to the logging module */
   ctk::ScalarOutput<std::string> message { this, "message", "", "Message of the module to the logging System",
-      { "Logging", "PROCESS", getName() } };
+      { "Logging", getName() } };
 
   /** Message to be send to the logging module */
   ctk::ScalarOutput<uint> messageLevel { this, "messageLevel", "", "Logging level of the message",
-      { "Logging", "PROCESS", getName() } };
+      { "Logging", getName() } };
 
   void sendMessage(const logging::LogLevel &level = logging::LogLevel::INFO);
 
@@ -174,6 +177,7 @@ extern std::mutex fs_mutex; ///< This mutex is used when reading filesystem info
  * E.g. /dev/sdb1 mounted at /media/data -> statfs works on /media/data.
  * Therefore the module might be used multiple times for different mount point to
  * be monitored.
+ * The "SYS" tag is used for all variables that are updated in the main loop.
  */
 struct FileSystemModule : public ctk::ApplicationModule {
   /**
@@ -190,9 +194,9 @@ struct FileSystemModule : public ctk::ApplicationModule {
    * the watchdog  sever.
    */
   ctk::ScalarOutput<std::string> deviceName { this, "deviceName", "", "Name of the device",
-        { "CS", "SYS"} };
+        { "CS" } };
   ctk::ScalarOutput<std::string> mountPoint { this, "mountPoint", "", "Mount point of the device",
-          { "CS", "SYS"} };
+          { "CS" } };
   ctk::ScalarOutput<double> disk_size { this, "size", "GiB", "Mount point of the device",
           { "CS", "SYS", "DAQ"} };
   ctk::ScalarOutput<double> disk_free { this, "free", "GiB", "Free disk space",
@@ -200,7 +204,7 @@ struct FileSystemModule : public ctk::ApplicationModule {
   ctk::ScalarOutput<double> disk_user { this, "freeUser", "GiB", "Free disk space available for the user",
           { "CS", "SYS", "DAQ"} };
   ctk::ScalarOutput<double> disk_usage { this, "usage", "%", "Disk usage with respect to the space available to the user",
-          { "CS", "SYS", "DAQ"} };
+          { "CS", "SYS", "DAQ", "History"} };
 //
   ctk::ScalarPushInput<uint64_t> trigger { this, "trigger", "",
       "Trigger used to update the watchdog" };
@@ -216,11 +220,11 @@ struct FileSystemModule : public ctk::ApplicationModule {
 #ifdef ENABLE_LOGGING
   /** Message to be send to the logging module */
   ctk::ScalarOutput<std::string> message { this, "message", "", "Message of the module to the logging System",
-      { "Logging", "SYS", getName() } };
+      { "Logging", getName() } };
 
   /** Message to be send to the logging module */
   ctk::ScalarOutput<uint> messageLevel { this, "messageLevel", "", "Logging level of the message",
-      { "Logging", "SYS", getName() } };
+      { "Logging", getName() } };
 
   void sendMessage(const logging::LogLevel &level = logging::LogLevel::INFO);
 
@@ -259,6 +263,7 @@ struct FileSystemModule : public ctk::ApplicationModule {
  * E.g. /dev/sdb1 mounted at /media/data -> statfs works on /media/data.
  * Therefore the module might be used multiple times for different mount point to
  * be monitored.
+ * The "SYS" tag is used for all variables that are updated in the main loop.
  */
 struct NetworkModule : public ctk::ApplicationModule {
   NetworkModule(const std::string &device, EntityOwner *owner, const std::string &name,
@@ -270,7 +275,7 @@ struct NetworkModule : public ctk::ApplicationModule {
    * the watchdog  sever.
    */
   ctk::ScalarOutput<std::string> deviceName { this, "device", "", "Name of the device",
-        { "CS", "SYS"} };
+        { "CS" } };
 
   /*
    * Use a vector to handle all output variables of the module for easy
@@ -314,11 +319,11 @@ struct NetworkModule : public ctk::ApplicationModule {
 #ifdef ENABLE_LOGGING
   /** Message to be send to the logging module */
   ctk::ScalarOutput<std::string> message { this, "message", "", "Message of the module to the logging System",
-      { "Logging", "SYS", getName() } };
+      { "Logging", getName() } };
 
   /** Message to be send to the logging module */
   ctk::ScalarOutput<uint> messageLevel { this, "messageLevel", "", "Logging level of the message",
-      { "Logging", "SYS", getName() } };
+      { "Logging", getName() } };
 
   void sendMessage(const logging::LogLevel &level = logging::LogLevel::INFO);
 

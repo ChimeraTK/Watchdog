@@ -31,7 +31,7 @@ SystemInfoModule::SystemInfoModule(EntityOwner *owner, const std::string &name,
     strInfos[it->first].replace(ctk::ScalarOutput<std::string> { this,
         space2underscore(it->first), "", space2underscore(it->first) });
   }
-  cpu_use.reset(new ctk::ArrayOutput<double>{this, "cpuUsage", "%", sysInfo.getNCpu(), "CPU usage for each processor", { "CS", "SYS" }});
+  cpu_use.reset(new ctk::ArrayOutput<double>{this, "cpuUsage", "%", sysInfo.getNCpu(), "CPU usage for each processor", { "CS", "SYS", "History" }});
 //  // add 1 since cpuTotal should be added too
   lastInfo = std::vector<cpu>(sysInfo.getNCpu() + 1);
 #ifdef ENABLE_LOGGING
@@ -83,6 +83,8 @@ void SystemInfoModule::mainLoop() {
   startTimeStr = boost::posix_time::to_simple_string(boost::posix_time::from_time_t(startTime));
   startTime.write();
   startTimeStr.write();
+  std::cout << "Description is:  " << startTime.getDescription() << std::endl;
+  std::cout << "Description of owner is:  " << startTime.getOwner()->getDescription() << std::endl;
   
   while(true) {
     trigger.read();
@@ -102,13 +104,7 @@ void SystemInfoModule::mainLoop() {
       sendMessage(logging::LogLevel::ERROR);
 #endif
     }
-    maxMem   .write();
-    freeMem  .write();
-    cachedMem.write();
-    usedMem  .write();
-    maxSwap  .write();
-    freeSwap .write();
-    usedSwap .write();
+    memoryUsage = 1.*usedMem/maxMem*100.;
     
     // get system uptime
     try {
@@ -130,21 +126,14 @@ void SystemInfoModule::mainLoop() {
 #endif
     }
 
-//    double tmp[3] = { 0., 0., 0. };
     std::vector<double> v_tmp(3);
 
     loadavg(&v_tmp[0], &v_tmp[1], &v_tmp[2]);
     loadAvg = v_tmp;
 
-    uptime_secTotal.write();
-    uptime_sec.write();
-    uptime_day.write();
-    uptime_hour.write();
-    uptime_min.write();
-    loadAvg.write();
-    
     calculatePCPU();
 
+    findTag("SYS").writeAll();
 #ifdef ENABLE_LOGGING
     (*logging) << getTime(this) << "System data updated" << std::endl;
     sendMessage(logging::LogLevel::DEBUG);
@@ -184,10 +173,8 @@ void SystemInfoModule::calculatePCPU() {
     newcpu++;
   }
   cpu_useTotal = usage_tmp.back();
-  cpu_useTotal.write();
   usage_tmp.pop_back();
   cpu_use->operator =(usage_tmp);
-  cpu_use->write();
 }
 
 void SystemInfoModule::readCPUInfo(std::vector<cpu> &vcpu) {
@@ -328,10 +315,7 @@ void FileSystemModule::mainLoop(){
         sendMessage(logging::LogLevel::DEBUG);
 #endif
       }
-      disk_size.write();
-      disk_free.write();
-      disk_user.write();
-      disk_usage.write();
+      findTag("SYS").writeAll();
     }
   }
 }
@@ -373,13 +357,13 @@ NetworkModule::NetworkModule(const std::string &device, EntityOwner *owner, cons
   data.emplace_back(ctk::ScalarOutput<double>{this, "tx_packates", "1/s", "Transmitted packates.",
       { "CS", "SYS", "DAQ"}});
   data.emplace_back(ctk::ScalarOutput<double>{this, "rx", "MiB/s", "Data rate receive.",
-      { "CS", "SYS", "DAQ"}});
+      { "CS", "SYS", "DAQ", "History"}});
   data.emplace_back(ctk::ScalarOutput<double>{this, "tx", "MiB/s", "Data rate transmit.",
-      { "CS", "SYS", "DAQ"}});
+      { "CS", "SYS", "DAQ", "History"}});
   data.emplace_back(ctk::ScalarOutput<double>{this, "rx_dropped", "1/s", "Dropped received packates.",
-      { "CS", "SYS", "DAQ"}});
+      { "CS", "SYS", "DAQ", "History"}});
   data.emplace_back(ctk::ScalarOutput<double>{this, "tx_dropped", "1/s", "Dropped transmitted packates.",
-      { "CS", "SYS", "DAQ"}});
+      { "CS", "SYS", "DAQ", "History"}});
   data.emplace_back(ctk::ScalarOutput<double>{this, "collisions", "1/s", "Number of collisions.",
     { "CS", "SYS", "DAQ"}});
 }
@@ -414,9 +398,7 @@ void NetworkModule::mainLoop(){
   while(1){
     trigger.read();
     if(read()){
-      for(auto &i : data){
-        i.write();
-      }
+      findTag("SYS").writeAll();
     }
   }
 }

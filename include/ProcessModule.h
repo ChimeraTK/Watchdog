@@ -102,7 +102,7 @@ struct ProcessInfoModule : public ctk::ApplicationModule {
 
   //\ToDo Use unsigned long
   ctk::ScalarOutput<int> mem { this, "mem", "kB", "Memory used by the process",
-    { "CS", "PROCESS", getName(), "DAQ" } };
+    { "CS", "PROCESS", getName(), "DAQ", "History" } };
 
   //\todo Use long
   /** kernel scheduling priority */
@@ -120,13 +120,13 @@ struct ProcessInfoModule : public ctk::ApplicationModule {
    * The process time includes utime, stime, sutime, sctime.
    */
   ctk::ScalarOutput<double> pcpu { this, "pcpu", "%", "Actual CPU usage",
-    { "CS", "PROCESS", getName(), "DAQ" } };
+    { "CS", "PROCESS", getName(), "DAQ", "History" } };
   /**
    * CPU usage averaged over the whole runtime of the process.
    * The process time includes utime, stime, sutime, sctime.
    */
   ctk::ScalarOutput<double> avpcpu { this, "avpcpu", "%", "Average CPU usage",
-    { "CS", "PROCESS", getName(), "DAQ" } };
+    { "CS", "PROCESS", getName(), "DAQ", "History" } };
   /** @} */
 
   /**

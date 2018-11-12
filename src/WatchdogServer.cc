@@ -111,7 +111,7 @@ void WatchdogServer::defineConnections() {
   }
   systemInfo.findTag("CS").connectTo(cs[systemInfo.getName()]);
   trigger.tick >> systemInfo.trigger;
-  cs["configuration"]("UpdateTime") >> trigger.timeout;
+  cs["configuration"]("UpdateTime") >> trigger.period;
 
 	watchdog.findTag("CS").connectTo(cs[watchdog.getName()]);
 #ifdef ENABLE_LOGGING
@@ -241,7 +241,26 @@ void WatchdogServer::defineConnections() {
     cs["MicroDAQ"]("nMaxFiles") >> microDAQ.nMaxFiles;
     cs["MicroDAQ"]("nTriggersPerFile") >> microDAQ.nTriggersPerFile;
     cs["MicroDAQ"]("enable") >> microDAQ.enable;
+  }
 
+  if(config.get<int>("enableHistory") != 0){
+    int serverHistroyLength = config.get<int>("serverHistroyLength");
+    if(serverHistroyLength != 0)
+      history = ctk::history::ServerHistory{this, "History", "History", serverHistroyLength};
+    else
+      history = ctk::history::ServerHistory{this, "History", "History", 100};
+    history.addSource(systemInfo.findTag("History"), "history/" + systemInfo.getName());
+    history.addSource(watchdog.findTag("History"), "history/" + watchdog.getName());
+    for(auto &item : processes) {
+      history.addSource(item.findTag("History"), "history/" + item.getName());
+    }
+    for(auto &item : fsMonitors){
+      history.addSource(item.findTag("History"), "history/" + item.getName());
+    }
+    for(auto &item : networkMonitors){
+      history.addSource(item.findTag("History"), "history/" + item.getName());
+    }
+    history.findTag("CS").connectTo(cs);
   }
 //  dumpConnections();
 }

@@ -13,6 +13,7 @@
 #include <ChimeraTK/ApplicationCore/ConfigReader.h>
 #include <ChimeraTK/ApplicationCore/MicroDAQ.h>
 #include "ChimeraTK/ApplicationCore/PeriodicTrigger.h"
+#include "ChimeraTK/ApplicationCore/ServerHistory.h"
 
 #include "SystemInfoModule.h"
 #include "ProcessModule.h"
@@ -119,6 +120,15 @@ struct WatchdogServer: public ctk::Application {
   ConversionModule conversion;
 
   ctk::MicroDAQ microDAQ;
+
+  /*
+   * History module if history is enabled in the config file.
+   * In th config file use:
+   * <variable name="enableServerHistory" type="int32" value="1" />
+   * <variable name="serverHistoryLength" type="int32" value="1200" />
+   */
+  ctk::history::ServerHistory history;
+
   /**
    * Use either
    * - ctk::ControlSystemModule cs;
