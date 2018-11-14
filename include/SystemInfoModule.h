@@ -78,9 +78,9 @@ public:
    * @{
    */
   std::map<std::string, ctk::ScalarOutput<std::string> > strInfos;
-  ctk::ScalarOutput<int> ticksPerSecond { this, "ticksPerSecond", "Hz",
+  ctk::ScalarOutput<uint> ticksPerSecond { this, "ticksPerSecond", "Hz",
       "Number of clock ticks per second",  { "CS" }}; ///< Number of clock ticks per second
-  ctk::ScalarOutput<int> nCPU { this, "nCPU", "", "Number of CPUs",
+  ctk::ScalarOutput<uint> nCPU { this, "nCPU", "", "Number of CPUs",
     { "CS" } };
   /** @} */
   /**
@@ -88,36 +88,36 @@ public:
    * @{
    */
   //\todo: Implement the following as unsigned long!
-  ctk::ScalarOutput<int> maxMem { this, "maxMem", "kB",
+  ctk::ScalarOutput<uint> maxMem { this, "maxMem", "kB",
       "Maximum available memory", { "CS", "SYS" } };
-  ctk::ScalarOutput<int> freeMem { this, "freeMem", "kB", "Free memory",
+  ctk::ScalarOutput<uint> freeMem { this, "freeMem", "kB", "Free memory",
     { "CS", "SYS", "DAQ", "History" } };
-  ctk::ScalarOutput<int> cachedMem { this, "cachedMem", "kB", "Cached memory",
+  ctk::ScalarOutput<uint> cachedMem { this, "cachedMem", "kB", "Cached memory",
     { "CS", "SYS" } };
-  ctk::ScalarOutput<int> usedMem { this, "usedMem", "kB", "Used memory",
+  ctk::ScalarOutput<uint> usedMem { this, "usedMem", "kB", "Used memory",
     { "CS", "SYS", "DAQ", "History"} };
-  ctk::ScalarOutput<int> maxSwap { this, "maxSwap", "kB", "Swap size",
+  ctk::ScalarOutput<uint> maxSwap { this, "maxSwap", "kB", "Swap size",
     { "CS", "SYS" } };
-  ctk::ScalarOutput<int> freeSwap { this, "freeSwap", "kB", "Free swap",
+  ctk::ScalarOutput<uint> freeSwap { this, "freeSwap", "kB", "Free swap",
     { "CS", "SYS", "DAQ" } };
-  ctk::ScalarOutput<int> usedSwap { this, "usedSwap", "kB", "Used swap",
+  ctk::ScalarOutput<uint> usedSwap { this, "usedSwap", "kB", "Used swap",
     { "CS", "SYS", "DAQ", "History" } };
   ctk::ScalarOutput<double> memoryUsage { this, "memoryUsage", "%", "Relative memory usage",
       { "CS", "SYS", "DAQ", "History" } };
   //\todo: Implement the following as long!
-  ctk::ScalarOutput<int> startTime { this, "startTime", "s", "start time of system with respect to EPOCH",
+  ctk::ScalarOutput<uint> startTime { this, "startTime", "s", "start time of system with respect to EPOCH",
       { "CS" } };
   ctk::ScalarOutput<std::string> startTimeStr { this, "startTimeStr", "", "startTimeStr",
         { "CS", "SYS" } };
-  ctk::ScalarOutput<int> uptime_secTotal { this, "uptimeSecTotal", "s", "Total uptime",
+  ctk::ScalarOutput<uint> uptime_secTotal { this, "uptimeSecTotal", "s", "Total uptime",
       { "CS", "SYS" } };
-  ctk::ScalarOutput<int> uptime_day { this, "uptimeDays", "day", "Days up",
+  ctk::ScalarOutput<uint> uptime_day { this, "uptimeDays", "day", "Days up",
     { "CS", "SYS" } };
-  ctk::ScalarOutput<int> uptime_hour { this, "uptimeHours", "h", "Hours up",
+  ctk::ScalarOutput<uint> uptime_hour { this, "uptimeHours", "h", "Hours up",
     { "CS", "SYS" } };
-  ctk::ScalarOutput<int> uptime_min { this, "uptimeMin", "min", "Minutes up",
+  ctk::ScalarOutput<uint> uptime_min { this, "uptimeMin", "min", "Minutes up",
     { "CS", "SYS" } };
-  ctk::ScalarOutput<int> uptime_sec { this, "uptimeSec", "s", "Seconds up",
+  ctk::ScalarOutput<uint> uptime_sec { this, "uptimeSec", "s", "Seconds up",
     { "CS", "SYS" } };
   std::unique_ptr<ctk::ArrayOutput<double> > cpu_use;
   ctk::ScalarOutput<double> cpu_useTotal {this, "cpuTotal", "%", "Total CPU usage",
