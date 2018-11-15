@@ -58,6 +58,9 @@ void ProcessInfoModule::FillProcInfo(const std::shared_ptr<proc_t> &info){
       rss = std::stoi(std::to_string(info->rss));
       mem = std::stoi(std::to_string(info->vm_rss));
 
+      maxMem.read();
+      memoryUsage = 1.*mem/maxMem*100.;
+
       sysUpTime.read();
       ticksPerSecond.read();
       runtime = std::stoi(std::to_string(sysUpTime - std::stoi(std::to_string(info->start_time)) * 1. / ticksPerSecond));
@@ -77,20 +80,21 @@ void ProcessInfoModule::FillProcInfo(const std::shared_ptr<proc_t> &info){
     }
     time_stamp = now;
   } else {
-    time_stamp = boost::posix_time::not_a_date_time;
-    utime     = 0;
-    stime     = 0;
-    cutime    = 0;
-    cstime    = 0;
-    startTime = 0;
+    time_stamp   = boost::posix_time::not_a_date_time;
+    utime        = 0;
+    stime        = 0;
+    cutime       = 0;
+    cstime       = 0;
+    startTime    = 0;
     startTimeStr = "";
-    priority  = 0;
-    nice      = 0;
-    rss       = 0;
-    pcpu      = 0;
-    avpcpu    = 0;
-    runtime   = 0;
-    mem       = 0;
+    priority     = 0;
+    nice         = 0;
+    rss          = 0;
+    pcpu         = 0;
+    avpcpu       = 0;
+    runtime      = 0;
+    mem          = 0;
+    memoryUsage  = 0.;
   }
   utime    .write();
   stime    .write();
@@ -105,6 +109,7 @@ void ProcessInfoModule::FillProcInfo(const std::shared_ptr<proc_t> &info){
   avpcpu   .write();
   runtime  .write();
   mem      .write();
+  memoryUsage.write();
 }
 
 void ProcessInfoModule::terminate(){

@@ -68,11 +68,12 @@ struct ProcessInfoModule : public ctk::ApplicationModule {
    * @{
    */
   /** Number of clock ticks per second */
-  ctk::ScalarPollInput<int> ticksPerSecond { this, "tickPerSecond", "Hz",
+  ctk::ScalarPollInput<uint> ticksPerSecond { this, "tickPerSecond", "Hz",
       "Number of clock ticks per second" };
   /** Uptime of the system */
-  ctk::ScalarPollInput<int> sysUpTime { this, "sysUpTime", "s", "Uptime of the system" };
-  ctk::ScalarPollInput<int> sysStartTime { this, "sysStartTime", "s", "System start time (seconds since EPOCH)" };
+  ctk::ScalarPollInput<uint> sysUpTime { this, "sysUpTime", "s", "Uptime of the system" };
+  ctk::ScalarPollInput<uint> sysStartTime { this, "sysStartTime", "s", "System start time (seconds since EPOCH)" };
+  ctk::ScalarPollInput<uint> maxMem { this, "maxMem", "kB", "Maximum available memory" };
   /** @} */
 
   /**
@@ -81,38 +82,41 @@ struct ProcessInfoModule : public ctk::ApplicationModule {
    */
   //\todo Use unsigned long long int
   /** user-mode CPU time accumulated by process */
-  ctk::ScalarOutput<int> utime { this, "utime", "clock ticks", "user-mode CPU time accumulated by process",
+  ctk::ScalarOutput<uint> utime { this, "utime", "clock ticks", "user-mode CPU time accumulated by process",
     { "CS", "PROCESS", getName() } };
   /** kernel-mode CPU time accumulated by process */
-  ctk::ScalarOutput<int> stime { this, "stime", "clock ticks", "kernel-mode CPU time accumulated by process",
+  ctk::ScalarOutput<uint> stime { this, "stime", "clock ticks", "kernel-mode CPU time accumulated by process",
     { "CS", "PROCESS", getName() } };
   /** cumulative utime of process and reaped children */
-  ctk::ScalarOutput<int> cutime { this, "cutime", "clock ticks",
+  ctk::ScalarOutput<uint> cutime { this, "cutime", "clock ticks",
       "cumulative utime of process and reaped children",
     { "CS", "PROCESS", getName() } };
   /** cumulative stime of process and reaped children */
-  ctk::ScalarOutput<int> cstime { this, "cstime", "clock ticks", "cumulative stime of process and reaped children",
+  ctk::ScalarOutput<uint> cstime { this, "cstime", "clock ticks", "cumulative stime of process and reaped children",
     { "CS", "PROCESS", getName() } };
   /** start time of process -- seconds since 1-1-70 */
-  ctk::ScalarOutput<int> startTime { this, "startTime", "s", "start time of process with respect to EPOCH",
+  ctk::ScalarOutput<uint> startTime { this, "startTime", "s", "start time of process with respect to EPOCH",
     { "CS", "PROCESS", getName() } };
 
   ctk::ScalarOutput<std::string> startTimeStr { this, "startTimeStr", "", "start time string",
       { "CS", "PROCESS", getName() } };
 
   //\ToDo Use unsigned long
-  ctk::ScalarOutput<int> mem { this, "mem", "kB", "Memory used by the process",
+  ctk::ScalarOutput<uint> mem { this, "mem", "kB", "Memory used by the process",
     { "CS", "PROCESS", getName(), "DAQ", "History" } };
+
+  ctk::ScalarOutput<double> memoryUsage { this, "memoryUsage", "%", "Relative memory usage",
+      { "CS", "SYS", "DAQ", "History" } };
 
   //\todo Use long
   /** kernel scheduling priority */
-  ctk::ScalarOutput<int> priority { this, "priority", "", "kernel scheduling priority",
+  ctk::ScalarOutput<uint> priority { this, "priority", "", "kernel scheduling priority",
     { "CS", "PROCESS", getName() } };
   /** standard unix nice level of process */
-  ctk::ScalarOutput<int> nice { this, "nice", "", "standard unix nice level of process",
+  ctk::ScalarOutput<uint> nice { this, "nice", "", "standard unix nice level of process",
     { "CS", "PROCESS", getName() } };
   /** resident set size from /proc/#/stat (pages) */
-  ctk::ScalarOutput<int> rss { this, "rss", "", "resident set size from /proc/#/stat (pages)",
+  ctk::ScalarOutput<uint> rss { this, "rss", "", "resident set size from /proc/#/stat (pages)",
     { "CS", "PROCESS", getName() } };
 
   /**

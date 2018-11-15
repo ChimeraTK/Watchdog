@@ -147,6 +147,7 @@ void WatchdogServer::defineConnections() {
 	systemInfo.ticksPerSecond >> watchdog.ticksPerSecond;
   systemInfo.uptime_secTotal >> watchdog.sysUpTime;
   systemInfo.startTime >> watchdog.sysStartTime;
+  systemInfo.maxMem >> watchdog.maxMem;
   trigger.tick >> watchdog.trigger;
 
 
@@ -165,6 +166,7 @@ void WatchdogServer::defineConnections() {
     systemInfo.ticksPerSecond >> item.ticksPerSecond;
     systemInfo.uptime_secTotal >> item.sysUpTime;
     systemInfo.startTime >> item.sysStartTime;
+    systemInfo.maxMem >> item.maxMem;
     trigger.tick >> item.trigger;
 
 #ifdef ENABLE_LOGGING
@@ -243,7 +245,7 @@ void WatchdogServer::defineConnections() {
     cs["MicroDAQ"]("enable") >> microDAQ.enable;
   }
 
-  if(config.get<int>("enableHistory") != 0){
+  if(config.get<uint>("enableHistory") != 0){
     int serverHistroyLength = config.get<int>("serverHistroyLength");
     if(serverHistroyLength != 0)
       history = ctk::history::ServerHistory{this, "History", "History", serverHistroyLength};
