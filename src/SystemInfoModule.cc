@@ -105,6 +105,7 @@ void SystemInfoModule::mainLoop() {
 #endif
     }
     memoryUsage = 1.*usedMem/maxMem*100.;
+    swapUsage = 1.*usedSwap/maxSwap*100.;
     
     // get system uptime
     try {
@@ -150,7 +151,7 @@ void SystemInfoModule::calculatePCPU() {
   readCPUInfo(vcpu);
   auto lastcpu = lastInfo.begin();
   auto newcpu = vcpu.begin();
-  for(int iCPU = 0; iCPU < (nCPU + 1); iCPU++) {
+  for(size_t iCPU = 0; iCPU < (nCPU + 1); iCPU++) {
     if(newcpu->totalUser < lastcpu->totalUser
         || newcpu->totalUserLow < lastcpu->totalUserLow
         || newcpu->totalSys < lastcpu->totalSys

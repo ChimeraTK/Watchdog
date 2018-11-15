@@ -104,6 +104,8 @@ public:
     { "CS", "SYS", "DAQ", "History" } };
   ctk::ScalarOutput<double> memoryUsage { this, "memoryUsage", "%", "Relative memory usage",
       { "CS", "SYS", "DAQ", "History" } };
+  ctk::ScalarOutput<double> swapUsage { this, "swapUsage", "%", "Relative swap usage",
+      { "CS", "SYS", "DAQ", "History" } };
   //\todo: Implement the following as long!
   ctk::ScalarOutput<uint> startTime { this, "startTime", "s", "start time of system with respect to EPOCH",
       { "CS" } };
