@@ -245,8 +245,8 @@ void WatchdogServer::defineConnections() {
     cs["MicroDAQ"]("enable") >> microDAQ.enable;
   }
 
-  if(config.get<uint>("enableHistory") != 0){
-    int serverHistroyLength = config.get<int>("serverHistroyLength");
+  if(config.get<uint>("enableServerHistory") != 0){
+    int serverHistroyLength = config.get<int>("serverHistoryLength");
     if(serverHistroyLength != 0)
       history = ctk::history::ServerHistory{this, "History", "History", serverHistroyLength};
     else
