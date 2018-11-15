@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <configuration>
   <variable name="enableMicroDAQ" type="int32" value="0" />
-  <variable name="enableServerHistory" type="int32" value="0" />
+  <variable name="enableServerHistory" type="uint32" value="0" />
   <variable name="serverHistoryLength" type="int32" value="1200" />
   <variable name="processes" type="string">
     <value i="0" v="PROCESS_1"/>
