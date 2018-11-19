@@ -74,7 +74,7 @@ void ProcessInfoModule::FillProcInfo(const std::shared_ptr<proc_t> &info){
     if(!time_stamp.is_special()) {
       boost::posix_time::time_duration diff = now - time_stamp;
       pcpu = 1. * (utime + stime + cutime + cstime - old_time) / ticksPerSecond
-          / (diff.total_milliseconds() / 1000) * 100;
+          / (1.*diff.total_milliseconds() / 1000) * 100;
       avpcpu = 1. * (utime + stime + cutime + cstime) / ticksPerSecond / runtime
           * 100;
     }
