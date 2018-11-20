@@ -83,8 +83,6 @@ void SystemInfoModule::mainLoop() {
   startTimeStr = boost::posix_time::to_simple_string(boost::posix_time::from_time_t(startTime));
   startTime.write();
   startTimeStr.write();
-  std::cout << "Description is:  " << startTime.getDescription() << std::endl;
-  std::cout << "Description of owner is:  " << startTime.getOwner()->getDescription() << std::endl;
   
   while(true) {
     trigger.read();
