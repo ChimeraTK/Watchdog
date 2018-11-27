@@ -176,7 +176,15 @@ struct ProcessInfoModule : public ctk::ApplicationModule {
 struct ProcessControlModule : public ProcessInfoModule{
   std::unique_ptr<ProcessHandler> process; ///< The process handler used to get information about the subprocess
 
-  using ProcessInfoModule::ProcessInfoModule;
+  /**
+   * Default ApplicationModule constructor with an additional argument:
+   * \param historyOn If true process parameters are filled with 0 periodically in case the process is off.
+   * This is needed in order to have constant filling of the history buffer written by the History module of the watchdog.
+   */
+  ProcessControlModule(EntityOwner *owner, const std::string &name,
+      const std::string &description, bool historyOn = false, bool eliminateHierarchy = false,
+      const std::unordered_set<std::string> &tags = { }): ProcessInfoModule(owner, name, description, eliminateHierarchy, tags),
+          _stop(false), _restartRequired(false), _historyOn(historyOn){};
 
   /* Use terminate function to delete the ProcessHandler, since it is using a local stringstream constructed in the main loop
    * which is not existing at the time the ProcessHandler destructor is called!
@@ -300,8 +308,9 @@ struct ProcessControlModule : public ProcessInfoModule{
    */
   void mainLoop() override;
 private:
-  bool stop;
-  bool restartRequired;
+  bool _stop;
+  bool _restartRequired;
+  bool _historyOn;
 };
 
 #endif /* INCLUDE_PROCESSMODULE_H_ */

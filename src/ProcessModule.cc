@@ -170,8 +170,6 @@ void ProcessControlModule::mainLoop() {
 #endif
   }
 
-  stop =false;
-  restartRequired = false;
   while(true) {
     trigger.read();
     enableProcess.read();
@@ -183,8 +181,8 @@ void ProcessControlModule::mainLoop() {
       processNFailed.write();
       processRestarts = 0;
       processRestarts.write();
-      stop = false;
-      restartRequired = false;
+      _stop = false;
+      _restartRequired = false;
     }
 
     /*
@@ -192,13 +190,14 @@ void ProcessControlModule::mainLoop() {
      * or if the server was restarted more than the user set limit
      * -> to reset turn off/on the process
      */
-    if(stop) {
+    if(_stop) {
       (*logging) << getTime() << "Process sleeping. Fails: " << processNFailed << "/" << processMaxFails
           << ", Restarts: " << processRestarts << "/" << processMaxRestarts << std::endl;
 #ifdef ENABLE_LOGGING
       sendMessage(logging::LogLevel::DEBUG);
 #endif
-      usleep(200000);
+      if(_historyOn)
+        FillProcInfo(nullptr);
       continue;
     }
 
@@ -209,14 +208,14 @@ void ProcessControlModule::mainLoop() {
       CheckIsOnline(processPID);
       if(!processIsRunning){
         if(processMaxRestarts == 0){
-          stop = true;
+          _stop = true;
           (*logging) << getTime() << "Maximum number of restarts is 0. Process will not be started again." << std::endl;
 #ifdef ENABLE_LOGGING
           sendMessage(logging::LogLevel::WARNING);
 #endif
-          restartRequired = false;
+          _restartRequired = false;
         } else {
-          restartRequired = true;
+          _restartRequired = true;
         }
       }
     }
@@ -224,9 +223,9 @@ void ProcessControlModule::mainLoop() {
     /**
      * If starting a process fails and max restarts is 0 stop.
      */
-    if(processMaxRestarts == 0 && restartRequired){
-      restartRequired = false;
-      stop = true;
+    if(processMaxRestarts == 0 && _restartRequired){
+      _restartRequired = false;
+      _stop = true;
     }
 
     /**
@@ -240,17 +239,20 @@ void ProcessControlModule::mainLoop() {
 #else
       resetProcessHandler(nullptr);
 #endif
-      stop = true;
+      _stop = true;
 
     }
 
     if(enableProcess) {
-      if(processPID < 0 && !stop) {
-        if(restartRequired){
+      if(processPID < 0 && !_stop) {
+        if(_restartRequired){
           processRestarts += 1;
           processRestarts.write();
-          restartRequired = false;
+          _restartRequired = false;
         }
+        // fill 0 since the process is started here and not running yet
+        if(_historyOn)
+          FillProcInfo(nullptr);
         try {
           processSetPath.read();
           processSetCMD.read();
@@ -313,6 +315,8 @@ void ProcessControlModule::mainLoop() {
         (*logging) << getTime() << "Process Running: " << processIsRunning << ". Process is not running...OK" << std::endl;
         sendMessage(logging::LogLevel::DEBUG);
 #endif
+      if(_historyOn)
+        FillProcInfo(nullptr);
       } else {
 #ifdef ENABLE_LOGGING
         (*logging) << getTime() << "Trying to kill the process..." << " PID: "
@@ -387,18 +391,17 @@ void ProcessControlModule::SetOffline(){
 void ProcessControlModule::Failed(){
   processNFailed = processNFailed + 1;
   processNFailed.write();
-  if(!stop && processNFailed == processMaxFails){
-    stop = true;
-    restartRequired = false;
+  if(!_stop && processNFailed == processMaxFails){
+    _stop = true;
+    _restartRequired = false;
     (*logging) << getTime() <<  "Failed to start the process " << (std::string)processSetPath << "/" << (std::string)processSetCMD << " " << processMaxFails << " times."
         << " It will not be started again until you reset the process by switching it off and on again." << std::endl;
 #ifdef ENABLE_LOGGING
     sendMessage(logging::LogLevel::ERROR);
 #endif
   } else {
-    restartRequired = true;
+    _restartRequired = true;
   }
-  sleep(2);
 }
 
 void ProcessControlModule::CheckIsOnline(const int pid){

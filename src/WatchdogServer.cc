@@ -61,7 +61,11 @@ WatchdogServer::WatchdogServer() :
     auto strProcesses = config.get<std::vector<std::string>>("processes");
     for(auto &processName : strProcesses) {
       std::cout << "Adding process: " << processName << std::endl;
-      processes.emplace_back(this, processName, "process");
+      if(config.get<uint>("enableServerHistory") != 0){
+        processes.emplace_back(this, processName, "process", true);
+      } else {
+        processes.emplace_back(this, processName, "process");
+      }
       processes.back().logging = nullptr;
 #ifdef ENABLE_LOGGING
       processesLog.emplace_back(this, processName + "-Log", "process log");
@@ -72,7 +76,11 @@ WatchdogServer::WatchdogServer() :
     std::cerr << "Error in the xml file 'WatchdogServerConfig.xml': " << e.what()
             << std::endl;
     std::cout << "I will create only one process named PROCESS..." << std::endl;
-    processes.emplace_back(this, "PROCESS", "Test process");
+    if(config.get<uint>("enableServerHistory") != 0){
+      processes.emplace_back(this, "PROCESS", "Test process", true);
+    } else {
+      processes.emplace_back(this, "PROCESS", "Test process");
+    }
     processes.back().logging = nullptr;
 #ifdef ENABLE_LOGGING
     processesLog.emplace_back(this, "PROCESS", "Process log");
