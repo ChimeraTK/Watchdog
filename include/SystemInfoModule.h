@@ -112,7 +112,7 @@ public:
   ctk::ScalarOutput<std::string> startTimeStr { this, "startTimeStr", "", "startTimeStr",
         { "CS", "SYS" } };
   ctk::ScalarOutput<uint> uptime_secTotal { this, "uptimeSecTotal", "s", "Total uptime",
-      { "CS", "SYS" } };
+      { "CS", "SYS", "DAQ" } };
   ctk::ScalarOutput<uint> uptime_day { this, "uptimeDays", "day", "Days up",
     { "CS", "SYS" } };
   ctk::ScalarOutput<uint> uptime_hour { this, "uptimeHours", "h", "Hours up",
