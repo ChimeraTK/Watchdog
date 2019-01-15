@@ -82,7 +82,7 @@ BOOST_AUTO_TEST_CASE( testStart) {
   ChimeraTK::TestFacility tf;
 
   // Get the trigger variable thats blocking the application (i.e. ProcessControlModule)
-  auto writeTrigger = tf.getScalar<uint>("trigger/");
+  auto writeTrigger = tf.getScalar<uint64_t>("trigger/");
   auto processCMD = tf.getScalar<std::string>("Process/SetCMD");
   auto processPath = tf.getScalar<std::string>("Process/SetPath");
   auto enable = tf.getScalar<uint>("Process/enableProcess");
@@ -113,7 +113,7 @@ BOOST_AUTO_TEST_CASE( testCounter) {
   ChimeraTK::TestFacility tf;
 
   // Get the trigger variable thats blocking the application (i.e. ProcessControlModule)
-  auto writeTrigger = tf.getScalar<uint>("trigger/");
+  auto writeTrigger = tf.getScalar<uint64_t>("trigger/");
   auto processCMD = tf.getScalar<std::string>("Process/SetCMD");
   auto processPath = tf.getScalar<std::string>("Process/SetPath");
   auto enable = tf.getScalar<uint>("Process/enableProcess");
@@ -198,7 +198,7 @@ BOOST_AUTO_TEST_CASE( testCounter) {
     sleep(2);
   }
 
-  BOOST_TEST_MESSAGE("Reset and test maxrestarts==2, maxfails==0 + check status after last restart/process end.");
+  BOOST_TEST_MESSAGE("Reset and test maxrestarts==2, maxfails==0 + check status after last restart/process end, when process terminates between two triggers.");
   enable = 0;
   enable.write();
   writeTrigger.write();
@@ -219,7 +219,37 @@ BOOST_AUTO_TEST_CASE( testCounter) {
     BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/IsRunning"), 1);
     sleep(2);
   }
+  // after max restarts is reached the process terminates and after the next trigger is fired
   writeTrigger.write();
   tf.stepApplication();
   BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/IsRunning"), 0);
+
+  BOOST_TEST_MESSAGE("Reset and test maxrestarts==2, maxfails==0 + check status after last restart/process end, when process terminates a few triggers after max restarts was reached.");
+  enable = 0;
+  enable.write();
+  writeTrigger.write();
+  tf.stepApplication();
+  enable = 1;
+  enable.write();
+  writeTrigger.write();
+  tf.stepApplication();
+  for(int i = 0; i < 3; i++){
+    writeTrigger.write();
+    tf.stepApplication();
+    BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/Failed"), 0);
+    BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/Restarts"), i);
+    BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/IsRunning"), 1);
+    if (i <2)
+      sleep(2);
+  }
+  // after max restarts is reached process is running
+  writeTrigger.write();
+  tf.stepApplication();
+  BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/IsRunning"), 1);
+  sleep(2);
+  // now after some time it is not running any more
+  writeTrigger.write();
+  tf.stepApplication();
+  BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/IsRunning"), 0);
+
 }
