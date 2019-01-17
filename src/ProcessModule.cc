@@ -234,17 +234,27 @@ void ProcessControlModule::mainLoop() {
     if(processMaxRestarts != 0 && processRestarts == processMaxRestarts){
       (*logging) << getTime() << "Maximum number of restarts reached. Restarts: " << processRestarts << "/" << processMaxRestarts << std::endl;
 #ifdef ENABLE_LOGGING
-      sendMessage(logging::LogLevel::WARNING);
-      resetProcessHandler(&handlerMessage);
-#else
-      resetProcessHandler(nullptr);
+      sendMessage(logging::LogLevel::DEBUG);
 #endif
-      _stop = true;
-
+      // Only stop if the process terminated. This ensures that the process status is updated.
+      if(processIsRunning == 0){
+        _stop = true;
+        (*logging) << getTime() << "Process terminated after maximum number of restarts reached. Restarts: " << processRestarts << "/" << processMaxRestarts << std::endl;
+#ifdef ENABLE_LOGGING
+        sendMessage(logging::LogLevel::ERROR);
+        resetProcessHandler(&handlerMessage);
+#else
+        resetProcessHandler(nullptr);
+#endif
+      } else {
+        _restartRequired = false;
+      }
     }
 
     if(enableProcess) {
-      if(processPID < 0 && !_stop) {
+      // process should run
+      if(processPID < 0 && !_stop && (processRestarts < processMaxRestarts || processMaxRestarts == 0)) {
+        // process should run and is not running
         if(_restartRequired){
           processRestarts += 1;
           processRestarts.write();
@@ -292,6 +302,7 @@ void ProcessControlModule::mainLoop() {
           SetOffline();
         }
       } else if (processPID > 0){
+        // process should run and is running
 #ifdef ENABLE_LOGGING
         (*logging) << getTime() << "Process is running..." << processIsRunning << " PID: " << processPID << std::endl;
         sendMessage(logging::LogLevel::DEBUG);
@@ -308,7 +319,9 @@ void ProcessControlModule::mainLoop() {
         }
       }
     } else {
+      // process should not run
       if(processPID < 0) {
+        // process should not run and is not running
         processIsRunning = 0;
         processIsRunning.write();
 #ifdef ENABLE_LOGGING
@@ -318,6 +331,7 @@ void ProcessControlModule::mainLoop() {
       if(_historyOn)
         FillProcInfo(nullptr);
       } else {
+        // process should not run and is running
 #ifdef ENABLE_LOGGING
         (*logging) << getTime() << "Trying to kill the process..." << " PID: "
             << processPID << std::endl;
