@@ -308,8 +308,22 @@ struct ProcessControlModule : public ProcessInfoModule{
    */
   void mainLoop() override;
 private:
+  /**
+   * Stop is used to enter the idle state.
+   * To escape the idle state enableProcess needs to be set false.
+   */
   bool _stop;
+
+  /**
+   * This flag is used to know if a process is started because a client enabled the process or
+   * if it is started because the process terminated without client interaction.
+   */
   bool _restartRequired;
+
+  /**
+   * This flags is  used decide if empty data is written in case the process is not running.
+   * This is needed to end up with a meaningful history buffer in case server based history is enabled.
+   */
   bool _historyOn;
 };
 
