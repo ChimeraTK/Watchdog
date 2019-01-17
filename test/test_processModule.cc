@@ -190,6 +190,10 @@ BOOST_AUTO_TEST_CASE( testProcess){
   for(int i = 0; i < 3; i++){
     writeTrigger.write();
     tf.stepApplication();
+    if(i == 0)
+      BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/IsRunning"), 1);
+    else
+      BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/IsRunning"), 0);
     BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/Failed"), 0);
     BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/Restarts"), 0);
     sleep(2);
@@ -245,6 +249,9 @@ BOOST_AUTO_TEST_CASE( testProcessRestartCounter2){
   BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/IsRunning"), 1);
   sleep(2);
   // now after some time it is not running any more
+  writeTrigger.write();
+  tf.stepApplication();
+  BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/IsRunning"), 0);
   writeTrigger.write();
   tf.stepApplication();
   BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/IsRunning"), 0);
