@@ -126,21 +126,14 @@ void WatchdogServer::defineConnections() {
   watchdog.findTag("Logging").connectTo(watchdogLog);
 
 	cs[watchdog.getName()]("SetLogFile") >> watchdogLog.logFile;
-	cs[watchdog.getName()]("SetLogTailLength") >> watchdogLog.tailLength;
-	cs[watchdog.getName()]("SetTargetStream") >> watchdogLog.targetStream;
-	cs[watchdog.getName()]("SetLogLevel") >> watchdogLog.logLevel;
   watchdogLog.findTag("CS").connectTo(cs[watchdog.getName()]);
 
   cs[watchdog.getName()]("SetLogFile") >> watchdogLogFile.logFile;
-  cs[watchdog.getName()]("SetLogTailLengthExternal") >> watchdogLogFile.tailLength;
   trigger.tick >> watchdogLogFile.trigger;
   watchdogLogFile.findTag("CS").connectTo(cs[watchdog.getName()]);
 
   systemInfo.findTag("Logging").connectTo(systemInfoLog);
   cs[watchdog.getName()]("SetLogFile") >> systemInfoLog.logFile;
-  cs[systemInfo.getName()]("SetLogTailLength") >> systemInfoLog.tailLength;
-  cs[systemInfo.getName()]("SetTargetStream") >> systemInfoLog.targetStream;
-  cs[systemInfo.getName()]("SetLogLevel") >> systemInfoLog.logLevel;
   systemInfoLog.findTag("CS").connectTo(cs[systemInfo.getName()]);
 
 
@@ -160,16 +153,6 @@ void WatchdogServer::defineConnections() {
 
 
   for(auto &item : processes) {
-    cs[item.getName()]("enableProcess") >> item.enableProcess;
-    cs[item.getName()]("SetCMD") >> item.processSetCMD;
-    cs[item.getName()]("SetPath") >> item.processSetPath;
-    cs[item.getName()]("SetEnvironment") >> item.processSetENV;
-    cs[item.getName()]("OverwriteEnvironment") >> item.processOverwriteENV;
-    cs[item.getName()]("SetMaxFails") >> item.processMaxFails;
-    cs[item.getName()]("SetMaxRestarts") >> item.processMaxRestarts;
-    cs[item.getName()]("killSig") >> item.killSig;
-    cs[item.getName()]("pidOffset") >> item.pidOffset;
-
     item.findTag("CS").connectTo(cs[item.getName()]);
     systemInfo.ticksPerSecond >> item.ticksPerSecond;
     systemInfo.uptime_secTotal >> item.sysUpTime;
@@ -178,16 +161,11 @@ void WatchdogServer::defineConnections() {
     trigger.tick >> item.trigger;
 
 #ifdef ENABLE_LOGGING
-    cs[item.getName()]("SetLogfileExternal") >> item.processSetExternalLogfile;
     item.message >> (*log).message;
     item.messageLevel >> (*log).messageLevel;
     cs[watchdog.getName()]("SetLogFile") >> (*log).logFile;
-    cs[item.getName()]("SetLogLevel") >> (*log).logLevel;
-    cs[item.getName()]("SetLogTailLength") >> (*log).tailLength;
-    cs[item.getName()]("SetTargetStream") >> (*log).targetStream;
     (*log).findTag("CS").connectTo(cs[item.getName()]);
     item.processExternalLogfile >> (*logExternal).logFile;
-    cs[item.getName()]("SetLogTailLengthExternal") >> (*logExternal).tailLength;
     trigger.tick >> (*logExternal).trigger;
     (*logExternal).findTag("CS").connectTo(cs[item.getName()]);
 
@@ -202,9 +180,6 @@ void WatchdogServer::defineConnections() {
     item.message >> (*log).message;
     item.messageLevel >> (*log).messageLevel;
     cs[watchdog.getName()]("SetLogFile") >> (*log).logFile;
-    cs[item.getName()]("SetLogLevel") >> (*log).logLevel;
-    cs[item.getName()]("SetLogTailLength") >> (*log).tailLength;
-    cs[item.getName()]("SetTargetStream") >> (*log).targetStream;
     (*log).findTag("CS").connectTo(cs[item.getName()]);
     log++;
 #endif
@@ -217,9 +192,6 @@ void WatchdogServer::defineConnections() {
     item.message >> (*log).message;
     item.messageLevel >> (*log).messageLevel;
     cs[watchdog.getName()]("SetLogFile") >> (*log).logFile;
-    cs[item.getName()]("SetLogLevel") >> (*log).logLevel;
-    cs[item.getName()]("SetLogTailLength") >> (*log).tailLength;
-    cs[item.getName()]("SetTargetStream") >> (*log).targetStream;
     (*log).findTag("CS").connectTo(cs[item.getName()]);
     log++;
 #endif

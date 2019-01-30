@@ -75,6 +75,7 @@ private:
   logging::LogLevel log;///< The current log level
   const std::string name; ///< Name of this class
   bool connected; ///< If false no cleanup is performed on destructor call
+  size_t killTimeout;///< Time in seconds to wait for a process to exit before using SIGKILL
 public:
   /**
    * Constructor.
@@ -172,6 +173,14 @@ public:
    * because if multiple handlers are used there is no need to call this function multiple times.
    */
   static void setupHandler();
+
+  /**
+   * Set the time used to wait for the process to exit after it is stopped using signum.
+   * After that time the process is killed using SIGKILL.
+   *
+   * \param timeout The time (given in seconds) to wait before killing the process using SIGKILL
+   */
+  void setKillTimeout(const size_t timeout){killTimeout = timeout;}
 
   void Disconnect();
 

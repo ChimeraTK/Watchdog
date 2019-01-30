@@ -40,7 +40,7 @@ void ProcessHandler::setupHandler(){
 
 ProcessHandler::ProcessHandler(const std::string &_PIDFileName, const bool _deletePIDFile, int &_PID, std::ostream &_stream, const std::string &_name):
  pid(-1), pidFile("/tmp/" + _PIDFileName + ".PID"), deletePIDFile(_deletePIDFile), signum(SIGINT),
- os(_stream), log(logging::LogLevel::DEBUG), name(_name + "/ProcessHandler: "), connected(true){
+ os(_stream), log(logging::LogLevel::DEBUG), name(_name + "/ProcessHandler: "), connected(true), killTimeout(1){
   _PID = -1;
   if(readTempPID(_PID)){
     if(proc_util::isProcessRunning(_PID))
@@ -52,7 +52,7 @@ ProcessHandler::ProcessHandler(const std::string &_PIDFileName, const bool _dele
 
 ProcessHandler::ProcessHandler(const std::string &_PIDFileName, const bool _deletePIDFile, std::ostream &_stream, const std::string &_name):
  pid(-1), pidFile("/tmp/" + _PIDFileName + ".PID"), deletePIDFile(_deletePIDFile), signum(SIGINT),
- os(_stream), log(logging::LogLevel::DEBUG), name(_name + "/ProcessHandler: "), connected(true) {
+ os(_stream), log(logging::LogLevel::DEBUG), name(_name + "/ProcessHandler: "), connected(true), killTimeout(1) {
 };
 
 
@@ -70,8 +70,21 @@ void ProcessHandler::cleanup() {
     kill(-pid, signum);
     // allow 1s for terminating the process, else it will be killed
     // \ToDo: Verify that 1s is ok...
-    sleep(1);
-    if(proc_util::isProcessRunning(pid)) {
+    bool running = true;
+    if(killTimeout < 1)
+      killTimeout = 1;
+    if(log == logging::LogLevel::DEBUG){
+      os << logging::LogLevel::DEBUG << name << logging::getTime() << "Waiting for the process to exit (no longer than " << killTimeout << "s)." << std::endl;
+    }
+    for(size_t i = 0; i < killTimeout; i++){
+      sleep(1);
+      if(!proc_util::isProcessRunning(pid)){
+        running = false;
+        break;
+      }
+    }
+
+    if(running) {
       if(log == logging::LogLevel::DEBUG){
         os << logging::LogLevel::DEBUG << name << logging::getTime() << "Going to kill (SIGKILL) process in the destructor of ProcessHandler for process: "
            << pid << std::endl;
@@ -83,6 +96,10 @@ void ProcessHandler::cleanup() {
             " could not be stopped. Even using signal SIGKILL!" << std::endl;
       } else {
         os << logging::LogLevel::INFO << name << logging::getTime() << "Ok process was terminated."  << std::endl;
+      }
+    } else {
+      if(log == logging::LogLevel::DEBUG){
+        os << logging::LogLevel::DEBUG << name << logging::getTime() << "Process exited normally." << std::endl;
       }
     }
   } else if(pid > 0 && log == logging::LogLevel::DEBUG) {

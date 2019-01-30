@@ -220,39 +220,39 @@ struct ProcessControlModule : public ProcessInfoModule{
   /** Path where to execute the command used to start the process */
   ctk::ScalarPollInput<std::string> processSetPath { this, "SetPath", "",
       "Set the path where to execute the command used to start the process",
-    { "PROCESS", getName() } };
+    { "CS", "PROCESS", getName() } };
   /** Command used to start the process */
   ctk::ScalarPollInput<std::string> processSetCMD { this, "SetCMD", "", "Set the command used to start the process",
-    { "PROCESS", getName() } };
+    { "CS", "PROCESS", getName() } };
 
   /** Command used to start the process */
   ctk::ScalarPollInput<std::string> processSetENV { this, "SetEnvironment", "", "Set environment variables needed by the process",
-    { "PROCESS", getName() } };
+    { "CS", "PROCESS", getName() } };
   ctk::ScalarPollInput<int> processOverwriteENV { this, "OverwriteEnvironment", "",
     "If true the environmet variables are overwritten. Else they are extended.",
-    { "PROCESS", getName() } };
+    { "CS", "PROCESS", getName() } };
 
-  ctk::ScalarPollInput<uint> processMaxFails { this, "MaxFails", "",
+  ctk::ScalarPollInput<uint> processMaxFails { this, "SetMaxFails", "",
     "Set the maximum number of allowed fails.",
-    { "PROCESS", getName() } };
-  ctk::ScalarPollInput<uint> processMaxRestarts { this, "MaxRestarts", "",
+    { "CS", "PROCESS", getName() } };
+  ctk::ScalarPollInput<uint> processMaxRestarts { this, "SetMaxRestarts", "",
     "Set the maximum number of allowed restarts.",
-    { "PROCESS", getName() } };
+    { "CS", "PROCESS", getName() } };
 #ifdef ENABLE_LOGGING
   /** Log file name. It will be created in the given processPath */
-  ctk::ScalarPollInput<std::string> processSetExternalLogfile { this, "SetExternalLogfile", "", "Set the name of the logfile"
+  ctk::ScalarPollInput<std::string> processSetExternalLogfile { this, "SetLogfileExternal", "", "Set the name of the logfile"
       " used by the process to be started. It is created in the given path.",
-    { "PROCESS", getName() } };
+    { "CS", "PROCESS", getName() } };
 #endif
   /** Start the process */
-  ctk::ScalarPollInput<uint> enableProcess { this, "startProcess", "", "Start the process",
-    { "PROCESS", getName() } };
+  ctk::ScalarPollInput<uint> enableProcess { this, "enableProcess", "", "Start the process",
+    { "CS", "PROCESS", getName() } };
   /** Signal used to kill the process (2: SIGINT, 9: SIGKILL) */
   ctk::ScalarPollInput<uint> killSig { this, "killSig", "", "Signal used to kill the process (2: SIGINT, 9: SIGKILL)",
-    { "PROCESS", getName() } };
+    { "CS", "PROCESS", getName() } };
   /** PID offset used when monitoring the started process */
   ctk::ScalarPollInput<uint> pidOffset { this, "pidOffset", "", "PID offset used when monitoring the started process",
-    { "PROCESS", getName() } };
+    { "CS", "PROCESS", getName() } };
   /** Process status 0: not running, 1: running */
   ctk::ScalarOutput<uint> processIsRunning { this, "IsRunning", "", "Process status 0: not running, 1: running",
       { "CS", "PROCESS", getName(), "DAQ" } };
@@ -268,6 +268,9 @@ struct ProcessControlModule : public ProcessInfoModule{
     { "CS", "PROCESS", getName(), "DAQ" } };
   ctk::ScalarPollInput<uint> bootDelay { this, "BootDelay", "s", "This delay is used at server start. Use this to delay the process start with"
       "respect to other processes.",
+    { "CS", "PROCESS", getName(), "DAQ"} };
+  ctk::ScalarPollInput<uint> killTimeout { this, "killTimeout", "s", "This is the maximum time waited for the process to exit after stopping. After, it is"
+        " stopped using SIGKILL.",
     { "CS", "PROCESS", getName(), "DAQ"} };
   /** @} */
 

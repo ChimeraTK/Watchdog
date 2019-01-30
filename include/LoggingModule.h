@@ -33,8 +33,8 @@ struct LogFileModule: public ctk::ApplicationModule {
   ctk::ScalarPollInput<std::string> logFile { this, "logFile", "",
     "Name of the external logfile, e.g. produced by a program started by the watchdog." };
 
-  ctk::ScalarPollInput<uint> tailLength { this, "maxLength", "",
-    "Maximum number of messages to be shown in the lofgile tail." };
+  ctk::ScalarPollInput<uint> tailLength { this, "SetLogTailLengthExternal", "",
+    "Maximum number of messages to be shown in the lofgile tail.", {"CS"}};
 
   ctk::ScalarOutput<std::string> logTailExtern { this, "LogfileTailExternal", "",
     "Tail of an external log file, e.g. produced by a program started by the watchdog.",
@@ -82,17 +82,19 @@ struct LoggingModule: public ctk::ApplicationModule {
   ctk::ScalarPushInput<uint> messageLevel { this, "messageLevel", "",
         "Message log level." };
 
-  ctk::ScalarPollInput<uint> targetStream { this, "targetStream", "",
-          "Set the tagret stream: 0 (cout/cerr+logfile), 1 (logfile), 2 (cout/cerr), 3 (none)" };
+  ctk::ScalarPollInput<uint> targetStream { this, "SetTargetStream", "",
+          "Set the tagret stream: 0 (cout/cerr+logfile), 1 (logfile), 2 (cout/cerr), 3 (none)",
+  {"CS"}};
 
-  ctk::ScalarPollInput<std::string> logFile { this, "Logfile", "",
-    "Name of the external logfile. If empty messages are pushed to cout/cerr" };
+  ctk::ScalarPollInput<std::string> logFile { this, "SetLogFile", "",
+    "Name of the external logfile. If empty messages are pushed to cout/cerr"};
 
-  ctk::ScalarPollInput<uint> tailLength { this, "maxLength", "",
-      "Maximum number of messages to be shown in the logging stream tail." };
+  ctk::ScalarPollInput<uint> tailLength { this, "SetLogTailLength", "",
+      "Maximum number of messages to be shown in the logging stream tail.",
+  {"CS"}};
 
-  ctk::ScalarPollInput<uint> logLevel { this, "logLevel", "",
-      "Current log level used for messages." };
+  ctk::ScalarPollInput<uint> logLevel { this, "SetLogLevel", "",
+      "Current log level used for messages.", {"CS"} };
 
   ctk::ScalarOutput<std::string> logTail { this, "LogTail", "", "Tail of the logging stream.",
       { "CS", "PROCESS", getName() } };

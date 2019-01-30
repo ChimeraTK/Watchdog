@@ -444,6 +444,8 @@ void ProcessControlModule::resetProcessHandler(std::stringstream* handlerMessage
     process->setSigNum(2);
   else
     process->setSigNum(killSig);
+  killTimeout.read();
+  process->setKillTimeout(killTimeout);
   process.reset(nullptr);
 #ifdef ENABLE_LOGGING
   evaluateMessage(*handlerMessage);
