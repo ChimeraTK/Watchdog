@@ -35,6 +35,8 @@ void LogFileModule::mainLoop(){
          messageTail << "No log file is set. Try starting the process and setting a LogFile." << std::endl;
         } else {
           messageTail << "Can not open file: " << currentFile << std::endl;
+          // set currentFile empty in order to force reopening
+          currentFile = "";
         }
       }
     }
