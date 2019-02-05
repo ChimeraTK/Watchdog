@@ -9,9 +9,9 @@
 
 void LogFileModule::mainLoop(){
   logFile.read();
-  std::string currentFile = (std::string)logFile;
+//  std::string currentFile = (std::string)logFile;
   logFileBuffer.reset(new std::filebuf);
-  logFileBuffer->open(currentFile,std::ios::in);
+  logFileBuffer->open((std::string)logFile,std::ios::in);
   std::stringstream messageTail;
   while(1){
     readAll();
@@ -20,24 +20,25 @@ void LogFileModule::mainLoop(){
     if(tailLength < 1){
       messageTail << "Tail length is <1. No messages from the log file read." << std::endl;
     } else {
-      if(((std::string)logFile).compare(currentFile) != 0){
-        logFileBuffer->close();
-        currentFile = (std::string)logFile;
-        messageTail << "New log file is opened: " << currentFile << std::endl;
-        logFileBuffer->open(currentFile,std::ios::in);
-      }
-
-      if(logFileBuffer->is_open()){
-        std::istream i(&(*logFileBuffer));
-        logging::formatLogTail(i, messageTail, tailLength);
-      } else {
-        if(currentFile.empty()){
+      if(((std::string)logFile).empty()){
          messageTail << "No log file is set. Try starting the process and setting a LogFile." << std::endl;
+      } else {
+        /**
+         * Always reopen the file buffer.
+         * If the file buffer is only opened in case the log file name changes the following problem arises:
+         * When the process is stopped the buffer is not updated anymore, which is ok. But if the log file is deleted
+         * and the process is started again a new log file is created. The buffer will not recognize this and still
+         * show the last update (of the log file that was deleted). Updates of the new log file would not be
+         * updated here.
+         */
+        logFileBuffer->open((std::string)logFile,std::ios::in);
+        if(logFileBuffer->is_open()){
+          std::istream i(&(*logFileBuffer));
+          logging::formatLogTail(i, messageTail, tailLength);
         } else {
-          messageTail << "Can not open file: " << currentFile << std::endl;
-          // set currentFile empty in order to force reopening
-          currentFile = "";
+          messageTail << "Can not open file: " << (std::string)logFile << std::endl;
         }
+        logFileBuffer->close();
       }
     }
     logTailExtern = messageTail.str();
