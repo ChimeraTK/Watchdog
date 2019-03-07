@@ -9,6 +9,7 @@
 
 #include "boost/filesystem.hpp"
 
+#include <fstream>
 namespace bfs = boost::filesystem;
 
 /*
