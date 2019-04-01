@@ -302,7 +302,7 @@ void ProcessHandler::setAllFHCloseOnExec()
 
 void ProcessHandler::Disconnect(){
   connected = false;
-  if(log == logging::LogLevel::DEBUG)
+  if(log == logging::LogLevel::DEBUG && pid > 0)
     os << logging::LogLevel::DEBUG << name << logging::getTime() << "Process is disconnected. It is no longer controlled by the ProcessHandler!"
         " You have to take care of it on your own. PID is: " << pid << std::endl;
 }
