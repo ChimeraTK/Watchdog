@@ -452,6 +452,13 @@ void ProcessControlModule::resetProcessHandler(std::stringstream* handlerMessage
 #endif
 }
 
+void ProcessControlModule::terminate(){
+  if(process != nullptr)
+    process->Disconnect();
+  process.reset(nullptr);
+  ProcessInfoModule::terminate();
+}
+
 #ifdef ENABLE_LOGGING
 void ProcessInfoModule::sendMessage(const logging::LogLevel &level){
   auto logging_ss = dynamic_cast<std::stringstream*>(logging);
@@ -484,9 +491,3 @@ std::string ProcessInfoModule::getTime(){
   return str;
 }
 
-void ProcessControlModule::terminate(){
-  if(process != nullptr)
-    process->Disconnect();
-  process.reset(nullptr);
-  ProcessInfoModule::terminate();
-}

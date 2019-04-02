@@ -169,7 +169,6 @@ struct ProcessInfoModule : public ctk::ApplicationModule {
   void terminate() override;
 };
 
-
 /**
  * \brief This module is used to start and stop subprocess controlled by the watchdog.
  */
@@ -184,7 +183,7 @@ struct ProcessControlModule : public ProcessInfoModule{
   ProcessControlModule(EntityOwner *owner, const std::string &name,
       const std::string &description, bool historyOn = false, bool eliminateHierarchy = false,
       const std::unordered_set<std::string> &tags = { }): ProcessInfoModule(owner, name, description, eliminateHierarchy, tags),
-          _stop(false), _restartRequired(false), _historyOn(historyOn){};
+          _stop(false), _restartRequired(false), _historyOn(historyOn){ };
 
   /* Use terminate function to delete the ProcessHandler, since it is using a local stringstream constructed in the main loop
    * which is not existing at the time the ProcessHandler destructor is called!
@@ -217,6 +216,9 @@ struct ProcessControlModule : public ProcessInfoModule{
      * \name Process control parameter (dynamic process execution)
      * @{
      */
+  /** Environment variable set for the process */
+  ctk::ScalarPollInput<std::string> processAlias { this, "alias", "", "Alias name of the process",
+    {  "CS", "PROCESS", getName() } };
   /** Path where to execute the command used to start the process */
   ctk::ScalarPollInput<std::string> processSetPath { this, "SetPath", "",
       "Set the path where to execute the command used to start the process",
@@ -330,4 +332,21 @@ private:
   bool _historyOn;
 };
 
+
+struct ProcessGroup : public ctk::ModuleGroup{
+  using ctk::ModuleGroup::ModuleGroup;
+  /**
+   * \brief This module is used to start and stop subprocess controlled by the watchdog.
+   */
+
+  /**
+   * vector storing processes
+   * The vector is filled during construction using information from the input xml file called:
+   * watchdog_server_processes.xml
+   * If that file is not found only one process named PROCESS is added.
+   */
+  std::vector<ProcessControlModule> processes;
+
+
+};
 #endif /* INCLUDE_PROCESSMODULE_H_ */

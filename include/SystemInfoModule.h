@@ -250,6 +250,16 @@ struct FileSystemModule : public ctk::ApplicationModule {
   bool read();
 };
 
+struct FileSystemGroup : public ctk::ModuleGroup{
+  using ctk::ModuleGroup::ModuleGroup;
+
+  /**
+   * Modules monitoring disks usage of system drives.
+   */
+  std::vector<FileSystemModule> fsMonitors;
+
+};
+
 /**
  * \brief Module reading information of a network adapter.
  *
@@ -347,6 +357,17 @@ struct NetworkModule : public ctk::ApplicationModule {
    * Since this might not be thread safe a mutex is used here.
    */
   bool read();
+};
+
+
+struct NetworkGroup : public ctk::ModuleGroup{
+
+  using ctk::ModuleGroup::ModuleGroup;
+
+  /**
+   * Modules monitoring disks usage of system drives.
+   */
+  std::vector<NetworkModule> networkMonitors;
 };
 
 #endif /* INCLUDE_SYSTEMINFOMODULE_H_ */

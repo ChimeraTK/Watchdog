@@ -57,7 +57,7 @@ struct testWD: public ctk::Application {
       std::cerr << "Error in the xml file 'WatchdogServer_processes.xml': " << e.what()
               << std::endl;
       std::cout << "I will create only one process named PROCESS..." << std::endl;
-      processes.emplace_back(this, "PROCESS", "Test process");
+      processes.emplace_back(this, "PROCESS", "Test process", "PROCESS");
       processes.back().logging = nullptr;
   #ifdef ENABLE_LOGGING
       processesLog.emplace_back(this, "PROCESS", "Test process log");

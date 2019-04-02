@@ -60,26 +60,15 @@ struct WatchdogServer: public ctk::Application {
     shutdown();
   }
 
-  SystemInfoModule systemInfo { this, "SYS",
+  SystemInfoModule systemInfo { this, "system",
       "Module reading system information" };
 
-  /**
-   * vector storing processes
-   * The vector is filled during construction using information from the input xml file called:
-   * watchdog_server_processes.xml
-   * If that file is not found only one process named PROCESS is added.
-   */
-  std::vector<ProcessControlModule> processes;
+  ProcessGroup processGroup{this, "process", "Process module group"};
 
-  /**
-   * Modules monitoring disks usage of system drives.
-   */
-  std::vector<FileSystemModule> fsMonitors;
+  FileSystemGroup filesystemGroup{this, "filesystem", "File system module group"};
 
-  /**
-   * Modules monitoring disks usage of system drives.
-   */
-  std::vector<NetworkModule> networkMonitors;
+  NetworkGroup networkGroup{this, "network", "Network module group"};
+
 
   ProcessInfoModule watchdog{this, "watchdog", "Module monitoring the watchdog process"};
 

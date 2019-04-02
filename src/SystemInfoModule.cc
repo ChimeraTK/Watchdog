@@ -84,6 +84,11 @@ void SystemInfoModule::mainLoop() {
   startTime.write();
   startTimeStr.write();
   
+  // findTag takes some time and should not be called with every loop
+  auto toWrite = findTag("SYS");
+  // ToDo: Remove once the bug in the VitualModule is fixed (issue #30)
+  toWrite.setOwner(this);
+
   while(true) {
     trigger.read();
 
@@ -132,7 +137,7 @@ void SystemInfoModule::mainLoop() {
 
     calculatePCPU();
 
-    findTag("SYS").writeAll();
+    toWrite.writeAll();
 #ifdef ENABLE_LOGGING
     (*logging) << getTime(this) << "System data updated" << std::endl;
     sendMessage(logging::LogLevel::DEBUG);
@@ -292,6 +297,12 @@ void FileSystemModule::mainLoop(){
   mountPoint = tmp[1];
   deviceName.write();
   mountPoint.write();
+
+  // findTag takes some time and should not be called with every loop
+  auto toWrite = findTag("SYS");
+  // ToDo: Remove once the bug in the VitualModule is fixed (issue #30)
+  toWrite.setOwner(this);
+
   while(1){
     trigger.read();
     if(read()){
@@ -314,7 +325,7 @@ void FileSystemModule::mainLoop(){
         sendMessage(logging::LogLevel::DEBUG);
 #endif
       }
-      findTag("SYS").writeAll();
+      toWrite.writeAll();
     }
   }
 }
@@ -394,10 +405,16 @@ bool NetworkModule::read(){
 void NetworkModule::mainLoop(){
   deviceName = tmp;
   deviceName.write();
+
+  // findTag takes some time and should not be called with every loop
+  auto toWrite = findTag("SYS");
+  // ToDo: Remove once the bug in the VitualModule is fixed (issue #30)
+  toWrite.setOwner(this);
+
   while(1){
     trigger.read();
     if(read()){
-      findTag("SYS").writeAll();
+      toWrite.writeAll();
     }
   }
 }

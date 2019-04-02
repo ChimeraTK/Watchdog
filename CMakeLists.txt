@@ -64,6 +64,8 @@ include_directories(${PROJECT_BINARY_DIR}/version)
 IF(DEFINED ENABLE_LOGGING)
   MESSAGE(STATUS "Logging modules are enabled.")
   add_definitions(-DENABLE_LOGGING)
+ELSE()
+  MESSAGE(STATUS "Logging modules are disabled.")
 ENDIF(DEFINED ENABLE_LOGGING)
 
 
