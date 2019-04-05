@@ -59,21 +59,20 @@ std::set<std::string> findNetworkDevices(){
 WatchdogServer::WatchdogServer() :
     Application("WatchdogServer") {
   try{
-    auto strProcesses = config.get<std::vector<std::string>>("processes");
-    size_t n = 0;
-    for(auto &processName : strProcesses) {
+    auto nProcesses = config.get<uint>("numberOfProcesses");
+    for(size_t i = 0; i < nProcesses; i++) {
+      std::string processName = std::to_string(i);
       std::cout << "Adding process: " << processName << std::endl;
       if(config.get<uint>("enableServerHistory") != 0){
-        processGroup.processes.emplace_back(&processGroup, std::to_string(n).c_str(), "process", true);
+        processGroup.processes.emplace_back(&processGroup, processName, "process", true);
       } else {
-        processGroup.processes.emplace_back(&processGroup, std::to_string(n).c_str(), "process");
+        processGroup.processes.emplace_back(&processGroup, processName, "process");
       }
-      processGroup.processes.back().logging = nullptr;
+      processGroup.processes.back().logStream = nullptr;
 #ifdef ENABLE_LOGGING
-      processesLog.emplace_back(this, processName + "-Log", "process log");
-      processesLogExternal.emplace_back(this, processName + "-LogExternal", "process external log");
+      processGroup.processesLog.emplace_back(&processGroup, processName, "process log");
+      processGroup.processesLogExternal.emplace_back(&processGroup, processName , "process external log");
 #endif
-      n++;
     }
   } catch (std::out_of_range &e){
     std::cerr << "Error in the xml file 'WatchdogServerConfig.xml': " << e.what()
@@ -84,10 +83,10 @@ WatchdogServer::WatchdogServer() :
     } else {
       processGroup.processes.emplace_back(&processGroup, "0", "Test process");
     }
-    processGroup.processes.back().logging = nullptr;
+    processGroup.processes.back().logStream = nullptr;
 #ifdef ENABLE_LOGGING
-    processesLog.emplace_back(this, "PROCESS", "Process log");
-    processesLogExternal.emplace_back(this, "PROCESS", "Process external log");
+    processGroup.processesLog.emplace_back(&processGroup, "0", "Process log");
+    processGroup.processesLogExternal.emplace_back(&processGroup, "0", "Process external log");
 #endif
   }
   size_t i =0;
@@ -97,7 +96,7 @@ WatchdogServer::WatchdogServer() :
     std::cout << "Adding filesystem monitor for: " << mountPoint.first << " mounted at: " << mountPoint.second << " -->" << name << std::endl;
     filesystemGroup.fsMonitors.emplace_back(mountPoint.first, mountPoint.second, &filesystemGroup, name, "Filesystem monitor");
 #ifdef ENABLE_LOGGING
-    processesLog.emplace_back(this, name + "-Log", "File system monitor log");
+    filesystemGroup.loggingModules.emplace_back(&filesystemGroup, name, "File system monitor log");
 #endif
     i++;
   }
@@ -108,7 +107,7 @@ WatchdogServer::WatchdogServer() :
     std::cout << "Adding network monitor for device: " << dev << " -->" << name << std::endl;
     networkGroup.networkMonitors.emplace_back(dev, &networkGroup, name, "Network monitor");
   #ifdef ENABLE_LOGGING
-    processesLog.emplace_back(this, name + "-Log", "Network monitor log");
+    networkGroup.loggingModules.emplace_back(&networkGroup, name, "Network monitor log");
   #endif
     i++;
   }
@@ -116,27 +115,34 @@ WatchdogServer::WatchdogServer() :
 }
 
 void WatchdogServer::defineConnections() {
-  for(auto it = systemInfo.strInfos.begin(), ite = systemInfo.strInfos.end();
-      it != ite; it++) {
-    it->second >> cs["system"](space2underscore(it->first));
+  for (auto it = systemInfo.info.strInfos.begin(); it != systemInfo.info.strInfos.end(); it++){
+    std::cout << it->second.getOwner()->getName() << std::endl;
   }
+  std::cout << "cpu: " << systemInfo.status.cpu_use->getOwner()->getName() << std::endl;
+//  for(auto it = systemInfo.info.strInfos.begin(), ite = systemInfo.info.strInfos.end();
+//      it != ite; it++) {
+//    it->second >> cs["system"](space2underscore(it->first));
+//  }
   systemInfo.findTag("CS").connectTo(cs[systemInfo.getName()]);
   trigger.tick >> systemInfo.trigger;
   cs["configuration"]("UpdateTime") >> trigger.period;
 
 	watchdog.findTag("CS").connectTo(cs[watchdog.getName()]);
-#ifdef ENABLE_LOGGING
-  watchdog.findTag("Logging").connectTo(watchdogLog);
 
-	cs[watchdog.getName()]("SetLogFile") >> watchdogLog.logFile;
+#ifdef ENABLE_LOGGING
+  // allow to set the logFile name -> other modules will use the same log file
+  watchdogLog.findTag("CS_OPTIONAL").connectTo(cs[watchdog.getName()]);
+	watchdog.logging.connectTo(watchdogLog.input);
+
+//	cs[watchdog.getName()]("logFile") >> watchdogLog.config.logFile;
   watchdogLog.findTag("CS").connectTo(cs[watchdog.getName()]);
 
-  cs[watchdog.getName()]("SetLogFile") >> watchdogLogFile.logFile;
+  watchdogLog.config.logFile >> watchdogLogFile.config.logFile;
   trigger.tick >> watchdogLogFile.trigger;
   watchdogLogFile.findTag("CS").connectTo(cs[watchdog.getName()]);
 
-  systemInfo.findTag("Logging").connectTo(systemInfoLog);
-  cs[watchdog.getName()]("SetLogFile") >> systemInfoLog.logFile;
+  systemInfo.logging.connectTo(systemInfoLog.input);
+  watchdogLog.config.logFile >> systemInfoLog.config.logFile;
   systemInfoLog.findTag("CS").connectTo(cs[systemInfo.getName()]);
 
 
@@ -144,56 +150,74 @@ void WatchdogServer::defineConnections() {
   // publish configuration
 //  config.connectTo(cs["Configuration"]);
 
-  auto log = processesLog.begin();
-  auto logExternal = processesLogExternal.begin();
+  auto log = processGroup.processesLog.begin();
+  auto logExternal = processGroup.processesLogExternal.begin();
 #endif
 
-	systemInfo.ticksPerSecond >> watchdog.ticksPerSecond;
-  systemInfo.uptime_secTotal >> watchdog.sysUpTime;
-  systemInfo.startTime >> watchdog.sysStartTime;
-  systemInfo.maxMem >> watchdog.maxMem;
+	systemInfo.info.ticksPerSecond >> watchdog.input.ticksPerSecond;
+  systemInfo.status.uptime_secTotal >> watchdog.input.sysUpTime;
+  systemInfo.status.startTime >> watchdog.input.sysStartTime;
+  systemInfo.status.maxMem >> watchdog.input.maxMem;
   trigger.tick >> watchdog.trigger;
+
+  auto tmp = processGroup.findTag("CS");
+  for( auto i : tmp.getSubmoduleList()){
+    std::cout << "Found submodule: " << i->getName() << std::endl;
+    for( auto j : i->getAccessorList()){
+      std::cout << "Found node: " << j.getName() << std::endl;
+    }
+    for( auto k : i->getSubmoduleList()){
+      std::cout << "Found subsubmodule: " << k->getName() << std::endl;
+      for( auto l : k->getAccessorList()){
+        std::cout << "Found node: " << l.getName() << std::endl;
+      }
+    }
+  }
 
   processGroup.findTag("CS").connectTo(cs["processes"]);
   for(auto &item : processGroup.processes) {
-    systemInfo.ticksPerSecond >> item.ticksPerSecond;
-    systemInfo.uptime_secTotal >> item.sysUpTime;
-    systemInfo.startTime >> item.sysStartTime;
-    systemInfo.maxMem >> item.maxMem;
+    systemInfo.info.ticksPerSecond >> item.input.ticksPerSecond;
+    systemInfo.status.uptime_secTotal >> item.input.sysUpTime;
+    systemInfo.status.startTime >> item.input.sysStartTime;
+    systemInfo.status.maxMem >> item.input.maxMem;
     trigger.tick >> item.trigger;
 
 #ifdef ENABLE_LOGGING
-    item.message >> (*log).message;
-    item.messageLevel >> (*log).messageLevel;
-    cs[watchdog.getName()]("SetLogFile") >> (*log).logFile;
-    (*log).findTag("CS").connectTo(cs[item.getName()]);
-    item.processExternalLogfile >> (*logExternal).logFile;
+    item.logging.connectTo((*log).input);
+    watchdogLog.config.logFile >> (*log).config.logFile;
+//    (*log).findTag("CS").connectTo(cs[item.getName()]);
+    item.config.externalLogfile >> (*logExternal).config.logFile;
     trigger.tick >> (*logExternal).trigger;
-    (*logExternal).findTag("CS").connectTo(cs[item.getName()]);
+//    (*logExternal).findTag("CS").connectTo(cs[item.getName()]);
 
     log++;
     logExternal++;
 #endif
   }
+  log = filesystemGroup.loggingModules.begin();
+
   filesystemGroup.findTag("CS").connectTo(cs["filesystem"]);
   for(auto &item : filesystemGroup.fsMonitors){
     trigger.tick >> item.trigger;
 #ifdef ENABLE_LOGGING
-    item.message >> (*log).message;
-    item.messageLevel >> (*log).messageLevel;
-    cs[watchdog.getName()]("SetLogFile") >> (*log).logFile;
-    (*log).findTag("CS").connectTo(cs[item.getName()]);
+    item.message >> (*log).input.message;
+    item.messageLevel >> (*log).input.messageLevel;
+    watchdogLog.config.logFile >> (*log).config.logFile;
+//    (*log).findTag("CS").connectTo(cs[item.getName()]);
     log++;
 #endif
   }
+
+  log = networkGroup.loggingModules.begin();
+
   networkGroup.findTag("CS").connectTo(cs["network"]);
   for(auto &item : networkGroup.networkMonitors){
     trigger.tick >> item.trigger;
 #ifdef ENABLE_LOGGING
-    item.message >> (*log).message;
-    item.messageLevel >> (*log).messageLevel;
-    cs[watchdog.getName()]("SetLogFile") >> (*log).logFile;
-    (*log).findTag("CS").connectTo(cs[item.getName()]);
+    item.message >> (*log).input.message;
+    item.messageLevel >> (*log).input.messageLevel;
+    watchdogLog.config.logFile >> (*log).config.logFile;
+//    (*log).findTag("CS").connectTo(cs[item.getName()]);
     log++;
 #endif
   }
@@ -246,17 +270,5 @@ void WatchdogServer::defineConnections() {
     history.findTag("CS").connectTo(cs);
   }
   dumpConnections();
-
-  std::cout << systemInfo.getOwner() << std::endl;
-  auto l = networkGroup.getSubmoduleList();
-  std::cout << networkGroup.getOwner() << std::endl;
-  for(auto mod : l){
-    std::cout << mod->getOwner() << std::endl;
-  }
-  l = networkGroup.getSubmoduleList();
-  std::cout << networkGroup.getOwner() << std::endl;
-  for(auto mod : l){
-    std::cout << mod->getOwner() << std::endl;
-  }
 }
 

@@ -25,14 +25,12 @@ struct testWD: public ctk::Application {
   SystemInfoModule systemInfo { this, "SYS",
       "Module reading system information" };
 
-  std::vector<ProcessControlModule> processes;
+  ProcessGroup processGroup{this, "process", "Process module group"};
 
   ProcessInfoModule watchdog{this, "watchdog", "Module monitoring the watchdog process"};
 
   ctk::ConfigReader config{this, "Configuration", "WatchdogServer_processes.xml"};
 
-  std::vector<LoggingModule> processesLog;
-  std::vector<LogFileModule> processesLogExternal;
   LogFileModule watchdogLogFile{this, "watchdogLog", "Logging module of all watchdog processes"};
   LoggingModule watchdogLog{this, "watchdogLog", "Logging module of the watchdog process"};
   LoggingModule systemInfoLog{this, "systeminfoLog", "Logging module of the system information module"};
@@ -46,22 +44,22 @@ struct testWD: public ctk::Application {
       auto strProcesses = config.get<std::vector<std::string>>("processes");
       for(auto &processName : strProcesses) {
         std::cout << "Adding process: " << processName << std::endl;
-        processes.emplace_back(this, processName, "process");
-        processes.back().logging = nullptr;
+        processGroup.processes.emplace_back(this, processName, "process");
+        processGroup.processes.back().logStream = nullptr;
   #ifdef ENABLE_LOGGING
-        processesLog.emplace_back(this, processName + "-Log", "process log");
-        processesLogExternal.emplace_back(this, processName + "-LogExternal", "process external log");
+        processGroup.processesLog.emplace_back(this, processName + "-Log", "process log");
+        processGroup.processesLogExternal.emplace_back(this, processName + "-LogExternal", "process external log");
   #endif
       }
     } catch (std::out_of_range &e){
       std::cerr << "Error in the xml file 'WatchdogServer_processes.xml': " << e.what()
               << std::endl;
       std::cout << "I will create only one process named PROCESS..." << std::endl;
-      processes.emplace_back(this, "PROCESS", "Test process", "PROCESS");
-      processes.back().logging = nullptr;
+      processGroup.processes.emplace_back(this, "PROCESS", "Test process", "PROCESS");
+      processGroup.processes.back().logStream = nullptr;
   #ifdef ENABLE_LOGGING
-      processesLog.emplace_back(this, "PROCESS", "Test process log");
-      processesLogExternal.emplace_back(this, "PROCESS", "Test process external log");
+      processGroup.processesLog.emplace_back(this, "PROCESS", "Test process log");
+      processGroup.processesLogExternal.emplace_back(this, "PROCESS", "Test process external log");
   #endif
     }
 
@@ -73,7 +71,7 @@ struct testWD: public ctk::Application {
   }
 
   void defineConnections() override{
-    for(auto it = systemInfo.strInfos.begin(), ite = systemInfo.strInfos.end();
+    for(auto it = systemInfo.info.strInfos.begin(), ite = systemInfo.info.strInfos.end();
         it != ite; it++) {
       it->second >> cs["SYS"](space2underscore(it->first));
     }
@@ -84,64 +82,64 @@ struct testWD: public ctk::Application {
   #ifdef ENABLE_LOGGING
     watchdog.findTag("Logging").connectTo(watchdogLog);
 
-    cs[watchdog.getName()]("SetLogFile") >> watchdogLog.logFile;
-    cs[watchdog.getName()]("SetLogTailLength") >> watchdogLog.tailLength;
-    cs[watchdog.getName()]("SetTargetStream") >> watchdogLog.targetStream;
-    cs[watchdog.getName()]("SetLogLevel") >> watchdogLog.logLevel;
+    cs[watchdog.getName()]("logFile") >> watchdogLog.config.logFile;
+    cs[watchdog.getName()]("logTailLength") >> watchdogLog.config.tailLength;
+    cs[watchdog.getName()]("targetStream") >> watchdogLog.config.targetStream;
+    cs[watchdog.getName()]("logLevel") >> watchdogLog.config.logLevel;
     watchdogLog.findTag("CS").connectTo(cs[watchdog.getName()]);
 
-    cs[watchdog.getName()]("SetLogFile") >> watchdogLogFile.logFile;
-    cs[watchdog.getName()]("SetLogTailLengthExternal") >> watchdogLogFile.tailLength;
+    cs[watchdog.getName()]("logFile") >> watchdogLogFile.config.logFile;
+    cs[watchdog.getName()]("logTailLengthExternal") >> watchdogLogFile.config.tailLength;
     cs("trigger") >> watchdogLogFile.trigger;
     watchdogLogFile.findTag("CS").connectTo(cs[watchdog.getName()]);
 
     systemInfo.findTag("Logging").connectTo(systemInfoLog);
-    cs[watchdog.getName()]("SetLogFile") >> systemInfoLog.logFile;
-    cs[systemInfo.getName()]("SetLogTailLength") >> systemInfoLog.tailLength;
-    cs[systemInfo.getName()]("SetTargetStream") >> systemInfoLog.targetStream;
-    cs[systemInfo.getName()]("SetLogLevel") >> systemInfoLog.logLevel;
+    cs[watchdog.getName()]("logFile") >> systemInfoLog.config.logFile;
+    cs[systemInfo.getName()]("logTailLength") >> systemInfoLog.config.tailLength;
+    cs[systemInfo.getName()]("targetStream") >> systemInfoLog.config.targetStream;
+    cs[systemInfo.getName()]("logLevel") >> systemInfoLog.config.logLevel;
     systemInfoLog.findTag("CS").connectTo(cs[systemInfo.getName()]);
 
 
-    auto log = processesLog.begin();
-    auto logExternal = processesLogExternal.begin();
+    auto log = processGroup.processesLog.begin();
+    auto logExternal = processGroup.processesLogExternal.begin();
   #endif
 
-    systemInfo.ticksPerSecond >> watchdog.ticksPerSecond;
-    systemInfo.uptime_secTotal >> watchdog.sysUpTime;
-    systemInfo.startTime >> watchdog.sysStartTime;
+    systemInfo.info.ticksPerSecond >> watchdog.input.ticksPerSecond;
+    systemInfo.status.uptime_secTotal >> watchdog.input.sysUpTime;
+    systemInfo.status.startTime >> watchdog.input.sysStartTime;
 
     cs("trigger") >> watchdog.trigger;
 
 
-    for(auto &item : processes) {
+    for(auto &item : processGroup.processes) {
       cs[item.getName()]("enableProcess") >> item.enableProcess;
-      cs[item.getName()]("SetCMD") >> item.processSetCMD;
-      cs[item.getName()]("SetPath") >> item.processSetPath;
-      cs[item.getName()]("SetEnvironment") >> item.processSetENV;
-      cs[item.getName()]("OverwriteEnvironment") >> item.processOverwriteENV;
-      cs[item.getName()]("SetMaxFails") >> item.processMaxFails;
-      cs[item.getName()]("SetMaxRestarts") >> item.processMaxRestarts;
-      cs[item.getName()]("killSig") >> item.killSig;
-      cs[item.getName()]("pidOffset") >> item.pidOffset;
+      cs[item.getName()]("SetCMD") >> item.config.cmd;
+      cs[item.getName()]("SetPath") >> item.config.path;
+      cs[item.getName()]("SetEnvironment") >> item.config.env;
+      cs[item.getName()]("OverwriteEnvironment") >> item.config.overwriteEnv;
+      cs[item.getName()]("SetMaxFails") >> item.config.maxFails;
+      cs[item.getName()]("SetMaxRestarts") >> item.config.maxRestarts;
+      cs[item.getName()]("killSig") >> item.config.killSig;
+      cs[item.getName()]("pidOffset") >> item.config.pidOffset;
 
       item.findTag("CS").connectTo(cs[item.getName()]);
-      systemInfo.ticksPerSecond >> item.ticksPerSecond;
-      systemInfo.uptime_secTotal >> item.sysUpTime;
-      systemInfo.startTime >> item.sysStartTime;
+      systemInfo.info.ticksPerSecond >> item.input.ticksPerSecond;
+      systemInfo.status.uptime_secTotal >> item.input.sysUpTime;
+      systemInfo.status.startTime >> item.input.sysStartTime;
       cs("trigger")  >> item.trigger;
 
   #ifdef ENABLE_LOGGING
-      cs[item.getName()]("SetLogfileExternal") >> item.processSetExternalLogfile;
-      item.message >> (*log).message;
-      item.messageLevel >> (*log).messageLevel;
-      cs[watchdog.getName()]("SetLogFile") >> (*log).logFile;
-      cs[item.getName()]("SetLogLevel") >> (*log).logLevel;
-      cs[item.getName()]("SetLogTailLength") >> (*log).tailLength;
-      cs[item.getName()]("SetTargetStream") >> (*log).targetStream;
+      cs[item.getName()]("SetLogfileExternal") >> item.config.externalLogfile;
+      item.logging.message >> (*log).input.message;
+      item.logging.messageLevel >> (*log).input.messageLevel;
+      cs[watchdog.getName()]("SetLogFile") >> (*log).config.logFile;
+      cs[item.getName()]("SetLogLevel") >> (*log).config.logLevel;
+      cs[item.getName()]("SetLogTailLength") >> (*log).config.tailLength;
+      cs[item.getName()]("SetTargetStream") >> (*log).config.targetStream;
       (*log).findTag("CS").connectTo(cs[item.getName()]);
-      item.processExternalLogfile >> (*logExternal).logFile;
-      cs[item.getName()]("SetLogTailLengthExternal") >> (*logExternal).tailLength;
+      item.status.externalLogfile >> (*logExternal).config.logFile;
+      cs[item.getName()]("SetLogTailLengthExternal") >> (*logExternal).config.tailLength;
       cs("trigger") >> (*logExternal).trigger;
       (*logExternal).findTag("CS").connectTo(cs[item.getName()]);
 

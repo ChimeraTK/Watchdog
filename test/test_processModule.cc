@@ -31,7 +31,7 @@ using namespace boost::unit_test_framework;
  */
 struct testApp : public ChimeraTK::Application {
   testApp() : Application("test"){
-    process.logging = 0;
+    process.logStream = 0;
     ProcessHandler::setupHandler();
   }
   ~testApp() {
@@ -57,19 +57,19 @@ struct testApp : public ChimeraTK::Application {
      * Define all other connections as done in the ProcessControlModule
      */
     cs["Process"]("enableProcess") >> process.enableProcess;
-    cs["Process"]("SetCMD") >> process.processSetCMD;
-    cs["Process"]("SetPath") >> process.processSetPath;
-    cs["Process"]("killSig") >> process.killSig;
-    cs["Process"]("pidOffset") >> process.pidOffset;
-    cs["Process"]("externalLogFile") >> process.processSetExternalLogfile;
-    cs["Process"]("maxFails") >> process.processMaxFails;
-    cs["Process"]("maxRestarts") >> process.processMaxRestarts;
+    cs["Process"]("SetCMD") >> process.config.cmd;
+    cs["Process"]("SetPath") >> process.config.path;
+    cs["Process"]("killSig") >> process.config.killSig;
+    cs["Process"]("pidOffset") >> process.config.pidOffset;
+    cs["Process"]("externalLogFile") >> process.config.externalLogfile;
+    cs["Process"]("maxFails") >> process.config.maxFails;
+    cs["Process"]("maxRestarts") >> process.config.maxRestarts;
     process.findTag("CS").connectTo(cs["Process"]);
 
-    cs("SetLogLevel") >> logging.logLevel;
-    cs("SetLogTailLenght") >> logging.tailLength;
-    cs("SetTargetStream") >> logging.targetStream;
-    cs("SetLogFile") >> logging.logFile;
+    cs("logLevel") >> logging.config.logLevel;
+    cs("logTailLenght") >> logging.config.tailLength;
+    cs("targetStream") >> logging.config.targetStream;
+    cs("logFile") >> logging.config.logFile;
     logging.findTag("CS").connectTo(cs["Logging"]);
     process.findTag("Logging").connectTo(logging);
   }

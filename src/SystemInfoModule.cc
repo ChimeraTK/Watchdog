@@ -28,32 +28,33 @@ SystemInfoModule::SystemInfoModule(EntityOwner *owner, const std::string &name,
     const std::unordered_set<std::string> &tags) :
     ctk::ApplicationModule(owner, name, description, eliminateHierarchy, tags) {
   for(auto it = sysInfo.ibegin; it != sysInfo.iend; it++) {
-    strInfos[it->first].replace(ctk::ScalarOutput<std::string> { this,
-        space2underscore(it->first), "", space2underscore(it->first) });
+    info.strInfos.emplace(it->first, ctk::ScalarOutput<std::string> {&info,
+              space2underscore(it->first), "", space2underscore(it->first), {"CS"} });
   }
-  cpu_use.reset(new ctk::ArrayOutput<double>{this, "cpuUsage", "%", sysInfo.getNCpu(), "CPU usage for each processor", { "CS", "SYS", "History" }});
+  status.cpu_use = std::make_unique<ctk::ArrayOutput<double> >(
+      &status, "cpuUsage", "%", sysInfo.getNCpu(), "CPU usage for each processor",
+      std::unordered_set<std::string>{"CS", "SYS", "History"});
 //  // add 1 since cpuTotal should be added too
   lastInfo = std::vector<cpu>(sysInfo.getNCpu() + 1);
 #ifdef ENABLE_LOGGING
-  logging = new std::stringstream();
+  logStream = new std::stringstream();
 #else
-  logging = &std::cerr;
+  logStream = &std::cerr;
 #endif
 }
 
 void SystemInfoModule::mainLoop() {
   for(auto it = sysInfo.ibegin; it != sysInfo.iend; it++) {
-    strInfos.at(it->first) = it->second;
-    strInfos.at(it->first).write();
+    info.strInfos.at(it->first) = it->second;
   }
-  nCPU = sysInfo.getNCpu();
-  nCPU.write();
-  ticksPerSecond = sysconf(_SC_CLK_TCK);
-  ticksPerSecond.write();
+  info.nCPU = sysInfo.getNCpu();
+  info.ticksPerSecond = sysconf(_SC_CLK_TCK);
 
-  if(lastInfo.size() != (unsigned) (nCPU + 1)) {
-    (*logging) << getName() << "Size of lastInfo: " << lastInfo.size()
-        << "\t nCPU: " << nCPU << std::endl;
+  info.writeAll();
+
+  if(lastInfo.size() != (unsigned) (info.nCPU + 1)) {
+    (*logStream) << getName() << "Size of lastInfo: " << lastInfo.size()
+        << "\t nCPU: " << info.nCPU << std::endl;
 #ifdef ENABLE_LOGGING
     sendMessage(logging::LogLevel::ERROR);
 #endif
@@ -63,7 +64,7 @@ void SystemInfoModule::mainLoop() {
 
   std::ifstream file("/proc/stat");
   if(!file.is_open()) {
-    (*logging) << getTime(this) << "Failed to open system file /proc/stat"
+    (*logStream) << getTime(this) << "Failed to open system file /proc/stat"
         << std::endl;
 #ifdef ENABLE_LOGGING
     sendMessage(logging::LogLevel::ERROR);
@@ -79,10 +80,10 @@ void SystemInfoModule::mainLoop() {
   double idle_secs;
   uptime(&uptime_secs, &idle_secs);
   auto now = boost::posix_time::second_clock::local_time();
-  startTime = boost::posix_time::to_time_t(now) - std::stoi(std::to_string(uptime_secs));
-  startTimeStr = boost::posix_time::to_simple_string(boost::posix_time::from_time_t(startTime));
-  startTime.write();
-  startTimeStr.write();
+  status.startTime = boost::posix_time::to_time_t(now) - std::stoi(std::to_string(uptime_secs));
+  status.startTimeStr = boost::posix_time::to_simple_string(boost::posix_time::from_time_t(status.startTime));
+  status.startTime.write();
+  status.startTimeStr.write();
   
   // findTag takes some time and should not be called with every loop
   auto toWrite = findTag("SYS");
@@ -94,37 +95,37 @@ void SystemInfoModule::mainLoop() {
 
     meminfo();
     try {
-      maxMem    = std::stoi(std::to_string(kb_main_total));
-      freeMem   = std::stoi(std::to_string(kb_main_free));
-      cachedMem = std::stoi(std::to_string(kb_main_cached));
-      usedMem   = std::stoi(std::to_string(maxMem - freeMem - cachedMem));
-      maxSwap   = std::stoi(std::to_string(kb_swap_total));
-      freeSwap  = std::stoi(std::to_string(kb_swap_free));
-      usedSwap  = std::stoi(std::to_string(maxSwap - freeSwap));
+      status.maxMem    = std::stoi(std::to_string(kb_main_total));
+      status.freeMem   = std::stoi(std::to_string(kb_main_free));
+      status.cachedMem = std::stoi(std::to_string(kb_main_cached));
+      status.usedMem   = std::stoi(std::to_string(status.maxMem - status.freeMem - status.cachedMem));
+      status.maxSwap   = std::stoi(std::to_string(kb_swap_total));
+      status.freeSwap  = std::stoi(std::to_string(kb_swap_free));
+      status.usedSwap  = std::stoi(std::to_string(status.maxSwap - status.freeSwap));
     } catch(std::exception &e) {
-      (*logging) << getTime(this) << "meminfo conversion failed: " << e.what() << std::endl;
+      (*logStream) << getTime(this) << "meminfo conversion failed: " << e.what() << std::endl;
 #ifdef ENABLE_LOGGING
       sendMessage(logging::LogLevel::ERROR);
 #endif
     }
-    memoryUsage = 1.*usedMem/maxMem*100.;
-    swapUsage = 1.*usedSwap/maxSwap*100.;
+    status.memoryUsage = 1.*status.usedMem/status.maxMem*100.;
+    status.swapUsage = 1.*status.usedSwap/status.maxSwap*100.;
     
     // get system uptime
     try {
       uptime(&uptime_secs, &idle_secs);
       //\ToDo: Use stoul once unsigned long is available
-      uptime_secTotal = std::stoi(std::to_string(uptime_secs));
-      uptime_day     = std::stoi(std::to_string(uptime_secTotal / 86400));
-      uptime_hour = std::stoi(
-          std::to_string((uptime_secTotal - (uptime_day * 86400)) / 3600));
-      uptime_min = std::stoi(std::to_string(
-              (uptime_secTotal - (uptime_day * 86400) - (uptime_hour * 3600))
+      status.uptime_secTotal = std::stoi(std::to_string(uptime_secs));
+      status.uptime_day     = std::stoi(std::to_string(status.uptime_secTotal / 86400));
+      status.uptime_hour = std::stoi(
+          std::to_string((status.uptime_secTotal - (status.uptime_day * 86400)) / 3600));
+      status.uptime_min = std::stoi(std::to_string(
+              (status.uptime_secTotal - (status.uptime_day * 86400) - (status.uptime_hour * 3600))
                   / 60));
-      uptime_sec = std::stoi(std::to_string(
-          uptime_secTotal - (uptime_day * 86400) - (uptime_hour * 3600) - (uptime_min*60)));
+      status.uptime_sec = std::stoi(std::to_string(
+          status.uptime_secTotal - (status.uptime_day * 86400) - (status.uptime_hour * 3600) - (status.uptime_min*60)));
     } catch(std::exception &e) {
-      (*logging) << getTime(this) << "uptime conversion failed: " << e.what() << std::endl;
+      (*logStream) << getTime(this) << "uptime conversion failed: " << e.what() << std::endl;
 #ifdef ENABLE_LOGGING
       sendMessage(logging::LogLevel::ERROR);
 #endif
@@ -133,13 +134,13 @@ void SystemInfoModule::mainLoop() {
     std::vector<double> v_tmp(3);
 
     loadavg(&v_tmp[0], &v_tmp[1], &v_tmp[2]);
-    loadAvg = v_tmp;
+    status.loadAvg = v_tmp;
 
     calculatePCPU();
 
     toWrite.writeAll();
 #ifdef ENABLE_LOGGING
-    (*logging) << getTime(this) << "System data updated" << std::endl;
+    (*logStream) << getTime(this) << "System data updated" << std::endl;
     sendMessage(logging::LogLevel::DEBUG);
 #endif
   }
@@ -148,13 +149,13 @@ void SystemInfoModule::mainLoop() {
 void SystemInfoModule::calculatePCPU() {
   unsigned long long total;
   double tmp;
-  std::vector<double> usage_tmp(nCPU + 1);
+  std::vector<double> usage_tmp(info.nCPU + 1);
   std::vector<std::string> strs;
-  std::vector<cpu> vcpu(nCPU + 1);
+  std::vector<cpu> vcpu(info.nCPU + 1);
   readCPUInfo(vcpu);
   auto lastcpu = lastInfo.begin();
   auto newcpu = vcpu.begin();
-  for(size_t iCPU = 0; iCPU < (nCPU + 1); iCPU++) {
+  for(size_t iCPU = 0; iCPU < (info.nCPU + 1); iCPU++) {
     if(newcpu->totalUser < lastcpu->totalUser
         || newcpu->totalUserLow < lastcpu->totalUserLow
         || newcpu->totalSys < lastcpu->totalSys
@@ -176,15 +177,15 @@ void SystemInfoModule::calculatePCPU() {
     lastcpu++;
     newcpu++;
   }
-  cpu_useTotal = usage_tmp.back();
+  status.cpu_useTotal = usage_tmp.back();
   usage_tmp.pop_back();
-  cpu_use->operator =(usage_tmp);
+  status.cpu_use->operator =(usage_tmp);
 }
 
 void SystemInfoModule::readCPUInfo(std::vector<cpu> &vcpu) {
   std::ifstream file("/proc/stat");
   if(!file.is_open()) {
-    (*logging) << getTime(this) << "Failed to open system file /proc/stat"
+    (*logStream) << getTime(this) << "Failed to open system file /proc/stat"
         << std::endl;
 #ifdef ENABLE_LOGGING
     sendMessage(logging::LogLevel::ERROR);
@@ -196,7 +197,7 @@ void SystemInfoModule::readCPUInfo(std::vector<cpu> &vcpu) {
   std::string line;
   for(auto it = vcpu.begin(); it != vcpu.end(); it++) {
     if(!std::getline(file, line)) {
-      (*logging) << getTime(this) << "Could not find enough lines in /proc/stat"
+      (*logStream) << getTime(this) << "Could not find enough lines in /proc/stat"
           << std::endl;
 #ifdef ENABLE_LOGGING
       sendMessage(logging::LogLevel::ERROR);
@@ -206,7 +207,7 @@ void SystemInfoModule::readCPUInfo(std::vector<cpu> &vcpu) {
     }
     auto strs = split_arguments(line);
     if(strs.size() < 5) {
-      (*logging) << getTime(this) << "Line seems to contain not enough data. Line: "
+      (*logStream) << getTime(this) << "Line seems to contain not enough data. Line: "
           << line << std::endl;
     }
 
@@ -216,13 +217,13 @@ void SystemInfoModule::readCPUInfo(std::vector<cpu> &vcpu) {
       it->totalSys     = std::stoull(strs.at(3), &sz, 0);
       it->totalIdle    = std::stoull(strs.at(4), &sz, 0);
     } catch(std::exception &e) {
-      (*logging) << getTime(this) << "Caught an exception: " << e.what()
+      (*logStream) << getTime(this) << "Caught an exception: " << e.what()
           << std::endl;
 #ifdef ENABLE_LOGGING
       sendMessage(logging::LogLevel::ERROR);
 #endif
       for(auto s : strs) {
-        (*logging) << getTime(this) << "String token: " << s << std::endl;
+        (*logStream) << getTime(this) << "String token: " << s << std::endl;
 #ifdef ENABLE_LOGGING
         sendMessage(logging::LogLevel::ERROR);
 #endif
@@ -233,20 +234,19 @@ void SystemInfoModule::readCPUInfo(std::vector<cpu> &vcpu) {
 
 void SystemInfoModule::terminate(){
 #ifdef ENABLE_LOGGING
-  delete logging;
-  logging = 0;
+  delete logStream;
+  logStream = 0;
 #endif
   ApplicationModule::terminate();
 }
 
 #ifdef ENABLE_LOGGING
 void SystemInfoModule::sendMessage(const logging::LogLevel &level){
-  auto logging_ss = dynamic_cast<std::stringstream*>(logging);
+  auto logging_ss = dynamic_cast<std::stringstream*>(logStream);
   if(logging_ss){
-    message = logging_ss->str();
-    message.write();
-    messageLevel = level;
-    messageLevel.write();
+    logging.message = logging_ss->str();
+    logging.messageLevel = level;
+    logging.writeAll();
     logging_ss->clear();
     logging_ss->str("");
   }
@@ -270,7 +270,7 @@ FileSystemModule::FileSystemModule(const std::string &devName, const std::string
 #ifdef ENABLE_LOGGING
   logging = new std::stringstream();
 #else
-  logging = &std::cerr;
+  logStream = &std::cerr;
 #endif
 }
 
@@ -278,25 +278,25 @@ std::mutex fs_mutex;
 bool FileSystemModule::read(){
   std::lock_guard<std::mutex> lock(fs_mutex);
   struct statfs fs;
-  if( ( statfs( ((std::string)mountPoint).c_str(), &fs ) ) < 0 ) {
-      (*logging) << getTime(this) << "Failed to stat " << (std::string)mountPoint << ": " << errno << std::endl;
+  if( ( statfs( ((std::string)status.mountPoint).c_str(), &fs ) ) < 0 ) {
+      (*logging) << getTime(this) << "Failed to stat " << (std::string)status.mountPoint << ": " << errno << std::endl;
 #ifdef ENABLE_LOGGING
       sendMessage(logging::LogLevel::ERROR);
 #endif
     return false;
   } else {
-    disk_size = 1.*(fs.f_blocks * fs.f_frsize)*GiB;
-    disk_free = 1.*(fs.f_bfree * fs.f_frsize)*GiB;
-    disk_user  = 1.*(fs.f_bavail * fs.f_frsize)*GiB;
+    status.disk_size = 1.*(fs.f_blocks * fs.f_frsize)*GiB;
+    status.disk_free = 1.*(fs.f_bfree * fs.f_frsize)*GiB;
+    status.disk_user  = 1.*(fs.f_bavail * fs.f_frsize)*GiB;
     return true;
   }
 }
 
 void FileSystemModule::mainLoop(){
   deviceName = tmp[0];
-  mountPoint = tmp[1];
+  status.mountPoint = tmp[1];
   deviceName.write();
-  mountPoint.write();
+  status.mountPoint.write();
 
   // findTag takes some time and should not be called with every loop
   auto toWrite = findTag("SYS");
@@ -305,22 +305,26 @@ void FileSystemModule::mainLoop(){
 
   while(1){
     trigger.read();
+    config.readAll();
     if(read()){
-      disk_usage = (disk_size-disk_user)/disk_size*100.;
-      if(disk_usage > 95){
-        (*logging) << getTime(this) << "More than 95% (" << disk_usage << "%) of "
-            << (std::string)deviceName << " mounted at " << (std::string)mountPoint << " are used!" << std::endl;
+      status.disk_usage = (status.disk_size-status.disk_user)/status.disk_size*100.;
+      if(status.disk_usage > config.errorLevel){
+        (*logging) << getTime(this) << "More than " << config.errorLevel << "% (" << status.disk_usage << "%) of "
+            << (std::string)deviceName << " mounted at " << (std::string)status.mountPoint << " are used!" << std::endl;
+        status.disk_status = 2;
 #ifdef ENABLE_LOGGING
         sendMessage(logging::LogLevel::WARNING);
 #endif
-      } else if (disk_usage > 85){
-        (*logging) << getTime(this) << "More than 85% (" << disk_usage << "%) of "
-            << (std::string)deviceName << " mounted at " << (std::string)mountPoint << " are used!" << std::endl;
+      } else if (status.disk_usage > config.warningLevel){
+        (*logging) << getTime(this) << "More than " << config.warningLevel << "% (" << status.disk_usage << "%) of "
+            << (std::string)deviceName << " mounted at " << (std::string)status.mountPoint << " are used!" << std::endl;
+        status.disk_status = 1;
 #ifdef ENABLE_LOGGING
         sendMessage(logging::LogLevel::INFO);
 #endif
       } else {
-        (*logging) << getTime(this) << "Disk usage: " << disk_usage << std::endl;
+        (*logging) << getTime(this) << "Disk usage: " << status.disk_usage << std::endl;
+        status.disk_status = 0;
 #ifdef ENABLE_LOGGING
         sendMessage(logging::LogLevel::DEBUG);
 #endif
@@ -360,21 +364,21 @@ NetworkModule::NetworkModule(const std::string &device, EntityOwner *owner, cons
 #ifdef ENABLE_LOGGING
   logging = new std::stringstream();
 #else
-  logging = &std::cerr;
+  logStream = &std::cerr;
 #endif
-  data.emplace_back(ctk::ScalarOutput<double>{this, "rx_packates", "1/s", "Received packates.",
+  status.data.emplace_back(ctk::ScalarOutput<double>{&status, "rx_packates", "1/s", "Received packates.",
       { "CS", "SYS", "DAQ"}});
-  data.emplace_back(ctk::ScalarOutput<double>{this, "tx_packates", "1/s", "Transmitted packates.",
+  status.data.emplace_back(ctk::ScalarOutput<double>{&status, "tx_packates", "1/s", "Transmitted packates.",
       { "CS", "SYS", "DAQ"}});
-  data.emplace_back(ctk::ScalarOutput<double>{this, "rx", "MiB/s", "Data rate receive.",
+  status.data.emplace_back(ctk::ScalarOutput<double>{&status, "rx", "MiB/s", "Data rate receive.",
       { "CS", "SYS", "DAQ", "History"}});
-  data.emplace_back(ctk::ScalarOutput<double>{this, "tx", "MiB/s", "Data rate transmit.",
+  status.data.emplace_back(ctk::ScalarOutput<double>{&status, "tx", "MiB/s", "Data rate transmit.",
       { "CS", "SYS", "DAQ", "History"}});
-  data.emplace_back(ctk::ScalarOutput<double>{this, "rx_dropped", "1/s", "Dropped received packates.",
+  status.data.emplace_back(ctk::ScalarOutput<double>{&status, "rx_dropped", "1/s", "Dropped received packates.",
       { "CS", "SYS", "DAQ", "History"}});
-  data.emplace_back(ctk::ScalarOutput<double>{this, "tx_dropped", "1/s", "Dropped transmitted packates.",
+  status.data.emplace_back(ctk::ScalarOutput<double>{&status, "tx_dropped", "1/s", "Dropped transmitted packates.",
       { "CS", "SYS", "DAQ", "History"}});
-  data.emplace_back(ctk::ScalarOutput<double>{this, "collisions", "1/s", "Number of collisions.",
+  status.data.emplace_back(ctk::ScalarOutput<double>{&status, "collisions", "1/s", "Number of collisions.",
     { "CS", "SYS", "DAQ"}});
 }
 
@@ -394,7 +398,7 @@ bool NetworkModule::read(){
     // check if this is the first reading and no data is stored yet in previousData
     if(previousData.files.size() != 0){
       boost::posix_time::time_duration diff = tmp.time.at(i) - previousData.time.at(i);
-      data.at(i) =  1.*(tmp.data.at(i) - previousData.data.at(i))/1024/1024/(diff.total_nanoseconds()/1e9);
+      status.data.at(i) =  1.*(tmp.data.at(i) - previousData.data.at(i))/1024/1024/(diff.total_nanoseconds()/1e9);
     }
     in.close();
   }

@@ -41,13 +41,13 @@ struct testApp : public ChimeraTK::Application {
      * Now there is a blocking read in the ProcessControlModule, which is used to step through the
      * application.
      */
-    cs("SetLogLevel") >> logging.logLevel;
-    cs("SetLogTailLenght") >> logging.tailLength;
+    cs("logLevel") >> logging.config.logLevel;
+    cs("logTailLenght") >> logging.config.tailLength;
     logging.findTag("CS").connectTo(cs["Logging"]);
-    cs("SetLogFile") >> logging.logFile;
+    cs("logFile") >> logging.config.logFile;
 
-    cs("message") >> logging.message;
-    cs("messageLevel") >> logging.messageLevel;
+    cs("message") >> logging.input.message;
+    cs("messageLevel") >> logging.input.messageLevel;
   }
 };
 

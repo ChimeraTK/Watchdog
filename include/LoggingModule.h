@@ -30,15 +30,21 @@ struct LogFileModule: public ctk::ApplicationModule {
   ctk::ScalarPushInput<uint64_t> trigger { this, "trigger", "",
     "Trigger used to update the watchdog" };
 
-  ctk::ScalarPollInput<std::string> logFile { this, "logFile", "",
-    "Name of the external logfile, e.g. produced by a program started by the watchdog." };
+  struct Config: ctk::VariableGroup{
+    using ctk::VariableGroup::VariableGroup;
+    ctk::ScalarPollInput<std::string> logFile { this, "logFile", "",
+      "Name of the external logfile, e.g. produced by a program started by the watchdog." };
 
-  ctk::ScalarPollInput<uint> tailLength { this, "SetLogTailLengthExternal", "",
-    "Maximum number of messages to be shown in the lofgile tail.", {"CS"}};
+    ctk::ScalarPollInput<uint> tailLength { this, "logTailLengthExternal", "",
+      "Maximum number of messages to be shown in the lofgile tail.", {"CS"}};
+  } config {this, "config", "Configuration parameters of the process"};
 
-  ctk::ScalarOutput<std::string> logTailExtern { this, "LogfileTailExternal", "",
-    "Tail of an external log file, e.g. produced by a program started by the watchdog.",
-    { "CS", "PROCESS", getName() } };
+  struct Status: ctk::VariableGroup{
+    using ctk::VariableGroup::VariableGroup;
+    ctk::ScalarOutput<std::string> logTailExtern { this, "logTailExternal", "",
+      "Tail of an external log file, e.g. produced by a program started by the watchdog.",
+      { "CS", "PROCESS", getName() } };
+  } status {this, "status", "Status parameter of the process"};
 
   std::unique_ptr<std::filebuf> logFileBuffer;
 
@@ -76,28 +82,39 @@ struct LoggingModule: public ctk::ApplicationModule {
 
   using ctk::ApplicationModule::ApplicationModule;
 
-  ctk::ScalarPushInput<std::string> message { this, "message", "",
-      "Message to be logged." };
+  struct Input : ctk::VariableGroup{
+    using ctk::VariableGroup::VariableGroup;
+    ctk::ScalarPushInput<std::string> message { this, "message", "",
+        "Message to be logged." };
 
-  ctk::ScalarPushInput<uint> messageLevel { this, "messageLevel", "",
-        "Message log level." };
+    ctk::ScalarPushInput<uint> messageLevel { this, "messageLevel", "",
+          "Message log level." };
+  } input {this, "input", "Input to the LoggingModule"};
 
-  ctk::ScalarPollInput<uint> targetStream { this, "SetTargetStream", "",
-          "Set the tagret stream: 0 (cout/cerr+logfile), 1 (logfile), 2 (cout/cerr), 3 (none)",
-  {"CS"}};
+  struct Config : public ctk::VariableGroup {
+    using ctk::VariableGroup::VariableGroup;
+    ctk::ScalarPollInput<uint> targetStream { this, "targetStream", "",
+            "Set the tagret stream: 0 (cout/cerr+logfile), 1 (logfile), 2 (cout/cerr), 3 (none)",
+    {"CS"}};
 
-  ctk::ScalarPollInput<std::string> logFile { this, "SetLogFile", "",
-    "Name of the external logfile. If empty messages are pushed to cout/cerr"};
+    // don't show this to CS, since it could be set by another module
+    ctk::ScalarPollInput<std::string> logFile { this, "logFile", "",
+      "Name of the external logfile. If empty messages are pushed to cout/cerr", {"CS_OPTIONAL"}};
 
-  ctk::ScalarPollInput<uint> tailLength { this, "SetLogTailLength", "",
-      "Maximum number of messages to be shown in the logging stream tail.",
-  {"CS"}};
+    ctk::ScalarPollInput<uint> tailLength { this, "logTailLength", "",
+        "Maximum number of messages to be shown in the logging stream tail.",
+    {"CS"}};
 
-  ctk::ScalarPollInput<uint> logLevel { this, "SetLogLevel", "",
-      "Current log level used for messages.", {"CS"} };
+    ctk::ScalarPollInput<uint> logLevel { this, "logLevel", "",
+        "Current log level used for messages.", {"CS"} };
 
-  ctk::ScalarOutput<std::string> logTail { this, "LogTail", "", "Tail of the logging stream.",
-      { "CS", "PROCESS", getName() } };
+  } config {this, "config", "Configuration parameters of the process"};
+
+  struct Status : ctk::VariableGroup{
+    using ctk::VariableGroup::VariableGroup;
+    ctk::ScalarOutput<std::string> logTail { this, "logTail", "", "Tail of the logging stream.",
+        { "CS", "PROCESS", getName() } };
+  } status {this, "status", "Status parameter of the process"};
 
   std::unique_ptr<std::ofstream> file; ///< Log file where to write log messages
 

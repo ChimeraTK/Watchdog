@@ -40,21 +40,23 @@ struct ProcessInfoModule : public ctk::ApplicationModule {
    * \name Process parameter and status
    * @{
    */
+  struct Status : public ctk::VariableGroup{
+    using ctk::VariableGroup::VariableGroup;
   /** PID of the process */
   ctk::ScalarOutput<int> processPID { this, "PID", "", "PID of the process",
     { "CS", "PROCESS", getName() , "DAQ"} };
-
-  /** Time since process is running */
-  ctk::ScalarOutput<uint> runtime { this, "runtime", "s", "Time since process is running",
-    { "CS", "PROCESS", getName(), "DAQ" } };
+  } info{this, "status", "Status parameter of the process"};
 #ifdef ENABLE_LOGGING
-  /** Message to be send to the logging module */
-  ctk::ScalarOutput<std::string> message { this, "message", "", "Message of the module to the logging System",
-      { "Logging", "PROCESS", getName() } };
+  struct Logging : public ctk::VariableGroup {
+    using ctk::VariableGroup::VariableGroup;
+    /** Message to be send to the logging module */
+    ctk::ScalarOutput<std::string> message { this, "message", "", "Message of the module to the logging System",
+        { "Logging", "PROCESS", getName() } };
 
-  /** Message to be send to the logging module */
-  ctk::ScalarOutput<uint> messageLevel { this, "messageLevel", "", "Logging level of the message",
-      { "Logging", "PROCESS", getName() } };
+    /** Message to be send to the logging module */
+    ctk::ScalarOutput<uint> messageLevel { this, "messageLevel", "", "Logging level of the message",
+        { "Logging", "PROCESS", getName() } };
+  } logging{this, "logging", "Logging variables"};
 #endif
   /** @} */
 
@@ -63,75 +65,85 @@ struct ProcessInfoModule : public ctk::ApplicationModule {
    */
   boost::posix_time::ptime time_stamp;
 
-  /**
-   * \name Information from the SystemInfoModule
-   * @{
-   */
-  /** Number of clock ticks per second */
-  ctk::ScalarPollInput<uint> ticksPerSecond { this, "tickPerSecond", "Hz",
-      "Number of clock ticks per second" };
-  /** Uptime of the system */
-  ctk::ScalarPollInput<uint> sysUpTime { this, "sysUpTime", "s", "Uptime of the system" };
-  ctk::ScalarPollInput<uint> sysStartTime { this, "sysStartTime", "s", "System start time (seconds since EPOCH)" };
-  ctk::ScalarPollInput<uint> maxMem { this, "maxMem", "kB", "Maximum available memory" };
-  /** @} */
+  struct Input : public ctk::VariableGroup{
+    using ctk::VariableGroup::VariableGroup;
+    /**
+     * \name Information from the SystemInfoModule
+     * @{
+     */
+    /** Number of clock ticks per second */
+    ctk::ScalarPollInput<uint> ticksPerSecond { this, "tickPerSecond", "Hz",
+        "Number of clock ticks per second" };
+    /** Uptime of the system */
+    ctk::ScalarPollInput<uint> sysUpTime { this, "sysUpTime", "s", "Uptime of the system" };
+    ctk::ScalarPollInput<uint> sysStartTime { this, "sysStartTime", "s", "System start time (seconds since EPOCH)" };
+    ctk::ScalarPollInput<uint> maxMem { this, "maxMem", "kB", "Maximum available memory" };
+    /** @} */
+  } input{this, "input", "Moudle input from SystemInfoModule"};
 
-  /**
-   * \name Parameters read by proc
-   * @{
-   */
-  //\todo Use unsigned long long int
-  /** user-mode CPU time accumulated by process */
-  ctk::ScalarOutput<uint> utime { this, "utime", "clock ticks", "user-mode CPU time accumulated by process",
-    { "CS", "PROCESS", getName() } };
-  /** kernel-mode CPU time accumulated by process */
-  ctk::ScalarOutput<uint> stime { this, "stime", "clock ticks", "kernel-mode CPU time accumulated by process",
-    { "CS", "PROCESS", getName() } };
-  /** cumulative utime of process and reaped children */
-  ctk::ScalarOutput<uint> cutime { this, "cutime", "clock ticks",
-      "cumulative utime of process and reaped children",
-    { "CS", "PROCESS", getName() } };
-  /** cumulative stime of process and reaped children */
-  ctk::ScalarOutput<uint> cstime { this, "cstime", "clock ticks", "cumulative stime of process and reaped children",
-    { "CS", "PROCESS", getName() } };
-  /** start time of process -- seconds since 1-1-70 */
-  ctk::ScalarOutput<uint> startTime { this, "startTime", "s", "start time of process with respect to EPOCH",
-    { "CS", "PROCESS", getName() } };
+  struct Statistics : public ctk::VariableGroup{
+    using ctk::VariableGroup::VariableGroup;
+    /** Time since process is running */
+    ctk::ScalarOutput<uint> runtime { this, "runtime", "s", "Time since process is running",
+      { "CS", "PROCESS", getName(), "DAQ" } };
 
-  ctk::ScalarOutput<std::string> startTimeStr { this, "startTimeStr", "", "start time string",
+    /**
+     * \name Parameters read by proc
+     * @{
+     */
+    //\todo Use unsigned long long int
+    /** user-mode CPU time accumulated by process */
+    ctk::ScalarOutput<uint> utime { this, "utime", "clock ticks", "user-mode CPU time accumulated by process",
+      { "CS", "PROCESS", getName() } };
+    /** kernel-mode CPU time accumulated by process */
+    ctk::ScalarOutput<uint> stime { this, "stime", "clock ticks", "kernel-mode CPU time accumulated by process",
+      { "CS", "PROCESS", getName() } };
+    /** cumulative utime of process and reaped children */
+    ctk::ScalarOutput<uint> cutime { this, "cutime", "clock ticks",
+        "cumulative utime of process and reaped children",
+      { "CS", "PROCESS", getName() } };
+    /** cumulative stime of process and reaped children */
+    ctk::ScalarOutput<uint> cstime { this, "cstime", "clock ticks", "cumulative stime of process and reaped children",
+      { "CS", "PROCESS", getName() } };
+    /** start time of process -- seconds since 1-1-70 */
+    ctk::ScalarOutput<uint> startTime { this, "startTime", "s", "start time of process with respect to EPOCH",
       { "CS", "PROCESS", getName() } };
 
-  //\ToDo Use unsigned long
-  ctk::ScalarOutput<uint> mem { this, "mem", "kB", "Memory used by the process",
-    { "CS", "PROCESS", getName(), "DAQ", "History" } };
+    ctk::ScalarOutput<std::string> startTimeStr { this, "startTimeStr", "", "start time string",
+        { "CS", "PROCESS", getName() } };
 
-  ctk::ScalarOutput<double> memoryUsage { this, "memoryUsage", "%", "Relative memory usage",
-      { "CS", "SYS", "DAQ", "History" } };
+    //\ToDo Use unsigned long
+    ctk::ScalarOutput<uint> mem { this, "mem", "kB", "Memory used by the process",
+      { "CS", "PROCESS", getName(), "DAQ", "History" } };
 
-  //\todo Use long
-  /** kernel scheduling priority */
-  ctk::ScalarOutput<uint> priority { this, "priority", "", "kernel scheduling priority",
-    { "CS", "PROCESS", getName() } };
-  /** standard unix nice level of process */
-  ctk::ScalarOutput<uint> nice { this, "nice", "", "standard unix nice level of process",
-    { "CS", "PROCESS", getName() } };
-  /** resident set size from /proc/#/stat (pages) */
-  ctk::ScalarOutput<uint> rss { this, "rss", "", "resident set size from /proc/#/stat (pages)",
-    { "CS", "PROCESS", getName() } };
+    ctk::ScalarOutput<double> memoryUsage { this, "memoryUsage", "%", "Relative memory usage",
+        { "CS", "SYS", "DAQ", "History" } };
 
-  /**
-   * CPU usage for measured between two control system loops.
-   * The process time includes utime, stime, sutime, sctime.
-   */
-  ctk::ScalarOutput<double> pcpu { this, "pcpu", "%", "Actual CPU usage",
-    { "CS", "PROCESS", getName(), "DAQ", "History" } };
-  /**
-   * CPU usage averaged over the whole runtime of the process.
-   * The process time includes utime, stime, sutime, sctime.
-   */
-  ctk::ScalarOutput<double> avpcpu { this, "avpcpu", "%", "Average CPU usage",
-    { "CS", "PROCESS", getName(), "DAQ", "History" } };
-  /** @} */
+    //\todo Use long
+    /** kernel scheduling priority */
+    ctk::ScalarOutput<uint> priority { this, "priority", "", "kernel scheduling priority",
+      { "CS", "PROCESS", getName() } };
+    /** standard unix nice level of process */
+    ctk::ScalarOutput<uint> nice { this, "nice", "", "standard unix nice level of process",
+      { "CS", "PROCESS", getName() } };
+    /** resident set size from /proc/#/stat (pages) */
+    ctk::ScalarOutput<uint> rss { this, "rss", "", "resident set size from /proc/#/stat (pages)",
+      { "CS", "PROCESS", getName() } };
+
+    /**
+     * CPU usage for measured between two control system loops.
+     * The process time includes utime, stime, sutime, sctime.
+     */
+    ctk::ScalarOutput<double> pcpu { this, "pcpu", "%", "Actual CPU usage",
+      { "CS", "PROCESS", getName(), "DAQ", "History" } };
+    /**
+     * CPU usage averaged over the whole runtime of the process.
+     * The process time includes utime, stime, sutime, sctime.
+     */
+    ctk::ScalarOutput<double> avpcpu { this, "avpcpu", "%", "Average CPU usage",
+      { "CS", "PROCESS", getName(), "DAQ", "History" } };
+    /** @} */
+  } statistics{this, "statistics", "Process statistics read from the operating system"};
 
   /**
    * Application core main loop.
@@ -145,7 +157,7 @@ struct ProcessInfoModule : public ctk::ApplicationModule {
    */
   void FillProcInfo(const std::shared_ptr<proc_t> &info);
 
-  std::ostream *logging;
+  std::ostream *logStream;
 #ifdef ENABLE_LOGGING
 
   void sendMessage(const logging::LogLevel &level = logging::LogLevel::INFO);
@@ -194,86 +206,93 @@ struct ProcessControlModule : public ProcessInfoModule{
    * \name Process control parameter (static during process execution)
    * @{
    */
-  /** Path where to execute the command used to start the process */
-  ctk::ScalarOutput<std::string> processPath { this, "Path", "",
-      "Path where to execute the command used to start the process",
-    {  "CS", "PROCESS", getName() } };
-  /** Command used to start the process */
-  ctk::ScalarOutput<std::string> processCMD { this, "CMD", "", "Command used to start the process",
-    {  "CS", "PROCESS", getName() } };
-  /** Environment variable set for the process */
-  ctk::ScalarOutput<std::string> processENV { this, "ENV", "", "Environment variables of the process",
-    {  "CS", "PROCESS", getName() } };
-#ifdef ENABLE_LOGGING
-  /** Log file name. It will be created in the given processPath */
-  ctk::ScalarOutput<std::string> processExternalLogfile { this, "ExternalLogfile", "",
-    "Name of the logfile created in the given path (the process controlled by the module will "
-    "put its output here. Module messages go to cout/cerr",
-    {  "CS", "PROCESS", getName() } };
-#endif
+  struct ProcessStatus : public ctk::VariableGroup {
+    using ctk::VariableGroup::VariableGroup;
+    /** Path where to execute the command used to start the process */
+    ctk::ScalarOutput<std::string> path { this, "path", "",
+        "Path where to execute the command used to start the process",
+      {  "CS", "PROCESS", getName() } };
+    /** Command used to start the process */
+    ctk::ScalarOutput<std::string> cmd { this, "command", "", "Command used to start the process",
+      {  "CS", "PROCESS", getName() } };
+    /** Environment variable set for the process */
+    ctk::ScalarOutput<std::string> env { this, "environment", "", "Environment variables of the process",
+      {  "CS", "PROCESS", getName() } };
+    /** Process status 0: not running, 1: running */
+    ctk::ScalarOutput<uint> isRunning { this, "isRunning", "", "Process status 0: not running, 1: running",
+        { "CS", "PROCESS", getName(), "DAQ" } };
+    /** Number of failed restarts */
+    ctk::ScalarOutput<uint> nFailed { this, "nFailed", "", "Number of failed starts/restarts",
+      { "CS", "PROCESS", getName(), "DAQ" } };
+    /** Number of started processes */
+    ctk::ScalarOutput<uint> nChilds { this, "nChilds", "", "Number of started processes",
+      { "CS", "PROCESS", getName(), "DAQ" } };
+    /** Number of time the process was automatically */
+    ctk::ScalarOutput<uint> nRestarts { this, "nRestarts", "", "Number of time the process was automatically "
+            "restarted by the watchdog since server start.",
+      { "CS", "PROCESS", getName(), "DAQ" } };
+  #ifdef ENABLE_LOGGING
+    /** Log file name. It will be created in the given processPath */
+    ctk::ScalarOutput<std::string> externalLogfile { this, "externalLogfile", "",
+      "Name of the logfile created in the given path (the process controlled by the module will "
+      "put its output here. Module messages go to cout/cerr",
+      {  "CS", "PROCESS", getName() } };
+  #endif
+  } status{this, "status", "Status parameter of the process"};
   /** @} */
   /**
      * \name Process control parameter (dynamic process execution)
      * @{
      */
-  /** Environment variable set for the process */
-  ctk::ScalarPollInput<std::string> processAlias { this, "alias", "", "Alias name of the process",
-    {  "CS", "PROCESS", getName() } };
-  /** Path where to execute the command used to start the process */
-  ctk::ScalarPollInput<std::string> processSetPath { this, "SetPath", "",
-      "Set the path where to execute the command used to start the process",
-    { "CS", "PROCESS", getName() } };
-  /** Command used to start the process */
-  ctk::ScalarPollInput<std::string> processSetCMD { this, "SetCMD", "", "Set the command used to start the process",
-    { "CS", "PROCESS", getName() } };
+  struct Config : public ctk::VariableGroup {
+    using ctk::VariableGroup::VariableGroup;
+    /** Environment variable set for the process */
+    ctk::ScalarPollInput<std::string> alias { this, "alias", "", "Alias name of the process",
+      {  "CS", "PROCESS", getName() } };
+    /** Path where to execute the command used to start the process */
+    ctk::ScalarPollInput<std::string> path { this, "path", "",
+        "Set the path where to execute the command used to start the process",
+      { "CS", "PROCESS", getName() } };
+    /** Command used to start the process */
+    ctk::ScalarPollInput<std::string> cmd { this, "command", "", "Set the command used to start the process",
+      { "CS", "PROCESS", getName() } };
 
-  /** Command used to start the process */
-  ctk::ScalarPollInput<std::string> processSetENV { this, "SetEnvironment", "", "Set environment variables needed by the process",
-    { "CS", "PROCESS", getName() } };
-  ctk::ScalarPollInput<int> processOverwriteENV { this, "OverwriteEnvironment", "",
-    "If true the environmet variables are overwritten. Else they are extended.",
-    { "CS", "PROCESS", getName() } };
+    /** Command used to start the process */
+    ctk::ScalarPollInput<std::string> env { this, "environment", "", "Set environment variables needed by the process",
+      { "CS", "PROCESS", getName() } };
+    ctk::ScalarPollInput<int> overwriteEnv { this, "overwriteEnvironment", "",
+      "If true the environmet variables are overwritten. Else they are extended.",
+      { "CS", "PROCESS", getName() } };
 
-  ctk::ScalarPollInput<uint> processMaxFails { this, "SetMaxFails", "",
-    "Set the maximum number of allowed fails.",
-    { "CS", "PROCESS", getName() } };
-  ctk::ScalarPollInput<uint> processMaxRestarts { this, "SetMaxRestarts", "",
-    "Set the maximum number of allowed restarts.",
-    { "CS", "PROCESS", getName() } };
-#ifdef ENABLE_LOGGING
-  /** Log file name. It will be created in the given processPath */
-  ctk::ScalarPollInput<std::string> processSetExternalLogfile { this, "SetLogfileExternal", "", "Set the name of the logfile"
-      " used by the process to be started. It is created in the given path.",
-    { "CS", "PROCESS", getName() } };
-#endif
+    ctk::ScalarPollInput<uint> maxFails { this, "maxFails", "",
+      "Set the maximum number of allowed fails.",
+      { "CS", "PROCESS", getName() } };
+    ctk::ScalarPollInput<uint> maxRestarts { this, "maxRestarts", "",
+      "Set the maximum number of allowed restarts.",
+      { "CS", "PROCESS", getName() } };
+  #ifdef ENABLE_LOGGING
+    /** Log file name. It will be created in the given processPath */
+    ctk::ScalarPollInput<std::string> externalLogfile { this, "logfileExternal", "", "Set the name of the logfile"
+        " used by the process to be started. It is created in the given path.",
+      { "CS", "PROCESS", getName() } };
+  #endif
+    /** Signal used to kill the process (2: SIGINT, 9: SIGKILL) */
+    ctk::ScalarPollInput<uint> killSig { this, "killSig", "", "Signal used to kill the process (2: SIGINT, 9: SIGKILL)",
+      { "CS", "PROCESS", getName() } };
+    /** PID offset used when monitoring the started process */
+    ctk::ScalarPollInput<uint> pidOffset { this, "pidOffset", "", "PID offset used when monitoring the started process",
+      { "CS", "PROCESS", getName() } };
+    ctk::ScalarPollInput<uint> bootDelay { this, "bootDelay", "s", "This delay is used at server start. Use this to delay the process start with"
+        "respect to other processes.",
+      { "CS", "PROCESS", getName(), "DAQ"} };
+    ctk::ScalarPollInput<uint> killTimeout { this, "killTimeout", "s", "This is the maximum time waited for the process to exit after stopping. After, it is"
+          " stopped using SIGKILL.",
+      { "CS", "PROCESS", getName(), "DAQ"} };
+  } config {this, "config", "Configuration parameters of the process"};
+
   /** Start the process */
   ctk::ScalarPollInput<uint> enableProcess { this, "enableProcess", "", "Start the process",
     { "CS", "PROCESS", getName() } };
-  /** Signal used to kill the process (2: SIGINT, 9: SIGKILL) */
-  ctk::ScalarPollInput<uint> killSig { this, "killSig", "", "Signal used to kill the process (2: SIGINT, 9: SIGKILL)",
-    { "CS", "PROCESS", getName() } };
-  /** PID offset used when monitoring the started process */
-  ctk::ScalarPollInput<uint> pidOffset { this, "pidOffset", "", "PID offset used when monitoring the started process",
-    { "CS", "PROCESS", getName() } };
-  /** Process status 0: not running, 1: running */
-  ctk::ScalarOutput<uint> processIsRunning { this, "IsRunning", "", "Process status 0: not running, 1: running",
-      { "CS", "PROCESS", getName(), "DAQ" } };
-  /** Number of failed restarts */
-  ctk::ScalarOutput<uint> processNFailed { this, "Failed", "", "Number of failed starts/restarts",
-    { "CS", "PROCESS", getName(), "DAQ" } };
-  /** Number of started processes */
-  ctk::ScalarOutput<uint> processNChilds { this, "nChilds", "", "Number of started processes",
-    { "CS", "PROCESS", getName(), "DAQ" } };
-  /** Number of time the process was automatically */
-  ctk::ScalarOutput<uint> processRestarts { this, "Restarts", "", "Number of time the process was automatically "
-          "restarted by the watchdog since server start.",
-    { "CS", "PROCESS", getName(), "DAQ" } };
-  ctk::ScalarPollInput<uint> bootDelay { this, "BootDelay", "s", "This delay is used at server start. Use this to delay the process start with"
-      "respect to other processes.",
-    { "CS", "PROCESS", getName(), "DAQ"} };
-  ctk::ScalarPollInput<uint> killTimeout { this, "killTimeout", "s", "This is the maximum time waited for the process to exit after stopping. After, it is"
-        " stopped using SIGKILL.",
-    { "CS", "PROCESS", getName(), "DAQ"} };
   /** @} */
 
   /**
@@ -346,6 +365,11 @@ struct ProcessGroup : public ctk::ModuleGroup{
    * If that file is not found only one process named PROCESS is added.
    */
   std::vector<ProcessControlModule> processes;
+
+#ifdef ENABLE_LOGGING
+  std::vector<LoggingModule> processesLog;
+  std::vector<LogFileModule> processesLogExternal;
+#endif
 
 
 };

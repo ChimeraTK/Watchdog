@@ -75,8 +75,8 @@ struct WatchdogServer: public ctk::Application {
   ctk::ConfigReader config{this, "Configuration", "WatchdogServerConfig.xml"};
 
 #ifdef ENABLE_LOGGING
-  std::vector<LoggingModule> processesLog;
-  std::vector<LogFileModule> processesLogExternal;
+//  std::vector<LoggingModule> processesLog;
+//  std::vector<LogFileModule> processesLogExternal;
 
   /**
    * This module is used to read the watchdog log file, which includes messages from the
@@ -92,7 +92,7 @@ struct WatchdogServer: public ctk::Application {
    * AND the watchdog LoggingModule. But this is not possible, since it is not possible to connect multiple
    * outputs to a single push input variable.
    */
-  LogFileModule watchdogLogFile{this, "watchdogLog", "Logging module of all watchdog processes"};
+  LogFileModule watchdogLogFile{this, "watchdogLogFile", "Logging module reading the watchdog logfile"};
 
   /**
    * This module is used to handle messages from the watchdog process it self.
