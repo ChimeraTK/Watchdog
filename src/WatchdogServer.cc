@@ -60,9 +60,9 @@ WatchdogServer::WatchdogServer() :
     Application("WatchdogServer") {
   try{
     auto nProcesses = config.get<uint>("numberOfProcesses");
+    std::cout << "Adding " << nProcesses << " processes." << std::endl;
     for(size_t i = 0; i < nProcesses; i++) {
       std::string processName = std::to_string(i);
-      std::cout << "Adding process: " << processName << std::endl;
       if(config.get<uint>("enableServerHistory") != 0){
         processGroup.processes.emplace_back(&processGroup, processName, "process", true);
       } else {
@@ -202,21 +202,17 @@ void WatchdogServer::defineConnections() {
     microDAQ.addSource(watchdog.findTag("DAQ"), watchdog.getName());
     microDAQ.addSource(systemInfo.findTag("DAQ"), systemInfo.getName());
     for(auto &item : processGroup.processes) {
-      microDAQ.addSource(item.findTag("DAQ"), item.getName());
+      microDAQ.addSource(item.findTag("DAQ"), "processes/"+item.getName());
     }
     for(auto &item : networkGroup.networkMonitors) {
-      microDAQ.addSource(item.findTag("DAQ"), item.getName());
+      microDAQ.addSource(item.findTag("DAQ"), "network/" + item.getName());
     }
     for(auto &item : filesystemGroup.fsMonitors) {
-      microDAQ.addSource(item.findTag("DAQ"), item.getName());
+      microDAQ.addSource(item.findTag("DAQ"), "filesystem/" + item.getName());
     }
     // configuration of the DAQ system itself
     conversion.triggerOut >> microDAQ.trigger;
-    microDAQ.findTag("MicroDAQ.CONFIG").connectTo(cs["MicroDAQ"]);
-
-    cs["MicroDAQ"]("nMaxFiles") >> microDAQ.nMaxFiles;
-    cs["MicroDAQ"]("nTriggersPerFile") >> microDAQ.nTriggersPerFile;
-    cs["MicroDAQ"]("enable") >> microDAQ.enable;
+    microDAQ.findTag("MicroDAQ.CONFIG").connectTo(cs["microDAQ"]);
   }
 
   if(config.get<uint>("enableServerHistory") != 0){
@@ -228,13 +224,13 @@ void WatchdogServer::defineConnections() {
     history.addSource(systemInfo.findTag("History"), "history/" + systemInfo.getName());
     history.addSource(watchdog.findTag("History"), "history/" + watchdog.getName());
     for(auto &item : processGroup.processes) {
-      history.addSource(item.findTag("History"), "history/" + item.getName());
+      history.addSource(item.findTag("History"), "history/processes/" + item.getName());
     }
     for(auto &item : filesystemGroup.fsMonitors){
-      history.addSource(item.findTag("History"), "history/" + item.getName());
+      history.addSource(item.findTag("History"), "history/filesystem/" + item.getName());
     }
     for(auto &item : networkGroup.networkMonitors){
-      history.addSource(item.findTag("History"), "history/" + item.getName());
+      history.addSource(item.findTag("History"), "history/network/" + item.getName());
     }
     history.findTag("CS").connectTo(cs);
   }
