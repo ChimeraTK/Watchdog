@@ -276,6 +276,9 @@ struct FileSystemModule : public ctk::ApplicationModule {
   bool read();
 };
 
+/**
+ * \brief This group includes one FileSystemModule per hard drive.
+ */
 struct FileSystemGroup : public ctk::ModuleGroup{
   using ctk::ModuleGroup::ModuleGroup;
 
@@ -394,7 +397,9 @@ struct NetworkModule : public ctk::ApplicationModule {
   bool read();
 };
 
-
+/**
+ * \brief This group includes one NetworkModule per network device.
+ */
 struct NetworkGroup : public ctk::ModuleGroup{
 
   using ctk::ModuleGroup::ModuleGroup;

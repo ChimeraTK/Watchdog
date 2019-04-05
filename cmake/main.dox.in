@@ -2,46 +2,60 @@
 \author Klaus Zenker (HZDR)
 \version @watchdog_server_VERSION@
 \mainpage Watchdog Server
-The watchdog contains two main moudles:
-  - SYS: Monitors system paramters
-  - PROCESS: Start/stop and monitor a process 
+The watchdog contains five main moudles:
+  - system: Monitors system paramters
+  - processes: Start/stop and monitor a process
+  - watchdog: Watchdog paramters
+  - filesystem: Filesystem information for all hard drives (disk usage,...)
+  - network: Network statistics for all network adapters
+  
+Optional modules are:
+  - history: A server based history of selected process variables
+  - microDAQ: DAQ module writing selected data to hdf5 files 
 
 System parameter are read directly from \c /proc/\%PID%/cpuinfo and \c   /sys/devices/system/cpu/present.
-Information about processes also taken from \c /proc/ using the \c proc library. By default only one Process module
-will be created that can be used to control one process. This is done using the properties:
+Information about processes are also taken from \c /proc/ using the \c proc library. 
+The number of proceeses to be controlled by the watchdog has to be set in the configuration file \c WatchdogServerConfig.xml, where also 
+the optional modules can be added.
+
+\code
+<?xml version="1.0" encoding="UTF-8" ?>
+<configuration>
+  <variable name="enableMicroDAQ" type="int32" value="0" />
+  <variable name="enableServerHistory" type="uint32" value="0" />
+  <variable name="serverHistoryLength" type="int32" value="1200" />
+  <variable name="numberOfProcesses" type="uint32" value="1" />
+</configuration>
+\endcode
+
+On the server the following substructure for each process will appear:
+
   - enableProcess
-  - path
-  - cmd
+  - subfolder: statistics &rarr; Process statistcs filled when the process is running
+  - subfolder: config     &rarr; Process configuration
+  - subfolder: status     &rarr; Process information like errors, PID, ... 
+
+To setup a process the following minimum configuration has to be done:
+  -# \c config/path
+  -# \c config/command
+  -# \c enableProcess &rarr; set 1 to start the process 
   
-Here \c cmd can also include arguments to be passed to the program. If \c enableProcess is set true a new
+Here \c command can also include arguments to be passed to the program. If \c enableProcess is set true a new
 process is created using \c fork in combination with \c execv. A detailed documentation is given in 
 the documentation of the class ProcessHandler, which is used for the process control. If starting the process fails
-the server will retry to start the process (SetMaxFails controls how often restarts are tried, Failed shows the number of fails in the control system).
-In order to try again one has to set enableProcess to flase and true again. The same is true if the process is ended from 
-outside the watchog. In that case the watchdog restarts the process. The number of restarts is counted and the maximum allowed
-number of resets can be set by the user.
+the server will retry to start the process (\c config/maxFails controls how often restarts are tried and \c status/nFailed indicates the number of fails).
+In order to try again one has to set enableProcess to flase and true again. If the process terminates 
+ the watchdog restarts the process. The number of restarts is counted (\c config/nRestarts) and the maximum allowed
+number of resets can be set by the user (\c config/maxRestarts).
 
 It might happen that a started process also starts child processes. The number of processes started is given in the control
-system (nChilds). All process statistics are shown for the first child process. If you want to see the statistics for 
-another child process increase the pidOffset paramter (0 for the first process) according to the number of total child
-processes.  
+system (\c status/nChilds). All process statistics are shown for the first child process. If you want to see the statistics for 
+another child process increase the paramter \c config/pidOffset (0 for the first process) according to the number of total child
+processes.
 
-In order to control more than only one process a dedicated \c xml file needs to be provided. 
-Its name is WatchdogServerConfig.xml and the contend should look like this:
-\code
- <?xml version="1.0" encoding="UTF-8" ?>
-<watchdog>
-  <process name="PROCESS_1"/>
-  <process name="PROCESS_2"/>
-</watchdog>
-\endcode
-In the example above two processes are created. Each of the processes is required to have a unique name assigned.
-Further information like an inital path or an initial command are not added to the init file for the following reason. 
-If the server crashes or is restarted all variable values are taken from the persistancy file of the server during the restart. 
-If one would overwrite the \c path or \c cmd variable with the one from the \c  WatchdogServerConfig.xml file the shown 
-information would not be true in any case. If the user changed the path or command during the run time of the server 
-and started the process its is indicated in the watchdog. After a restart still the watchdog would show that the process
-is running, but \c path or \c cmd would show wrong values taken from the \c  WatchdogServerConfig.xml file.
+In the control system the processes are identified by the dicetory number, which might not be convinient. For process
+identification the user can set a process alias using \c config/alias. This allows to write more generic client applications, which
+do not include process names encoded in the process variable name.  
 
 \remark 
 For each process a link in the proc directory is created! Thus one can access the path \c /proc/self/ without knowing the 

@@ -36,10 +36,7 @@ struct ProcessInfoModule : public ctk::ApplicationModule {
 
   ctk::ScalarPushInput<uint64_t> trigger { this, "trigger", "",
       "Trigger used to update the watchdog" };
-  /**
-   * \name Process parameter and status
-   * @{
-   */
+
   struct Status : public ctk::VariableGroup{
     using ctk::VariableGroup::VariableGroup;
   /** PID of the process */
@@ -58,7 +55,6 @@ struct ProcessInfoModule : public ctk::ApplicationModule {
         { "Logging", "PROCESS", getName() } };
   } logging{this, "logging", "Logging variables"};
 #endif
-  /** @} */
 
   /**
    * Store an internal time stamp that is used to calculate the cpu usage.
@@ -202,10 +198,6 @@ struct ProcessControlModule : public ProcessInfoModule{
    */
   void terminate() override;
 
-  /**
-   * \name Process control parameter (static during process execution)
-   * @{
-   */
   struct ProcessStatus : public ctk::VariableGroup {
     using ctk::VariableGroup::VariableGroup;
     /** Path where to execute the command used to start the process */
@@ -239,11 +231,7 @@ struct ProcessControlModule : public ProcessInfoModule{
       {  "CS", "PROCESS", getName() } };
   #endif
   } status{this, "status", "Status parameter of the process"};
-  /** @} */
-  /**
-     * \name Process control parameter (dynamic process execution)
-     * @{
-     */
+
   struct Config : public ctk::VariableGroup {
     using ctk::VariableGroup::VariableGroup;
     /** Environment variable set for the process */
@@ -256,8 +244,6 @@ struct ProcessControlModule : public ProcessInfoModule{
     /** Command used to start the process */
     ctk::ScalarPollInput<std::string> cmd { this, "command", "", "Set the command used to start the process",
       { "CS", "PROCESS", getName() } };
-
-    /** Command used to start the process */
     ctk::ScalarPollInput<std::string> env { this, "environment", "", "Set environment variables needed by the process",
       { "CS", "PROCESS", getName() } };
     ctk::ScalarPollInput<int> overwriteEnv { this, "overwriteEnvironment", "",
@@ -293,7 +279,7 @@ struct ProcessControlModule : public ProcessInfoModule{
   /** Start the process */
   ctk::ScalarPollInput<uint> enableProcess { this, "enableProcess", "", "Start the process",
     { "CS", "PROCESS", getName() } };
-  /** @} */
+
 
   /**
    * Set the PID and set status to running.
@@ -362,7 +348,6 @@ struct ProcessGroup : public ctk::ModuleGroup{
    * vector storing processes
    * The vector is filled during construction using information from the input xml file called:
    * watchdog_server_processes.xml
-   * If that file is not found only one process named PROCESS is added.
    */
   std::vector<ProcessControlModule> processes;
 

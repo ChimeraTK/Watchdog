@@ -25,8 +25,9 @@
 
 namespace ctk = ChimeraTK;
 
-/*
- * Module used to convert trigger signal from PeriodicTrigger for MicroDAQ
+/**
+ * \brief Module used to convert trigger signal from PeriodicTrigger for MicroDAQ
+ *
  * \FixMe: Remove once MicroDAQ is using uint
  */
 struct ConversionModule : public ctk::ApplicationModule{
@@ -52,7 +53,9 @@ struct ConversionModule : public ctk::ApplicationModule{
 /**
  * \brief The watchdog application
  *
- * WatchdogServerConfig.xml file is used to read process names and microDAQ enable/disable is used.
+ * WatchdogServerConfig.xml file is used to read the number of processes and to enable/disable
+ * - microDAQ
+ * - history
  */
 struct WatchdogServer: public ctk::Application {
   WatchdogServer();
@@ -75,17 +78,15 @@ struct WatchdogServer: public ctk::Application {
   ctk::ConfigReader config{this, "Configuration", "WatchdogServerConfig.xml"};
 
 #ifdef ENABLE_LOGGING
-//  std::vector<LoggingModule> processesLog;
-//  std::vector<LogFileModule> processesLogExternal;
 
   /**
    * This module is used to read the watchdog log file, which includes messages from the
    * watchdog process and all other processes controlled by the watchdog.
-   * This allows to show all watchdog related messages via the tail (LogfileTailExternal).
+   * This allows to show all watchdog related messages via the tail (\c status/logTailExternal).
    * The LogFileModule is used differently for all the processes, since in case of the processes
    * the  massages produced by the started processes are read and shown in the corresponding
-   * tail (LogfileTailExternal). Thus in that case the postfix 'External' makes more sense. Here
-   * the postfix 'External' can be a bit misleading, because the tail (LogfileTailExternal) includes
+   * tail (\c status/logTailExternal). Thus in that case the postfix 'External' makes more sense. Here
+   * the postfix 'External' can be a bit misleading, because the tail (\c status/logTailExternal) includes
    * only messages produced by the watchdog itself.
    *
    * \remark It would be nice to connect the message output variable of each process to its LoggingModule
@@ -118,20 +119,6 @@ struct WatchdogServer: public ctk::Application {
    */
   ctk::history::ServerHistory history;
 
-  /**
-   * Use either
-   * - ctk::ControlSystemModule cs;
-   *   in combinartion with
-   *   cs["SYS"]("val")
-   * or
-   * - ctk::ControlSystemModule cs{"SYS"};
-   *   in combination with
-   *   cs("val")
-   * In any case SYS defines the location in DOOCS.
-   * SYS/TEST would create another hierarchy that would result
-   * in SYS/TEST.val in DOOCS.
-   *
-   */
   ctk::ControlSystemModule cs;
 
   ctk::PeriodicTrigger trigger{this, "Trigger", "Trigger used for other modules"};
