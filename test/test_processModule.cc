@@ -56,32 +56,32 @@ struct testApp : public ChimeraTK::Application {
     /**
      * Define all other connections as done in the ProcessControlModule
      */
-    cs["Process"]("enableProcess") >> process.enableProcess;
-    cs["Process"]("SetCMD") >> process.config.cmd;
-    cs["Process"]("SetPath") >> process.config.path;
-    cs["Process"]("killSig") >> process.config.killSig;
-    cs["Process"]("pidOffset") >> process.config.pidOffset;
-    cs["Process"]("externalLogFile") >> process.config.externalLogfile;
-    cs["Process"]("maxFails") >> process.config.maxFails;
-    cs["Process"]("maxRestarts") >> process.config.maxRestarts;
+//    cs["Process"]("enableProcess") >> process.enableProcess;
+//    cs["Process"]("SetCMD") >> process.config.cmd;
+//    cs["Process"]("SetPath") >> process.config.path;
+//    cs["Process"]("killSig") >> process.config.killSig;
+//    cs["Process"]("pidOffset") >> process.config.pidOffset;
+//    cs["Process"]("externalLogFile") >> process.config.externalLogfile;
+//    cs["Process"]("maxFails") >> process.config.maxFails;
+//    cs["Process"]("maxRestarts") >> process.config.maxRestarts;
     process.findTag("CS").connectTo(cs["Process"]);
 
-    cs("logLevel") >> logging.config.logLevel;
-    cs("logTailLenght") >> logging.config.tailLength;
-    cs("targetStream") >> logging.config.targetStream;
-    cs("logFile") >> logging.config.logFile;
+//    cs("logLevel") >> logging.config.logLevel;
+//    cs("logTailLenght") >> logging.config.tailLength;
+//    cs("targetStream") >> logging.config.targetStream;
+//    cs("logFile") >> logging.config.logFile;
     logging.findTag("CS").connectTo(cs["Logging"]);
-    process.findTag("Logging").connectTo(logging);
+    process.logging.connectTo(logging.input);
   }
 };
 
 void prepareTest(ChimeraTK::TestFacility *tf, int maxFails, int maxRestarts, std::string cmd, std::string path){
   auto writeTrigger = tf->getScalar<uint64_t>("trigger/");
-  auto processCMD = tf->getScalar<std::string>("Process/SetCMD");
-  auto processPath = tf->getScalar<std::string>("Process/SetPath");
+  auto processCMD = tf->getScalar<std::string>("Process/config/command");
+  auto processPath = tf->getScalar<std::string>("Process/config/path");
   auto enable = tf->getScalar<uint>("Process/enableProcess");
-  auto pmaxFails = tf->getScalar<uint>("Process/maxFails");
-  auto pmaxRestarts = tf->getScalar<uint>("Process/maxRestarts");
+  auto pmaxFails = tf->getScalar<uint>("Process/config/maxFails");
+  auto pmaxRestarts = tf->getScalar<uint>("Process/config/maxRestarts");
   BOOST_TEST_MESSAGE("Test maxrestarts==2, maxfails==2 with failing process.");
   processPath = path;
   processPath.write();
@@ -103,8 +103,8 @@ BOOST_AUTO_TEST_CASE( testStart) {
 
   // Get the trigger variable thats blocking the application (i.e. ProcessControlModule)
   auto writeTrigger = tf.getScalar<uint64_t>("trigger/");
-  auto processCMD = tf.getScalar<std::string>("Process/SetCMD");
-  auto processPath = tf.getScalar<std::string>("Process/SetPath");
+  auto processCMD = tf.getScalar<std::string>("Process/config/command");
+  auto processPath = tf.getScalar<std::string>("Process/config/path");
   auto enable = tf.getScalar<uint>("Process/enableProcess");
 
   processPath = std::string("/bin/");
@@ -117,7 +117,7 @@ BOOST_AUTO_TEST_CASE( testStart) {
   writeTrigger.write();
   tf.stepApplication();
   usleep(200000);
-  BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/IsRunning"), 1);
+  BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/status/isRunning"), 1);
   enable = 0;
   enable.write();
   writeTrigger.write();
@@ -137,13 +137,13 @@ BOOST_AUTO_TEST_CASE( testProcessFailLimit) {
     writeTrigger.write();
     tf.stepApplication();
     if(i > 2)
-      BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/Failed"), 2);
+      BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/status/nFailed"), 2);
     else
-      BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/Failed"), i);\
+      BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/status/nFailed"), i);\
     if(i > 2)
-      BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/Restarts"), 1);
+      BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/status/nRestarts"), 1);
     else
-      BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/Restarts"), i-1);
+      BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/status/nRestarts"), i-1);
   }
 }
 
@@ -159,8 +159,8 @@ BOOST_AUTO_TEST_CASE( testProcessRestartLimit) {
     writeTrigger.write();
     tf.stepApplication();
   }
-  BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/Failed"), 3);
-  BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/Restarts"), 2);
+  BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/status/nFailed"), 3);
+  BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/status/nRestarts"), 2);
 }
 
 BOOST_AUTO_TEST_CASE( testProcessDefaultLimit) {
@@ -174,8 +174,8 @@ BOOST_AUTO_TEST_CASE( testProcessDefaultLimit) {
   for(int i = 0; i < 3; i++){
     writeTrigger.write();
     tf.stepApplication();
-    BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/Failed"), 1);
-    BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/Restarts"), 0);
+    BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/status/nFailed"), 1);
+    BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/status/nRestarts"), 0);
   }
 }
 
@@ -191,11 +191,11 @@ BOOST_AUTO_TEST_CASE( testProcess){
     writeTrigger.write();
     tf.stepApplication();
     if(i == 0)
-      BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/IsRunning"), 1);
+      BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/status/isRunning"), 1);
     else
-      BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/IsRunning"), 0);
-    BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/Failed"), 0);
-    BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/Restarts"), 0);
+      BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/status/isRunning"), 0);
+    BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/status/nFailed"), 0);
+    BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/status/nRestarts"), 0);
     sleep(2);
   }
 }
@@ -213,15 +213,15 @@ BOOST_AUTO_TEST_CASE( testProcessRestartCounter1){
   for(int i = 0; i < 3; i++){
     writeTrigger.write();
     tf.stepApplication();
-    BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/Failed"), 0);
-    BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/Restarts"), i);
-    BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/IsRunning"), 1);
+    BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/status/nFailed"), 0);
+    BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/status/nRestarts"), i);
+    BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/status/isRunning"), 1);
     sleep(2);
   }
   // after max restarts is reached the process terminates and after the next trigger is fired
   writeTrigger.write();
   tf.stepApplication();
-  BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/IsRunning"), 0);
+  BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/status/isRunning"), 0);
 }
 
 BOOST_AUTO_TEST_CASE( testProcessRestartCounter2){
@@ -237,22 +237,22 @@ BOOST_AUTO_TEST_CASE( testProcessRestartCounter2){
   for(int i = 0; i < 3; i++){
     writeTrigger.write();
     tf.stepApplication();
-    BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/Failed"), 0);
-    BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/Restarts"), i);
-    BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/IsRunning"), 1);
+    BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/status/nFailed"), 0);
+    BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/status/nRestarts"), i);
+    BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/status/isRunning"), 1);
     if (i <2)
       sleep(2);
   }
   // after max restarts is reached process is running
   writeTrigger.write();
   tf.stepApplication();
-  BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/IsRunning"), 1);
+  BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/status/isRunning"), 1);
   sleep(2);
   // now after some time it is not running any more
   writeTrigger.write();
   tf.stepApplication();
-  BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/IsRunning"), 0);
+  BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/status/isRunning"), 0);
   writeTrigger.write();
   tf.stepApplication();
-  BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/IsRunning"), 0);
+  BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/status/isRunning"), 0);
 }

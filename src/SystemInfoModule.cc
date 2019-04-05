@@ -268,7 +268,7 @@ FileSystemModule::FileSystemModule(const std::string &devName, const std::string
   tmp[0] = devName;
   tmp[1] = mntPoint;
 #ifdef ENABLE_LOGGING
-  logging = new std::stringstream();
+  logStream = new std::stringstream();
 #else
   logStream = &std::cerr;
 #endif
@@ -279,7 +279,7 @@ bool FileSystemModule::read(){
   std::lock_guard<std::mutex> lock(fs_mutex);
   struct statfs fs;
   if( ( statfs( ((std::string)status.mountPoint).c_str(), &fs ) ) < 0 ) {
-      (*logging) << getTime(this) << "Failed to stat " << (std::string)status.mountPoint << ": " << errno << std::endl;
+      (*logStream) << getTime(this) << "Failed to stat " << (std::string)status.mountPoint << ": " << errno << std::endl;
 #ifdef ENABLE_LOGGING
       sendMessage(logging::LogLevel::ERROR);
 #endif
@@ -309,21 +309,21 @@ void FileSystemModule::mainLoop(){
     if(read()){
       status.disk_usage = (status.disk_size-status.disk_user)/status.disk_size*100.;
       if(status.disk_usage > config.errorLevel){
-        (*logging) << getTime(this) << "More than " << config.errorLevel << "% (" << status.disk_usage << "%) of "
+        (*logStream) << getTime(this) << "More than " << config.errorLevel << "% (" << status.disk_usage << "%) of "
             << (std::string)deviceName << " mounted at " << (std::string)status.mountPoint << " are used!" << std::endl;
         status.disk_status = 2;
 #ifdef ENABLE_LOGGING
         sendMessage(logging::LogLevel::WARNING);
 #endif
       } else if (status.disk_usage > config.warningLevel){
-        (*logging) << getTime(this) << "More than " << config.warningLevel << "% (" << status.disk_usage << "%) of "
+        (*logStream) << getTime(this) << "More than " << config.warningLevel << "% (" << status.disk_usage << "%) of "
             << (std::string)deviceName << " mounted at " << (std::string)status.mountPoint << " are used!" << std::endl;
         status.disk_status = 1;
 #ifdef ENABLE_LOGGING
         sendMessage(logging::LogLevel::INFO);
 #endif
       } else {
-        (*logging) << getTime(this) << "Disk usage: " << status.disk_usage << std::endl;
+        (*logStream) << getTime(this) << "Disk usage: " << status.disk_usage << std::endl;
         status.disk_status = 0;
 #ifdef ENABLE_LOGGING
         sendMessage(logging::LogLevel::DEBUG);
@@ -336,12 +336,11 @@ void FileSystemModule::mainLoop(){
 
 #ifdef ENABLE_LOGGING
 void FileSystemModule::sendMessage(const logging::LogLevel &level){
-  auto logging_ss = dynamic_cast<std::stringstream*>(logging);
+  auto logging_ss = dynamic_cast<std::stringstream*>(logStream);
   if(logging_ss){
-    message = logging_ss->str();
-    message.write();
-    messageLevel = level;
-    messageLevel.write();
+    logging.message = logging_ss->str();
+    logging.messageLevel = level;
+    logging.writeAll();
     logging_ss->clear();
     logging_ss->str("");
   }
@@ -350,8 +349,8 @@ void FileSystemModule::sendMessage(const logging::LogLevel &level){
 
 void FileSystemModule::terminate(){
 #ifdef ENABLE_LOGGING
-  delete logging;
-  logging = 0;
+  delete logStream;
+  logStream = 0;
 #endif
   ApplicationModule::terminate();
 }
@@ -362,7 +361,7 @@ NetworkModule::NetworkModule(const std::string &device, EntityOwner *owner, cons
          ctk::ApplicationModule(owner, name, description, eliminateHierarchy, tags){
   tmp = device;
 #ifdef ENABLE_LOGGING
-  logging = new std::stringstream();
+  logStream = new std::stringstream();
 #else
   logStream = &std::cerr;
 #endif
@@ -387,7 +386,7 @@ bool NetworkModule::read(){
   for(size_t i = 0; i < tmp.files.size(); i++){
     std::ifstream in(tmp.files.at(i));
     if(!in.is_open()){
-      (*logging) << getTime(this) << "Failed to open: " << tmp.files.at(i) << std::endl;
+      (*logStream) << getTime(this) << "Failed to open: " << tmp.files.at(i) << std::endl;
 #ifdef ENABLE_LOGGING
       sendMessage(logging::LogLevel::ERROR);
 #endif
@@ -425,12 +424,11 @@ void NetworkModule::mainLoop(){
 
 #ifdef ENABLE_LOGGING
 void NetworkModule::sendMessage(const logging::LogLevel &level){
-  auto logging_ss = dynamic_cast<std::stringstream*>(logging);
+  auto logging_ss = dynamic_cast<std::stringstream*>(logStream);
   if(logging_ss){
-    message = logging_ss->str();
-    message.write();
-    messageLevel = level;
-    messageLevel.write();
+    logging.message = logging_ss->str();
+    logging.messageLevel = level;
+    logging.writeAll();
     logging_ss->clear();
     logging_ss->str("");
   }
@@ -439,8 +437,8 @@ void NetworkModule::sendMessage(const logging::LogLevel &level){
 
 void NetworkModule::terminate(){
 #ifdef ENABLE_LOGGING
-  delete logging;
-  logging = 0;
+  delete logStream;
+  logStream = 0;
 #endif
   ApplicationModule::terminate();
 }

@@ -115,14 +115,6 @@ WatchdogServer::WatchdogServer() :
 }
 
 void WatchdogServer::defineConnections() {
-  for (auto it = systemInfo.info.strInfos.begin(); it != systemInfo.info.strInfos.end(); it++){
-    std::cout << it->second.getOwner()->getName() << std::endl;
-  }
-  std::cout << "cpu: " << systemInfo.status.cpu_use->getOwner()->getName() << std::endl;
-//  for(auto it = systemInfo.info.strInfos.begin(), ite = systemInfo.info.strInfos.end();
-//      it != ite; it++) {
-//    it->second >> cs["system"](space2underscore(it->first));
-//  }
   systemInfo.findTag("CS").connectTo(cs[systemInfo.getName()]);
   trigger.tick >> systemInfo.trigger;
   cs["configuration"]("UpdateTime") >> trigger.period;
@@ -133,8 +125,6 @@ void WatchdogServer::defineConnections() {
   // allow to set the logFile name -> other modules will use the same log file
   watchdogLog.findTag("CS_OPTIONAL").connectTo(cs[watchdog.getName()]);
 	watchdog.logging.connectTo(watchdogLog.input);
-
-//	cs[watchdog.getName()]("logFile") >> watchdogLog.config.logFile;
   watchdogLog.findTag("CS").connectTo(cs[watchdog.getName()]);
 
   watchdogLog.config.logFile >> watchdogLogFile.config.logFile;
@@ -160,20 +150,6 @@ void WatchdogServer::defineConnections() {
   systemInfo.status.maxMem >> watchdog.input.maxMem;
   trigger.tick >> watchdog.trigger;
 
-  auto tmp = processGroup.findTag("CS");
-  for( auto i : tmp.getSubmoduleList()){
-    std::cout << "Found submodule: " << i->getName() << std::endl;
-    for( auto j : i->getAccessorList()){
-      std::cout << "Found node: " << j.getName() << std::endl;
-    }
-    for( auto k : i->getSubmoduleList()){
-      std::cout << "Found subsubmodule: " << k->getName() << std::endl;
-      for( auto l : k->getAccessorList()){
-        std::cout << "Found node: " << l.getName() << std::endl;
-      }
-    }
-  }
-
   processGroup.findTag("CS").connectTo(cs["processes"]);
   for(auto &item : processGroup.processes) {
     systemInfo.info.ticksPerSecond >> item.input.ticksPerSecond;
@@ -185,11 +161,8 @@ void WatchdogServer::defineConnections() {
 #ifdef ENABLE_LOGGING
     item.logging.connectTo((*log).input);
     watchdogLog.config.logFile >> (*log).config.logFile;
-//    (*log).findTag("CS").connectTo(cs[item.getName()]);
     item.config.externalLogfile >> (*logExternal).config.logFile;
     trigger.tick >> (*logExternal).trigger;
-//    (*logExternal).findTag("CS").connectTo(cs[item.getName()]);
-
     log++;
     logExternal++;
 #endif
@@ -200,10 +173,8 @@ void WatchdogServer::defineConnections() {
   for(auto &item : filesystemGroup.fsMonitors){
     trigger.tick >> item.trigger;
 #ifdef ENABLE_LOGGING
-    item.message >> (*log).input.message;
-    item.messageLevel >> (*log).input.messageLevel;
+    item.logging.connectTo((*log).input);
     watchdogLog.config.logFile >> (*log).config.logFile;
-//    (*log).findTag("CS").connectTo(cs[item.getName()]);
     log++;
 #endif
   }
@@ -214,10 +185,8 @@ void WatchdogServer::defineConnections() {
   for(auto &item : networkGroup.networkMonitors){
     trigger.tick >> item.trigger;
 #ifdef ENABLE_LOGGING
-    item.message >> (*log).input.message;
-    item.messageLevel >> (*log).input.messageLevel;
+    item.logging.connectTo((*log).input);
     watchdogLog.config.logFile >> (*log).config.logFile;
-//    (*log).findTag("CS").connectTo(cs[item.getName()]);
     log++;
 #endif
   }
@@ -269,6 +238,6 @@ void WatchdogServer::defineConnections() {
     }
     history.findTag("CS").connectTo(cs);
   }
-  dumpConnections();
+//  dumpConnections();
 }
 

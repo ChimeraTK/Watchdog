@@ -241,15 +241,18 @@ struct FileSystemModule : public ctk::ApplicationModule {
    * \name Logging
    * @{
    */
-  std::ostream *logging;
+  std::ostream *logStream;
 #ifdef ENABLE_LOGGING
-  /** Message to be send to the logging module */
-  ctk::ScalarOutput<std::string> message { this, "message", "", "Message of the module to the logging System",
-      { "Logging", getName() } };
+  struct Logging : ctk::VariableGroup{
+    using ctk::VariableGroup::VariableGroup;
+    /** Message to be send to the logging module */
+    ctk::ScalarOutput<std::string> message { this, "message", "", "Message of the module to the logging System",
+        { "Logging", getName() } };
 
-  /** Message to be send to the logging module */
-  ctk::ScalarOutput<uint> messageLevel { this, "messageLevel", "", "Logging level of the message",
-      { "Logging", getName() } };
+    /** Message to be send to the logging module */
+    ctk::ScalarOutput<uint> messageLevel { this, "messageLevel", "", "Logging level of the message",
+        { "Logging", getName() } };
+  } logging {this, "logging", "Logging messages"};
 
   void sendMessage(const logging::LogLevel &level = logging::LogLevel::INFO);
 
@@ -356,15 +359,18 @@ struct NetworkModule : public ctk::ApplicationModule {
    * \name Logging
    * @{
    */
-  std::ostream *logging;
+  std::ostream *logStream;
 #ifdef ENABLE_LOGGING
-  /** Message to be send to the logging module */
-  ctk::ScalarOutput<std::string> message { this, "message", "", "Message of the module to the logging System",
-      { "Logging", getName() } };
+  struct Logging : ctk::VariableGroup{
+    using ctk::VariableGroup::VariableGroup;
+    /** Message to be send to the logging module */
+    ctk::ScalarOutput<std::string> message { this, "message", "", "Message of the module to the logging System",
+        { "Logging", getName() } };
 
-  /** Message to be send to the logging module */
-  ctk::ScalarOutput<uint> messageLevel { this, "messageLevel", "", "Logging level of the message",
-      { "Logging", getName() } };
+    /** Message to be send to the logging module */
+    ctk::ScalarOutput<uint> messageLevel { this, "messageLevel", "", "Logging level of the message",
+        { "Logging", getName() } };
+  } logging {this, "logging", "Logging messages"};
 
   void sendMessage(const logging::LogLevel &level = logging::LogLevel::INFO);
 
