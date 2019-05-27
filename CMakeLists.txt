@@ -22,7 +22,7 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 --coverage")
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--export-dynamic -Wl,--no-as-needed")
 
 include(cmake/add_dependency.cmake)
-add_dependency(ChimeraTK-ApplicationCore 01.02 REQUIRED)
+add_dependency(ChimeraTK-ApplicationCore 01.04 REQUIRED)
 
 find_library(procps NAMES procps REQUIRED)
 

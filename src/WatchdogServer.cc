@@ -167,8 +167,9 @@ void WatchdogServer::defineConnections() {
     logExternal++;
 #endif
   }
+#ifdef ENABLE_LOGGING
   log = filesystemGroup.loggingModules.begin();
-
+#endif
   filesystemGroup.findTag("CS").connectTo(cs["filesystem"]);
   for(auto &item : filesystemGroup.fsMonitors){
     trigger.tick >> item.trigger;
@@ -178,9 +179,9 @@ void WatchdogServer::defineConnections() {
     log++;
 #endif
   }
-
+#ifdef ENABLE_LOGGING
   log = networkGroup.loggingModules.begin();
-
+#endif
   networkGroup.findTag("CS").connectTo(cs["network"]);
   for(auto &item : networkGroup.networkMonitors){
     trigger.tick >> item.trigger;
@@ -198,7 +199,7 @@ void WatchdogServer::defineConnections() {
     conversion = ConversionModule{this, "Conversion", "Module used to do the trigger conversion"};
     //\FixMe: Remove once MicroDAQ is using uint
     trigger.tick >> conversion.triggerIn;
-    microDAQ = ctk::MicroDAQ(this, "MicroDAQ", "Local ringbuffer DAQ system");
+    microDAQ = ctk::MicroDAQ<int32_t>(this, "MicroDAQ", "Local ringbuffer DAQ system");
     microDAQ.addSource(watchdog.findTag("DAQ"), watchdog.getName());
     microDAQ.addSource(systemInfo.findTag("DAQ"), systemInfo.getName());
     for(auto &item : processGroup.processes) {

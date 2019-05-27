@@ -109,7 +109,7 @@ struct WatchdogServer: public ctk::Application {
    */
   ConversionModule conversion;
 
-  ctk::MicroDAQ microDAQ;
+  ctk::MicroDAQ<int32_t> microDAQ;
 
   /*
    * History module if history is enabled in the config file.
