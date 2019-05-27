@@ -196,10 +196,7 @@ void WatchdogServer::defineConnections() {
    *  Micro DAQ system
    */
   if(config.get<int>("enableMicroDAQ") != 0) {
-    conversion = ConversionModule{this, "Conversion", "Module used to do the trigger conversion"};
-    //\FixMe: Remove once MicroDAQ is using uint
-    trigger.tick >> conversion.triggerIn;
-    microDAQ = ctk::MicroDAQ<int32_t>(this, "MicroDAQ", "Local ringbuffer DAQ system");
+    microDAQ = ctk::MicroDAQ<uint64_t>(this, "MicroDAQ", "Local ringbuffer DAQ system");
     microDAQ.addSource(watchdog.findTag("DAQ"), watchdog.getName());
     microDAQ.addSource(systemInfo.findTag("DAQ"), systemInfo.getName());
     for(auto &item : processGroup.processes) {
@@ -212,7 +209,7 @@ void WatchdogServer::defineConnections() {
       microDAQ.addSource(item.findTag("DAQ"), "filesystem/" + item.getName());
     }
     // configuration of the DAQ system itself
-    conversion.triggerOut >> microDAQ.trigger;
+    trigger.tick >> microDAQ.trigger;
     microDAQ.findTag("MicroDAQ.CONFIG").connectTo(cs["microDAQ"]);
   }
 
