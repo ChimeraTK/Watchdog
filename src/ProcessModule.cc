@@ -159,6 +159,7 @@ void ProcessControlModule::mainLoop() {
     enableProcess.read();
     config.maxFails.read();
     config.maxRestarts.read();
+    config.alias.read();
     // reset number of failed tries and restarts in case the process is set offline
     if(!enableProcess) {
       status.nFailed = 0;
@@ -474,3 +475,15 @@ std::string ProcessInfoModule::getTime(){
   return str;
 }
 
+std::string ProcessControlModule::getTime(){
+  std::string str{"WATCHDOG_SERVER: "};
+  str.append(logging::getTime());
+  str.append(this->getOwner()->getName());
+  str.append("/");
+  str.append(this->getName());
+  if(!((std::string)(config.alias)).empty()){
+    str.append(" (alias: " + (std::string)config.alias + ")");
+  }
+  str.append(" -> ");
+  return str;
+}

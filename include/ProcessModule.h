@@ -172,7 +172,7 @@ struct ProcessInfoModule : public ctk::ApplicationModule {
    * Print the watchdog server name, a time stamp and the module name:
    * Result is: 'WATCHDOG_SERVER: "day of week"  "month" "day" hh:mm:ss yyyy "module_name" -> '
    */
-  std::string getTime();
+  virtual std::string getTime();
 
   void terminate() override;
 };
@@ -317,6 +317,7 @@ struct ProcessControlModule : public ProcessInfoModule{
    * Application core main loop.
    */
   void mainLoop() override;
+
 private:
   /**
    * Stop is used to enter the idle state.
@@ -335,6 +336,13 @@ private:
    * This is needed to end up with a meaningful history buffer in case server based history is enabled.
    */
   bool _historyOn;
+
+  /**
+   * Print the watchdog server name, a time stamp and the module name:
+   * Result is: 'WATCHDOG_SERVER: "day of week"  "month" "day" hh:mm:ss yyyy "module_name" (alias: config.alias) -> '
+   * Alias is only added if it is not empty.
+   */
+  std::string getTime() override;
 };
 
 

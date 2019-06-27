@@ -256,6 +256,8 @@ void SystemInfoModule::sendMessage(const logging::LogLevel &level){
 std::string getTime(ctk::ApplicationModule* mod){
   std::string str{"WATCHDOG_SERVER: "};
   str.append(logging::getTime());
+  str.append(mod->getOwner()->getName());
+  str.append("/");
   str.append(mod->getName());
   str.append(" -> ");
   return str;
