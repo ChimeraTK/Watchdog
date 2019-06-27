@@ -323,9 +323,9 @@ void FileSystemModule::mainLoop(){
         sendMessage(logging::LogLevel::INFO);
 #endif
       } else {
-        (*logStream) << getTime(this) << "Disk usage: " << status.disk_usage << std::endl;
         status.disk_status = 0;
 #ifdef ENABLE_LOGGING
+        (*logStream) << getTime(this) << "Disk usage: " << status.disk_usage << std::endl;
         sendMessage(logging::LogLevel::DEBUG);
 #endif
       }
