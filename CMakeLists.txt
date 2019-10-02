@@ -61,12 +61,14 @@ set(server_sources ${CMAKE_SOURCE_DIR}/src/applicationInstance.cc)
 configure_file(include/version.h.in ${PROJECT_BINARY_DIR}/version/version.h)
 include_directories(${PROJECT_BINARY_DIR}/version)
 
-IF(DEFINED ENABLE_LOGGING)
+option(ENABLE_LOGGING      "Enable logging"      OFF)
+
+IF(ENABLE_LOGGING)
   MESSAGE(STATUS "Logging modules are enabled.")
   add_definitions(-DENABLE_LOGGING)
 ELSE()
   MESSAGE(STATUS "Logging modules are disabled.")
-ENDIF(DEFINED ENABLE_LOGGING)
+ENDIF(ENABLE_LOGGING)
 
 
 message("CMAKE_BUILD_TYPE = ${CMAKE_BUILD_TYPE}")
