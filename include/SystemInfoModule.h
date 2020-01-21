@@ -11,7 +11,9 @@
 #undef GENERATE_XML
 #include <ChimeraTK/ApplicationCore/ApplicationCore.h>
 
+#ifdef ENABLE_LOGGING
 #include "LoggingModule.h"
+#endif
 
 #include "sys_stat.h"
 #include <unordered_set>

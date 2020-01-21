@@ -8,6 +8,17 @@ set(${PROJECT_NAME}_MINOR_VERSION 01)
 set(${PROJECT_NAME}_PATCH_VERSION 00)
 include(cmake/set_version_numbers.cmake)
 
+# Options
+option(ENABLE_TESTING      "Build unit tests"      ON)
+option(ENABLE_LOGGING      "Enable logging for the watchdog server"      ON)
+option(ENABLE_DOCUMENTAION "Enable create of doxygen documentation"      ON)
+
+if( ENABLE_DOCUMENTAION )
+  SET( SUPPRESS_AUTO_DOC_BUILD FALSE)
+else()
+  SET( SUPPRESS_AUTO_DOC_BUILD TRUE)
+endif( ENABLE_DOCUMENTAION )
+
 # Moderate version of the compiler flags
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fPIC -Wextra -ansi -Wuninitialized -O3 -fomit-frame-pointer")
 
@@ -26,20 +37,22 @@ add_dependency(ChimeraTK-ApplicationCore 01.04 REQUIRED)
 
 find_library(procps NAMES procps REQUIRED)
 
-IF(ADAPTER STREQUAL "OPCUA")
+if(ADAPTER STREQUAL "OPCUA")
   message("Building against the OPC UA ControlSystemAdater")
   add_dependency(ChimeraTK-ControlSystemAdapter-OPCUAAdapter REQUIRED)
-ELSEIF(ADAPTER STREQUAL "DOOCS")
+elseif(ADAPTER STREQUAL "DOOCS")
   message("Building against the DOOCS ControlSystemAdater")
   add_dependency(ChimeraTK-ControlSystemAdapter-DoocsAdapter REQUIRED)
-ELSE()
+else()
   message(FATAL_ERROR "Please select your ControlSystemAdapter to use by passing to the cmake command line:\n"
                       "   -DADAPTER=DOOCS to use DOOCS\n"
                       "   -DADAPTER=OPCUA to use OPC-UA")
-ENDIF()
+endif()
 
-FIND_PACKAGE(Boost COMPONENTS unit_test_framework date_time filesystem)
-ENABLE_TESTING()
+if( ENABLE_TESTING )
+  FIND_PACKAGE(Boost COMPONENTS unit_test_framework date_time filesystem)
+  ENABLE_TESTING()
+endif( ENABLE_TESTING )
 
 FIND_PACKAGE(PkgConfig REQUIRED)
 set(LIBXML++_VERSION "libxml++-2.6")
@@ -61,23 +74,29 @@ set(server_sources ${CMAKE_SOURCE_DIR}/src/applicationInstance.cc)
 configure_file(include/version.h.in ${PROJECT_BINARY_DIR}/version/version.h)
 include_directories(${PROJECT_BINARY_DIR}/version)
 
-IF(DEFINED ENABLE_LOGGING)
+if(ENABLE_LOGGING)
   MESSAGE(STATUS "Logging modules are enabled.")
   add_definitions(-DENABLE_LOGGING)
-ELSE()
+else()
   MESSAGE(STATUS "Logging modules are disabled.")
-ENDIF(DEFINED ENABLE_LOGGING)
+endif(ENABLE_LOGGING)
 
 
 message("CMAKE_BUILD_TYPE = ${CMAKE_BUILD_TYPE}")
-IF(CMAKE_BUILD_TYPE MATCHES Debug)
-  add_library(${PROJECT_NAME}lib SHARED ${library_sources} )
+if(CMAKE_BUILD_TYPE MATCHES Debug)
+  if( NOT ENABLE_LOGGING )
+    list(REMOVE_ITEM library_sources ${CMAKE_CURRENT_SOURCE_DIR}/src/Logging.cc
+                                     ${CMAKE_CURRENT_SOURCE_DIR}/src/LoggingModule.cc)
+  endif( NOT ENABLE_LOGGING )
+  
+  add_library(${PROJECT_NAME}lib SHARED ${library_sources} )  
   set_target_properties(${PROJECT_NAME}lib PROPERTIES VERSION ${${PROJECT_NAME}_FULL_LIBRARY_VERSION}
                                                     SOVERSION ${${PROJECT_NAME}_SOVERSION})
   target_link_libraries(${PROJECT_NAME}lib ${Boost_LIBRARIES}
                                            ${ChimeraTK-ApplicationCore_LIBRARIES}
                                            procps
                                            ${Boost_process_LIBRARIES})
+  install(TARGETS ${PROJECT_NAME}lib LIBRARY DESTINATION  lib)                                            
   
   # main server executable
   add_executable(${PROJECT_NAME} ${server_sources})
@@ -94,44 +113,45 @@ IF(CMAKE_BUILD_TYPE MATCHES Debug)
   target_link_libraries(${PROJECT_NAME}-xmlGenerator ${ChimeraTK-ApplicationCore_LIBRARIES} 
                                                      ${LibXML++_LIBRARIES} 
                                                      procps
-                                                     ${PROJECT_NAME}lib) 
+                                                     ${PROJECT_NAME}lib)
   
-  # Create the executable for automated unit testing.
-  add_executable(test_procReader ${CMAKE_SOURCE_DIR}/test/test_procReader.cc)
-  target_link_libraries(test_procReader ${ChimeraTK-ApplicationCore_LIBRARIES} 
-                                        ${LibXML++_LIBRARIES} 
-                                        procps 
-                                        ${Boost_LIBRARIES}
-                                        ${PROJECT_NAME}lib)
-  add_test(test_procReader test_procReader)
-  IF(DEFINED ENABLE_LOGGING)
-    add_executable(test_processModule ${CMAKE_SOURCE_DIR}/test/test_processModule.cc)
-    target_link_libraries(test_processModule ${ChimeraTK-ApplicationCore_LIBRARIES} 
+  if( ENABLE_TESTING )
+    # Create the executable for automated unit testing.
+    add_executable(test_procReader ${CMAKE_SOURCE_DIR}/test/test_procReader.cc)
+    target_link_libraries(test_procReader ${ChimeraTK-ApplicationCore_LIBRARIES} 
                                           ${LibXML++_LIBRARIES} 
                                           procps 
                                           ${Boost_LIBRARIES}
                                           ${PROJECT_NAME}lib)
-    add_test(test_processModule test_processModule)
-  
-    add_executable(test_loggingModule ${CMAKE_SOURCE_DIR}/test/test_loggingModule.cc)
-    target_link_libraries(test_loggingModule ${ChimeraTK-ApplicationCore_LIBRARIES} 
+    add_test(test_procReader test_procReader)
+    if( ENABLE_LOGGING )
+      add_executable(test_processModule ${CMAKE_SOURCE_DIR}/test/test_processModule.cc)
+      target_link_libraries(test_processModule ${ChimeraTK-ApplicationCore_LIBRARIES} 
+                                            ${LibXML++_LIBRARIES} 
+                                            procps 
+                                            ${Boost_LIBRARIES}
+                                            ${PROJECT_NAME}lib)
+      add_test(test_processModule test_processModule)
+    
+      add_executable(test_loggingModule ${CMAKE_SOURCE_DIR}/test/test_loggingModule.cc)
+      target_link_libraries(test_loggingModule ${ChimeraTK-ApplicationCore_LIBRARIES} 
+                                            ${LibXML++_LIBRARIES} 
+                                            procps 
+                                            ${Boost_LIBRARIES}
+                                            ${PROJECT_NAME}lib)
+      add_test(test_loggingModule test_loggingModule)
+    endif( ENABLE_LOGGING )
+    
+    add_executable(test_watchdog ${CMAKE_SOURCE_DIR}/test/test_watchdog.cc)
+    target_link_libraries(test_watchdog ${ChimeraTK-ApplicationCore_LIBRARIES} 
                                           ${LibXML++_LIBRARIES} 
                                           procps 
                                           ${Boost_LIBRARIES}
                                           ${PROJECT_NAME}lib)
-    add_test(test_loggingModule test_loggingModule)
-  ENDIF(DEFINED ENABLE_LOGGING)
-  
-  add_executable(test_watchdog ${CMAKE_SOURCE_DIR}/test/test_watchdog.cc)
-  target_link_libraries(test_watchdog ${ChimeraTK-ApplicationCore_LIBRARIES} 
-                                        ${LibXML++_LIBRARIES} 
-                                        procps 
-                                        ${Boost_LIBRARIES}
-                                        ${PROJECT_NAME}lib)
-                                        
-  install(TARGETS ${PROJECT_NAME}lib LIBRARY DESTINATION  lib)
+    add_test(test_watchdog test_watchdog)                                          
+  endif( ENABLE_TESTING )                                          
 
-ELSE()
+else()
   # main server executable
   add_executable(${PROJECT_NAME} ${server_sources} ${library_sources})
   target_link_libraries(${PROJECT_NAME} ${ChimeraTK-ApplicationCore_LIBRARIES} 
@@ -146,24 +166,24 @@ ELSE()
   target_link_libraries(${PROJECT_NAME}-xmlGenerator ${ChimeraTK-ApplicationCore_LIBRARIES} 
                                                      ${LibXML++_LIBRARIES} 
                                                      procps) 
-ENDIF(CMAKE_BUILD_TYPE MATCHES Debug)
+endif(CMAKE_BUILD_TYPE MATCHES Debug)
 
 # The make coverage command is only available in debug mode
-IF(CMAKE_BUILD_TYPE MATCHES Debug)
+if(CMAKE_BUILD_TYPE MATCHES Debug)
   configure_file(cmake/Makefile.coverage.in ${PROJECT_BINARY_DIR}/Makefile.coverage @ONLY)
   add_custom_target(coverage
     make -f Makefile.coverage
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     COMMENT "Generating test coverage documentation" VERBATIM
   )
-ENDIF(CMAKE_BUILD_TYPE MATCHES Debug)
+endif(CMAKE_BUILD_TYPE MATCHES Debug)
 
 FILE( COPY ${CMAKE_SOURCE_DIR}/configs/WatchdogServerConfig.xml DESTINATION ${PROJECT_BINARY_DIR})
-IF(ADAPTER STREQUAL "OPCUA")
+if(ADAPTER STREQUAL "OPCUA")
   FILE( COPY ${CMAKE_SOURCE_DIR}/configs/WatchdogServer_mapping.xml DESTINATION ${PROJECT_BINARY_DIR})
-ELSEIF(ADAPTER STREQUAL "DOOCS")
+elseif(ADAPTER STREQUAL "DOOCS")
   FILE( COPY ${CMAKE_SOURCE_DIR}/configs/${PROJECT_NAME}.conf DESTINATION ${PROJECT_BINARY_DIR})
-ENDIF()
+endif()
 
 # add a target to generate API documentation with Doxygen
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/cmake/main.dox.in ${CMAKE_CURRENT_BINARY_DIR}/main.dox @ONLY)

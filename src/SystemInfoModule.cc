@@ -23,6 +23,8 @@
 
 #include "boost/date_time/posix_time/posix_time.hpp"
 
+#include "Logging.h"
+
 SystemInfoModule::SystemInfoModule(EntityOwner *owner, const std::string &name,
     const std::string &description, bool eliminateHierarchy,
     const std::unordered_set<std::string> &tags) :

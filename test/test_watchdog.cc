@@ -11,7 +11,9 @@
 #include <string>
 
 #include "ProcessModule.h"
+#ifdef ENABLE_LOGGING
 #include "LoggingModule.h"
+#endif
 #include "WatchdogServer.h"
 #include "ChimeraTK/ApplicationCore/TestFacility.h"
 #include <ChimeraTK/ApplicationCore/ConfigReader.h>
@@ -30,11 +32,11 @@ struct testWD: public ctk::Application {
   ProcessInfoModule watchdog{this, "watchdog", "Module monitoring the watchdog process"};
 
   ctk::ConfigReader config{this, "Configuration", "WatchdogServerConfig.xml"};
-
+#ifdef ENABLE_LOGGING
   LogFileModule watchdogLogFile{this, "watchdogLog", "Logging module of all watchdog processes"};
   LoggingModule watchdogLog{this, "watchdogLog", "Logging module of the watchdog process"};
   LoggingModule systemInfoLog{this, "systeminfoLog", "Logging module of the system information module"};
-
+#endif
   ctk::ControlSystemModule cs;
 //  testWD():WatchdogServer(){ };
 
@@ -143,6 +145,7 @@ BOOST_AUTO_TEST_CASE( testPerformance) {
 
   // Get the trigger variable thats blocking the application (i.e. ProcessControlModule)
   auto writeTrigger = tf.getScalar<uint64_t>("trigger/");
+#ifdef ENABLE_LOGGING
   auto logFile = tf.getScalar<std::string>("watchdog/config/logFile");
   ChimeraTK::ScalarRegisterAccessor<uint> targetStream[10] = {
   tf.getScalar<uint>("processes/0/config/targetStream"),
@@ -155,20 +158,21 @@ BOOST_AUTO_TEST_CASE( testPerformance) {
   tf.getScalar<uint>("processes/7/config/targetStream"),
   tf.getScalar<uint>("watchdog/config/targetStream"),
   tf.getScalar<uint>("system/config/targetStream")};
-
+#endif
   tf.runApplication();
-
+#ifdef ENABLE_LOGGING
   for(int i = 0; i < 10; i++){
     targetStream[i] = 1;
     targetStream[i].write();
   }
+
   logFile = std::string("test_watchdog.log");
   logFile.write();
-
-  for(size_t i = 1; i < 20; i++){
+#endif
+  for(size_t i = 1; i < 5; i++){
     writeTrigger = i;
     writeTrigger.write();
     tf.stepApplication();
-    sleep(5);
+    sleep(1);
   }
 }

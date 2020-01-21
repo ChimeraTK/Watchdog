@@ -15,7 +15,9 @@
 namespace logging{
 
 enum LogLevel { DEBUG, INFO, WARNING, ERROR, SILENT };
+std::string getTime();
 
+#ifdef ENABLE_LOGGING
 struct Message {
   std::stringstream message;
   LogLevel logLevel;
@@ -41,10 +43,7 @@ struct Message {
 void formatLogTail(std::istream  &data, std::ostream &os, size_t numberOfLines = 10);
 
 std::vector<Message> stripMessages(std::stringstream &msg, size_t maxCharacters = 256);
-
-std::string getTime();
+#endif
 }
-
-std::ostream& operator<<(std::ostream& os, const logging::LogLevel &level);
 
 #endif /* INCLUDE_LOGGING_H_ */

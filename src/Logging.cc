@@ -123,4 +123,3 @@ Message& Message::operator<<(LogLevel level){
 std::string logging::getTime(){
   return boost::posix_time::to_simple_string(boost::posix_time::microsec_clock::local_time()) + " ";
 }
-
