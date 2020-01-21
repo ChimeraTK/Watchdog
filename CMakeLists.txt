@@ -83,13 +83,12 @@ else()
 endif(ENABLE_LOGGING)
 
 
-message("CMAKE_BUILD_TYPE = ${CMAKE_BUILD_TYPE}")
-if(CMAKE_BUILD_TYPE MATCHES Debug)
-  if( NOT ENABLE_LOGGING )
-    list(REMOVE_ITEM library_sources ${CMAKE_CURRENT_SOURCE_DIR}/src/Logging.cc
+if( NOT ENABLE_LOGGING )
+  list(REMOVE_ITEM library_sources ${CMAKE_CURRENT_SOURCE_DIR}/src/Logging.cc
                                      ${CMAKE_CURRENT_SOURCE_DIR}/src/LoggingModule.cc)
-  endif( NOT ENABLE_LOGGING )
-  
+endif( NOT ENABLE_LOGGING )
+
+if(CMAKE_BUILD_TYPE MATCHES Debug)
   add_library(${PROJECT_NAME}lib SHARED ${library_sources} )  
   set_target_properties(${PROJECT_NAME}lib PROPERTIES VERSION ${${PROJECT_NAME}_FULL_LIBRARY_VERSION}
                                                     SOVERSION ${${PROJECT_NAME}_SOVERSION})
