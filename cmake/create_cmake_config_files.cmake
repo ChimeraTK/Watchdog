@@ -44,26 +44,45 @@ endforeach()
 
 string(REPLACE " " ";" LIST "${PROJECT_NAME} ${${PROJECT_NAME}_LIBRARIES}")
 foreach(LIBRARY ${LIST})
-  if(LIBRARY MATCHES "/")  # library name contains slashes: link against the a file path name
+  if(LIBRARY MATCHES "/")         # library name contains slashes: link against the a file path name
     set(${PROJECT_NAME}_LINKER_FLAGS_MAKEFILE "${${PROJECT_NAME}_LINKER_FLAGS_MAKEFILE} ${LIBRARY}")
-  else()                   # library name does not contain slashes: link against library with -l option
+  elseif(LIBRARY MATCHES "^-l")   # library name does not contain slashes but already the -l option: directly quote it
+    set(${PROJECT_NAME}_LINKER_FLAGS_MAKEFILE "${${PROJECT_NAME}_LINKER_FLAGS_MAKEFILE} ${LIBRARY}")
+  elseif(LIBRARY MATCHES "::")  # library name is an exported target - we need to resolve it for Makefiles
+    get_property(lib_loc TARGET ${LIBRARY} PROPERTY LOCATION)
+    string(APPEND ${PROJECT_NAME}_LINKER_FLAGS_MAKEFILE " ${lib_loc}")
+  else()                          # link against library with -l option
     set(${PROJECT_NAME}_LINKER_FLAGS_MAKEFILE "${${PROJECT_NAME}_LINKER_FLAGS_MAKEFILE} -l${LIBRARY}")
   endif()
 endforeach()
 
+set(${PROJECT_NAME}_PUBLIC_DEPENDENCIES_L "")
+foreach(DEPENDENCY ${${PROJECT_NAME}_PUBLIC_DEPENDENCIES})
+    string(APPEND ${PROJECT_NAME}_PUBLIC_DEPENDENCIES_L "find_package(${DEPENDENCY} REQUIRED)\n")
+endforeach()
+
 # we have nested @-statements, so we have to parse twice:
 
-# create the cmake Find package script
-configure_file(cmake/FindPROJECT_NAME.cmake.in.in "${PROJECT_BINARY_DIR}/cmake/Find${PROJECT_NAME}.cmake.in" @ONLY)
-configure_file(${PROJECT_BINARY_DIR}/cmake/Find${PROJECT_NAME}.cmake.in "${PROJECT_BINARY_DIR}/Find${PROJECT_NAME}.cmake" @ONLY)
+# create the cmake find_package configuration file
+configure_file(cmake/PROJECT_NAMEConfig.cmake.in.in "${PROJECT_BINARY_DIR}/cmake/${PROJECT_NAME}Config.cmake.in" @ONLY)
+configure_file(${PROJECT_BINARY_DIR}/cmake/${PROJECT_NAME}Config.cmake.in "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake" @ONLY)
+configure_file(cmake/PROJECT_NAMEConfigVersion.cmake.in.in "${PROJECT_BINARY_DIR}/cmake/${PROJECT_NAME}ConfigVersion.cmake.in" @ONLY)
+configure_file(${PROJECT_BINARY_DIR}/cmake/${PROJECT_NAME}ConfigVersion.cmake.in "${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake" @ONLY)
 
 # create the shell script for standard make files
 configure_file(cmake/PROJECT_NAME-config.in.in "${PROJECT_BINARY_DIR}/cmake/${PROJECT_NAME}-config.in" @ONLY)
 configure_file(${PROJECT_BINARY_DIR}/cmake/${PROJECT_NAME}-config.in "${PROJECT_BINARY_DIR}/${PROJECT_NAME}-config" @ONLY)
 
-# install the script
-install(FILES "${PROJECT_BINARY_DIR}/Find${PROJECT_NAME}.cmake"
-  DESTINATION share/cmake-${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}/Modules COMPONENT dev)
+# install cmake find_package configuration file
+install(FILES "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
+  DESTINATION lib/cmake/${PROJECT_NAME} COMPONENT dev)
+install(FILES "${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake"
+  DESTINATION lib/cmake/${PROJECT_NAME} COMPONENT dev)
 
+# install same cmake configuration file another time into the Modules cmake subdirectory for compatibility reasons
+install(FILES "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
+  DESTINATION share/cmake-${CMAKE_MAJOR_VERSION}.${CMAKE_MINOR_VERSION}/Modules RENAME Find${PROJECT_NAME}.cmake COMPONENT dev)
+
+# install script for Makefiles
 install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config DESTINATION bin COMPONENT dev)
 
