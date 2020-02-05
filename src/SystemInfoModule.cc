@@ -29,7 +29,7 @@ SystemInfoModule::SystemInfoModule(EntityOwner *owner, const std::string &name,
     const std::string &description, bool eliminateHierarchy,
     const std::unordered_set<std::string> &tags) :
     ctk::ApplicationModule(owner, name, description, eliminateHierarchy, tags) {
-  for(auto it = sysInfo.ibegin; it != sysInfo.iend; it++) {
+  for(auto it = sysInfo.ibegin(); it != sysInfo.iend(); it++) {
     info.strInfos.emplace(it->first, ctk::ScalarOutput<std::string> {&info,
               space2underscore(it->first), "", space2underscore(it->first), {"CS"} });
   }
@@ -46,7 +46,7 @@ SystemInfoModule::SystemInfoModule(EntityOwner *owner, const std::string &name,
 }
 
 void SystemInfoModule::mainLoop() {
-  for(auto it = sysInfo.ibegin; it != sysInfo.iend; it++) {
+  for(auto it = sysInfo.ibegin(); it != sysInfo.iend(); it++) {
     info.strInfos.at(it->first) = it->second;
   }
   info.nCPU = sysInfo.getNCpu();

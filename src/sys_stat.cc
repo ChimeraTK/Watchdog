@@ -94,44 +94,29 @@ std::vector<std::string> split_arguments(const std::string &arguments, const std
   return strs;
 }
 
-SysInfo::SysInfo() :
-    sysData { std::make_pair("vendor", ""),
-        std::make_pair("family", ""),
-        std::make_pair("cpu family", ""),
-        std::make_pair("model", ""),
-        std::make_pair("model name", ""),
-        std::make_pair("stepping", ""),
-        std::make_pair("cpu MHz", ""),
-        std::make_pair("bogomips", "") },
-        CPUcount(0), ibegin(sysData.begin()), iend(sysData.end()) {
-  std::ifstream procfile("/proc/cpuinfo");
-  if(!procfile.is_open())
-    throw std::runtime_error("Failed to open /proc/cpuinfo");
-  std::string line;
-  for(auto pat = ibegin; pat != iend; pat++) {
-    while(std::getline(procfile, line)) {
-      if(lookup(line, pat->first))
-        break;
-    }
-    procfile.seekg(0, std::ios::beg);
-  }
-  procfile.seekg(0, std::ios::beg);
-  while(std::getline(procfile, line)) {
-    if(lookup(line, "processor"))
-      CPUcount += 1;
-  }
-  procfile.close();
+SysInfo::SysInfo(const std::string &cpuinfoFile):CPUcount(0){
+  parseInfoFile(cpuinfoFile);
 }
 
-bool SysInfo::lookup(const std::string &line, const std::string &pattern) {
-  std::size_t found = line.find(pattern);
-  if(found == std::string::npos)
-    return false;
-
-  std::string pat = line.substr(0, line.find(":"));
-  std::string val = line.substr(line.find(":") + 1, line.length() - 1);
-
-  fill(val, pattern);
-  return true;
+void SysInfo::parseInfoFile(const std::string &file){
+  std::ifstream procfile(file.c_str());
+   if(!procfile.is_open())
+     throw std::runtime_error(std::string("Failed to open ") + file);
+   std::string line;
+   while(std::getline(procfile, line)) {
+     auto strVec = split_arguments(line, ":");
+     // ignore lines without a delimiter
+     if(strVec.size() == 2){
+       for(auto &str: strVec){
+         boost::trim(str); // removes all leading and trailing white spaces
+         boost::trim_if(str, boost::is_any_of("\t")); // removes only tabs
+       }
+       // count number of processors
+       if(boost::to_upper_copy(strVec.at(0)).find("PROCESSOR") != std::string::npos)
+         CPUcount += 1;
+       if(sysData.find(strVec.at(0)) == sysData.end())
+         sysData[strVec.at(0)] = strVec.at(1);
+     }
+   }
+   procfile.close();
 }
-

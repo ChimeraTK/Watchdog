@@ -78,31 +78,32 @@ private:
   unsigned int CPUcount; ///< Number of cpu cores.
 
   /**
-   * Check if the given pattern is included in the given line.
-   * In case the patter is found the data is filled into the map sysData by
-   * calling fill(...).
+   * Parse cpuinfo file.
+   *
+   * If the keyward processor is found the number of cpus is increased by 1.
+   * Else only unique key strings are considered. So if e.g. the processors have
+   * different parameters that is ignored and only parameters of the first
+   * processor are considered.
+   *
+   * Only lines that contain a delimiter ":" are considered. All other lines
+   * are skipped.
    */
-  bool lookup(const std::string &line, const std::string &pattern);
-
-  /**
-   * Fill a value into the map sysData using the pattern string as map key.
-   */
-  void fill(const std::string &val, const std::string &pattern) {
-    if(sysData.count(pattern))
-      sysData.at(pattern) = val;
-  }
+  void parseInfoFile(const std::string &file);
 
 public:
+
   /** Iterator pointing to the beginning of the system data map */
-  const std::map<std::string, std::string>::iterator ibegin;
+  std::map<std::string, std::string>::iterator ibegin(){return sysData.begin();}
   /** Iterator pointing to the end of the system data map */
-  const std::map<std::string, std::string>::iterator iend;
+  std::map<std::string, std::string>::iterator iend(){return sysData.end();}
 
   /**
    * Read information about the system.
+   * \param cpuinfoFile Name of cpu info file created by procps. Only change
+   *                    this for test purposes.
    * \throws runtime_error Exception is thrown in case one of the /proc/ files could not be read.
    */
-  SysInfo();
+  SysInfo(const std::string &cpuinfoFile = "/proc/cpuinfo");
 
   /**
    * Get a system parameter stored in \c/proc/cpuinfo

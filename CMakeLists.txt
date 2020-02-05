@@ -49,11 +49,6 @@ else()
                       "   -DADAPTER=OPCUA to use OPC-UA")
 endif()
 
-if( ENABLE_TESTING )
-  FIND_PACKAGE(Boost COMPONENTS unit_test_framework date_time filesystem)
-  ENABLE_TESTING()
-endif( ENABLE_TESTING )
-
 FIND_PACKAGE(PkgConfig REQUIRED)
 set(LIBXML++_VERSION "libxml++-2.6")
 PKG_CHECK_MODULES(LibXML++ REQUIRED ${LIBXML++_VERSION})
@@ -114,43 +109,11 @@ if(CMAKE_BUILD_TYPE MATCHES Debug)
                                                      ${LibXML++_LIBRARIES} 
                                                      procps
                                                      ${PROJECT_NAME}lib)
-  
+                                                     
   if( ENABLE_TESTING )
-    # Create the executable for automated unit testing.
-    add_executable(test_procReader ${CMAKE_SOURCE_DIR}/test/test_procReader.cc)
-    target_link_libraries(test_procReader ${ChimeraTK-ApplicationCore_LIBRARIES} 
-                                          ${LibXML++_LIBRARIES} 
-                                          procps 
-                                          ${Boost_LIBRARIES}
-                                          ${PROJECT_NAME}lib)
-    add_test(test_procReader test_procReader)
-    if( ENABLE_LOGGING )
-      add_executable(test_processModule ${CMAKE_SOURCE_DIR}/test/test_processModule.cc)
-      target_link_libraries(test_processModule ${ChimeraTK-ApplicationCore_LIBRARIES} 
-                                            ${LibXML++_LIBRARIES} 
-                                            procps 
-                                            ${Boost_LIBRARIES}
-                                            ${PROJECT_NAME}lib)
-      add_test(test_processModule test_processModule)
-    
-      add_executable(test_loggingModule ${CMAKE_SOURCE_DIR}/test/test_loggingModule.cc)
-      target_link_libraries(test_loggingModule ${ChimeraTK-ApplicationCore_LIBRARIES} 
-                                            ${LibXML++_LIBRARIES} 
-                                            procps 
-                                            ${Boost_LIBRARIES}
-                                            ${PROJECT_NAME}lib)
-      add_test(test_loggingModule test_loggingModule)
-    endif( ENABLE_LOGGING )
-    
-    add_executable(test_watchdog ${CMAKE_SOURCE_DIR}/test/test_watchdog.cc)
-    target_link_libraries(test_watchdog ${ChimeraTK-ApplicationCore_LIBRARIES} 
-                                          ${LibXML++_LIBRARIES} 
-                                          procps 
-                                          ${Boost_LIBRARIES}
-                                          ${PROJECT_NAME}lib)
-    add_test(test_watchdog test_watchdog)                                          
-  endif( ENABLE_TESTING )                                          
-
+    add_subdirectory(test)
+  endif( ENABLE_TESTING )                                                     
+  
 else()
   # main server executable
   add_executable(${PROJECT_NAME} ${server_sources} ${library_sources})
