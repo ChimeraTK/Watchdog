@@ -40,11 +40,19 @@ find_library(procps NAMES procps REQUIRED)
 if(ADAPTER STREQUAL "OPCUA")
   message("Building against the OPC UA ControlSystemAdater")
   add_dependency(ChimeraTK-ControlSystemAdapter-OPCUAAdapter REQUIRED)
+  set(ControlSystemAdapter_LIBRARIES ${ChimeraTK-ControlSystemAdapter-OPCUAAdapter_LIBRARIES})
 elseif(ADAPTER STREQUAL "DOOCS")
   message("Building against the DOOCS ControlSystemAdater")
   add_dependency(ChimeraTK-ControlSystemAdapter-DoocsAdapter REQUIRED)
+  set(ControlSystemAdapter_LIBRARIES ${ChimeraTK-ControlSystemAdapter-DoocsAdapter_LIBRARIES})
+elseif(ADAPTER STREQUAL "EPICSIOC")
+  message("Building against the EPICS ControlSystemAdater")
+  add_dependency(ChimeraTK-ControlSystemAdapter-EPICS-IOC-Adapter REQUIRED)
+  set(ControlSystemAdapter_LIBRARIES ${ChimeraTK-ControlSystemAdapter-EPICS-IOC-Adapter_LIBRARIES})
+  set(ControlSystemAdapter_LINK_FLAGS ${ChimeraTK-ControlSystemAdapter-EPICS-IOC-Adapter_LINK_FLAGS})
 else()
   message(FATAL_ERROR "Please select your ControlSystemAdapter to use by passing to the cmake command line:\n"
+                      "   -DADAPTER=EPICSIOC to use EPICS\n"
                       "   -DADAPTER=DOOCS to use DOOCS\n"
                       "   -DADAPTER=OPCUA to use OPC-UA")
 endif()
@@ -96,8 +104,7 @@ if(CMAKE_BUILD_TYPE MATCHES Debug)
   # main server executable
   add_executable(${PROJECT_NAME} ${server_sources})
   target_link_libraries(${PROJECT_NAME} ${ChimeraTK-ApplicationCore_LIBRARIES} 
-                                        ${ChimeraTK-ControlSystemAdapter-DoocsAdapter_LIBRARIES} 
-                                        ${ChimeraTK-ControlSystemAdapter-OPCUAAdapter_LIBRARIES}
+                                        ${ControlSystemAdapter_LIBRARIES}
                                         ${LibXML++_LIBRARIES} 
                                         procps
                                         ${PROJECT_NAME}lib)
@@ -117,9 +124,11 @@ if(CMAKE_BUILD_TYPE MATCHES Debug)
 else()
   # main server executable
   add_executable(${PROJECT_NAME} ${server_sources} ${library_sources})
+  if(ADAPTER STREQUAL EPICSIOC) # This is exclusive to EPICSIOC, because this line was not present, before I added EPICSIOS as an adapter.
+    set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS ${ControlSystemAdapter_LINK_FLAGS})
+  endif(ADAPTER STREQUAL EPICSIOC)
   target_link_libraries(${PROJECT_NAME} ${ChimeraTK-ApplicationCore_LIBRARIES} 
-                                        ${ChimeraTK-ControlSystemAdapter-DoocsAdapter_LIBRARIES} 
-                                        ${ChimeraTK-ControlSystemAdapter-OPCUAAdapter_LIBRARIES}
+                                        ${ControlSystemAdapter_LIBRARIES}
                                         ${LibXML++_LIBRARIES} 
                                         procps)
   
@@ -127,7 +136,7 @@ else()
   add_executable(${PROJECT_NAME}-xmlGenerator ${server_sources} ${library_sources})
   set_target_properties(${PROJECT_NAME}-xmlGenerator PROPERTIES COMPILE_FLAGS "-DGENERATE_XML")
   target_link_libraries(${PROJECT_NAME}-xmlGenerator ${ChimeraTK-ApplicationCore_LIBRARIES} 
-                                                     ${LibXML++_LIBRARIES} 
+                                                     ${LibXML++_LIBRARIES}
                                                      procps) 
 endif(CMAKE_BUILD_TYPE MATCHES Debug)
 
