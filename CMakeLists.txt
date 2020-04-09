@@ -36,6 +36,12 @@ include(cmake/add_dependency.cmake)
 add_dependency(ChimeraTK-ApplicationCore 01.04 REQUIRED)
 
 find_library(procps NAMES procps REQUIRED)
+# Just check for procps.h although more headers are used by the watchdog
+# If that header is found assume that the dev package is installed
+CHECK_INCLUDE_FILE( proc/procps.h HAS_PROCPS_H)
+if(NOT HAS_PROCPS_H)
+  message(FATAL_ERROR "Could not find procps header file. Please install procps dev pacakge.")
+endif(NOT HAS_PROCPS_H)
 
 if(ADAPTER STREQUAL "OPCUA")
   message("Building against the OPC UA ControlSystemAdater")
