@@ -196,7 +196,11 @@ void WatchdogServer::defineConnections() {
    *  Micro DAQ system
    */
   if(config.get<int>("enableMicroDAQ") != 0) {
+#ifdef ROOTDAQ
+    microDAQ = ctk::RootDAQ<uint64_t>{this, "watchdog_server_data", "Local ringbuffer DAQ system"};
+#else
     microDAQ = ctk::MicroDAQ<uint64_t>(this, "MicroDAQ", "Local ringbuffer DAQ system");
+#endif
     microDAQ.addSource(watchdog.findTag("DAQ"), watchdog.getName());
     microDAQ.addSource(systemInfo.findTag("DAQ"), systemInfo.getName());
     for(auto &item : processGroup.processes) {

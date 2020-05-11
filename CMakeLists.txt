@@ -35,6 +35,14 @@ set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--export-dynamic
 include(cmake/add_dependency.cmake)
 add_dependency(ChimeraTK-ApplicationCore 01.04 REQUIRED)
 
+find_package(MicroDAQ COMPONENTS daq)
+if(MicroDAQ_FOUND)
+  message(STATUS "Found MicroDAQ package and will use ROOT DAQ")
+  message(STATUS "MicroDAQ libraries: ${MicroDAQ_LIBRARIES}")
+else()
+  message(STATUS "MicroDAQ package not found. Will use ApplicationCore DAQ.")
+endif(MicroDAQ_FOUND)
+
 find_library(procps NAMES procps REQUIRED)
 # Just check for procps.h although more headers are used by the watchdog
 # If that header is found assume that the dev package is installed
@@ -43,25 +51,7 @@ if(NOT HAS_PROCPS_H)
   message(FATAL_ERROR "Could not find procps header file. Please install procps dev pacakge.")
 endif(NOT HAS_PROCPS_H)
 
-if(ADAPTER STREQUAL "OPCUA")
-  message("Building against the OPC UA ControlSystemAdater")
-  add_dependency(ChimeraTK-ControlSystemAdapter-OPCUAAdapter REQUIRED)
-  set(ControlSystemAdapter_LIBRARIES ${ChimeraTK-ControlSystemAdapter-OPCUAAdapter_LIBRARIES})
-elseif(ADAPTER STREQUAL "DOOCS")
-  message("Building against the DOOCS ControlSystemAdater")
-  add_dependency(ChimeraTK-ControlSystemAdapter-DoocsAdapter REQUIRED)
-  set(ControlSystemAdapter_LIBRARIES ${ChimeraTK-ControlSystemAdapter-DoocsAdapter_LIBRARIES})
-elseif(ADAPTER STREQUAL "EPICSIOC")
-  message("Building against the EPICS ControlSystemAdater")
-  add_dependency(ChimeraTK-ControlSystemAdapter-EPICS-IOC-Adapter REQUIRED)
-  set(ControlSystemAdapter_LIBRARIES ${ChimeraTK-ControlSystemAdapter-EPICS-IOC-Adapter_LIBRARIES})
-  set(ControlSystemAdapter_LINK_FLAGS ${ChimeraTK-ControlSystemAdapter-EPICS-IOC-Adapter_LINK_FLAGS})
-else()
-  message(FATAL_ERROR "Please select your ControlSystemAdapter to use by passing to the cmake command line:\n"
-                      "   -DADAPTER=EPICSIOC to use EPICS\n"
-                      "   -DADAPTER=DOOCS to use DOOCS\n"
-                      "   -DADAPTER=OPCUA to use OPC-UA")
-endif()
+include(cmake/set_control_system_adapter.cmake)
 
 FIND_PACKAGE(PkgConfig REQUIRED)
 set(LIBXML++_VERSION "libxml++-2.6")
@@ -102,18 +92,25 @@ if(CMAKE_BUILD_TYPE MATCHES Debug)
   set_target_properties(${PROJECT_NAME}lib PROPERTIES VERSION ${${PROJECT_NAME}_FULL_LIBRARY_VERSION}
                                                     SOVERSION ${${PROJECT_NAME}_SOVERSION})
   target_link_libraries(${PROJECT_NAME}lib ${Boost_LIBRARIES}
+                                           ${MicroDAQ_LIBRARIES}
                                            ${ChimeraTK-ApplicationCore_LIBRARIES}
                                            procps
-                                           ${Boost_process_LIBRARIES})
+                                           ${Boost_process_LIBRARIES}
+                                           )
   install(TARGETS ${PROJECT_NAME}lib LIBRARY DESTINATION  lib)                                            
   
   # main server executable
   add_executable(${PROJECT_NAME} ${server_sources})
   target_link_libraries(${PROJECT_NAME} ${ChimeraTK-ApplicationCore_LIBRARIES} 
-                                        ${ControlSystemAdapter_LIBRARIES}
+                                        ${Adapter_LIBRARIES}
                                         ${LibXML++_LIBRARIES} 
                                         procps
                                         ${PROJECT_NAME}lib)
+
+  if(MicroDAQ_FOUND)
+    set_target_properties(${PROJECT_NAME}lib PROPERTIES COMPILE_FLAGS "-DROOTDAQ")
+    set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS "-DROOTDAQ")
+  endif(MicroDAQ_FOUND)
   
   # XML file generation
   add_executable(${PROJECT_NAME}-xmlGenerator ${server_sources})
@@ -121,7 +118,8 @@ if(CMAKE_BUILD_TYPE MATCHES Debug)
   target_link_libraries(${PROJECT_NAME}-xmlGenerator ${ChimeraTK-ApplicationCore_LIBRARIES} 
                                                      ${LibXML++_LIBRARIES} 
                                                      procps
-                                                     ${PROJECT_NAME}lib)
+                                                     ${PROJECT_NAME}lib
+                                                     ${MicroDAQ_LIBRARIES})
                                                      
   if( ENABLE_TESTING )
     add_subdirectory(test)
@@ -131,19 +129,24 @@ else()
   # main server executable
   add_executable(${PROJECT_NAME} ${server_sources} ${library_sources})
   if(ADAPTER STREQUAL EPICSIOC) # This is exclusive to EPICSIOC, because this line was not present, before I added EPICSIOS as an adapter.
-    set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS ${ControlSystemAdapter_LINK_FLAGS})
+    set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS ${Adapter_LINK_FLAGS})
   endif(ADAPTER STREQUAL EPICSIOC)
   target_link_libraries(${PROJECT_NAME} ${ChimeraTK-ApplicationCore_LIBRARIES} 
-                                        ${ControlSystemAdapter_LIBRARIES}
+                                        ${Adapter_LIBRARIES}
                                         ${LibXML++_LIBRARIES} 
-                                        procps)
+                                        procps
+                                        ${MicroDAQ_LIBRARIES})
+  if(MicroDAQ_FOUND)
+    set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "-DROOTDAQ")
+  endif(MicroDAQ_FOUND)                                        
   
   # XML file generation
   add_executable(${PROJECT_NAME}-xmlGenerator ${server_sources} ${library_sources})
   set_target_properties(${PROJECT_NAME}-xmlGenerator PROPERTIES COMPILE_FLAGS "-DGENERATE_XML")
   target_link_libraries(${PROJECT_NAME}-xmlGenerator ${ChimeraTK-ApplicationCore_LIBRARIES} 
                                                      ${LibXML++_LIBRARIES}
-                                                     procps) 
+                                                     procps
+                                                     ${MicroDAQ_LIBRARIES}) 
 endif(CMAKE_BUILD_TYPE MATCHES Debug)
 
 # The make coverage command is only available in debug mode

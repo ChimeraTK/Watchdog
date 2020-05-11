@@ -11,13 +11,17 @@
 #undef GENERATE_XML
 #include <ChimeraTK/ApplicationCore/ApplicationCore.h>
 #include <ChimeraTK/ApplicationCore/ConfigReader.h>
-#include <ChimeraTK/ApplicationCore/MicroDAQ.h>
 #include "ChimeraTK/ApplicationCore/PeriodicTrigger.h"
 #include "ChimeraTK/ApplicationCore/ServerHistory.h"
 
 #include "SystemInfoModule.h"
 #include "ProcessModule.h"
 
+#ifdef ROOTDAQ
+#include "MicroDAQROOT.h"
+#else
+#include <ChimeraTK/ApplicationCore/MicroDAQ.h>
+#endif
 
 #ifdef ENABLE_LOGGING
 #include "LoggingModule.h"
@@ -78,8 +82,11 @@ struct WatchdogServer: public ctk::Application {
   LoggingModule systemInfoLog{this, "systeminfoLog", "Logging module of the system information module"};
 #endif
 
+#ifdef ROOTDAQ
+  ctk::RootDAQ<uint64_t> microDAQ;
+#else
   ctk::MicroDAQ<uint64_t> microDAQ;
-
+#endif
   /*
    * History module if history is enabled in the config file.
    * In th config file use:
