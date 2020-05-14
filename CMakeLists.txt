@@ -35,7 +35,7 @@ set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--export-dynamic
 include(cmake/add_dependency.cmake)
 add_dependency(ChimeraTK-ApplicationCore 01.04 REQUIRED)
 
-find_package(MicroDAQ COMPONENTS daq)
+find_package(MicroDAQ 00.03 COMPONENTS ROOT)
 if(MicroDAQ_FOUND)
   message(STATUS "Found MicroDAQ package and will use ROOT DAQ")
   message(STATUS "MicroDAQ libraries: ${MicroDAQ_LIBRARIES}")
