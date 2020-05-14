@@ -215,6 +215,7 @@ void WatchdogServer::defineConnections() {
     // configuration of the DAQ system itself
     trigger.tick >> microDAQ.trigger;
     microDAQ.findTag("MicroDAQ.CONFIG").connectTo(cs["microDAQ"]);
+    microDAQ.findTag("MicroDAQ.STATUS").connectTo(cs["microDAQ"]["status"]);
   }
 
   if(config.get<uint>("enableServerHistory") != 0){
