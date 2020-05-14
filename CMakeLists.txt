@@ -35,13 +35,13 @@ set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--export-dynamic
 include(cmake/add_dependency.cmake)
 add_dependency(ChimeraTK-ApplicationCore 01.04 REQUIRED)
 
-find_package(MicroDAQ 00.03 COMPONENTS ROOT)
-if(MicroDAQ_FOUND)
+find_package(ChimeraTK-DAQ 00.04 COMPONENTS ROOT)
+if(ChimeraTK-DAQ)
   message(STATUS "Found MicroDAQ package and will use ROOT DAQ")
   message(STATUS "MicroDAQ libraries: ${MicroDAQ_LIBRARIES}")
 else()
   message(STATUS "MicroDAQ package not found. Will use ApplicationCore DAQ.")
-endif(MicroDAQ_FOUND)
+endif(ChimeraTK-DAQ)
 
 find_library(procps NAMES procps REQUIRED)
 # Just check for procps.h although more headers are used by the watchdog
@@ -107,10 +107,10 @@ if(CMAKE_BUILD_TYPE MATCHES Debug)
                                         procps
                                         ${PROJECT_NAME}lib)
 
-  if(MicroDAQ_FOUND)
+  if(ChimeraTK-DAQ)
     set_target_properties(${PROJECT_NAME}lib PROPERTIES COMPILE_FLAGS "-DROOTDAQ")
     set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS "-DROOTDAQ")
-  endif(MicroDAQ_FOUND)
+  endif(ChimeraTK-DAQ)
   
   # XML file generation
   add_executable(${PROJECT_NAME}-xmlGenerator ${server_sources})
@@ -136,9 +136,9 @@ else()
                                         ${LibXML++_LIBRARIES} 
                                         procps
                                         ${MicroDAQ_LIBRARIES})
-  if(MicroDAQ_FOUND)
+  if(ChimeraTK-DAQ)
     set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "-DROOTDAQ")
-  endif(MicroDAQ_FOUND)                                        
+  endif(ChimeraTK-DAQ)                                        
   
   # XML file generation
   add_executable(${PROJECT_NAME}-xmlGenerator ${server_sources} ${library_sources})
