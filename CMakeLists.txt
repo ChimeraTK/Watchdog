@@ -123,6 +123,7 @@ if(CMAKE_BUILD_TYPE MATCHES Debug)
                                                      
   if( ENABLE_TESTING )
     add_subdirectory(test)
+    ENABLE_TESTING()
   endif( ENABLE_TESTING )                                                     
   
 else()

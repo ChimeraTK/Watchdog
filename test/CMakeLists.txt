@@ -1,5 +1,4 @@
 FIND_PACKAGE(Boost COMPONENTS unit_test_framework date_time filesystem)
-ENABLE_TESTING()
 
 # Create the executable for automated unit testing.
 add_executable(test_procReader ${CMAKE_SOURCE_DIR}/test/test_procReader.cc)
