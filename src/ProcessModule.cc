@@ -438,8 +438,16 @@ void ProcessControlModule::resetProcessHandler(std::stringstream* handlerMessage
 }
 
 void ProcessControlModule::terminate(){
-  if(process != nullptr)
+  if(process != nullptr){
+#ifdef ENABLE_LOGGING
+    if(info.processPID > 0){
+      (*logStream) << getTime() << "Process " << getName() << " is disconnected. It is no longer controlled by the ProcessHandler!"
+          " You have to take care of it on your own. PID is: " << info.processPID << std::endl;
+      sendMessage(logging::LogLevel::INFO);
+    }
+#endif
     process->Disconnect();
+  }
   process.reset(nullptr);
   ProcessInfoModule::terminate();
 }
