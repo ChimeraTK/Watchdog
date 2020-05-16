@@ -31,7 +31,6 @@ struct testWD: public ctk::Application {
 
   ProcessInfoModule watchdog{this, "watchdog", "Module monitoring the watchdog process"};
 
-  ctk::ConfigReader config{this, "Configuration", "WatchdogServerConfig.xml"};
 #ifdef ENABLE_LOGGING
   LogFileModule watchdogLogFile{this, "watchdogLog", "Logging module of all watchdog processes"};
   LoggingModule watchdogLog{this, "watchdogLog", "Logging module of the watchdog process"};
@@ -42,38 +41,17 @@ struct testWD: public ctk::Application {
 
   testWD() :
       Application("WatchdogServer") {
-    try{
-      auto nProcesses = config.get<uint>("numberOfProcesses");
-      for(size_t i = 0; i < nProcesses; i++) {
-        std::string processName = std::to_string(i);
-        std::cout << "Adding process: " << processName << std::endl;
-        if(config.get<uint>("enableServerHistory") != 0){
-          processGroup.processes.emplace_back(&processGroup, processName, "process", true);
-        } else {
-          processGroup.processes.emplace_back(&processGroup, processName, "process");
-        }
-        processGroup.processes.back().logStream = nullptr;
-  #ifdef ENABLE_LOGGING
-        processGroup.processesLog.emplace_back(&processGroup, processName, "process log");
-        processGroup.processesLogExternal.emplace_back(&processGroup, processName , "process external log");
-  #endif
-      }
-    } catch (std::out_of_range &e){
-      std::cerr << "Error in the xml file 'WatchdogServerConfig.xml': " << e.what()
-              << std::endl;
-      std::cout << "I will create only one process named PROCESS..." << std::endl;
-      if(config.get<uint>("enableServerHistory") != 0){
-        processGroup.processes.emplace_back(&processGroup, "0", "Test process", true);
-      } else {
-        processGroup.processes.emplace_back(&processGroup, "0", "Test process");
-      }
+    size_t nProcesses = 8;
+    for(size_t i = 0; i < nProcesses; i++) {
+      std::string processName = std::to_string(i);
+      std::cout << "Adding process: " << processName << std::endl;
+      processGroup.processes.emplace_back(&processGroup, processName, "process", true);
       processGroup.processes.back().logStream = nullptr;
-  #ifdef ENABLE_LOGGING
-      processGroup.processesLog.emplace_back(&processGroup, "0", "Process log");
-      processGroup.processesLogExternal.emplace_back(&processGroup, "0", "Process external log");
-  #endif
+#ifdef ENABLE_LOGGING
+      processGroup.processesLog.emplace_back(&processGroup, processName, "process log");
+      processGroup.processesLogExternal.emplace_back(&processGroup, processName , "process external log");
+#endif
     }
-
     ProcessHandler::setupHandler();
  }
 
