@@ -26,7 +26,7 @@ using namespace boost::unit_test_framework;
 
 /**
  * Define a test app to test the ProcessControlModule.
- * The trigger will be given by the control system to realise a
+ * The trigger will be given by the control system to realize a
  * blocking read!
  */
 struct testApp : public ChimeraTK::Application {
@@ -56,43 +56,18 @@ struct testApp : public ChimeraTK::Application {
     /**
      * Define all other connections as done in the ProcessControlModule
      */
-//    cs["Process"]("enableProcess") >> process.enableProcess;
-//    cs["Process"]("SetCMD") >> process.config.cmd;
-//    cs["Process"]("SetPath") >> process.config.path;
-//    cs["Process"]("killSig") >> process.config.killSig;
-//    cs["Process"]("pidOffset") >> process.config.pidOffset;
-//    cs["Process"]("externalLogFile") >> process.config.externalLogfile;
-//    cs["Process"]("maxFails") >> process.config.maxFails;
-//    cs["Process"]("maxRestarts") >> process.config.maxRestarts;
     process.findTag("CS").connectTo(cs["Process"]);
-
-//    cs("logLevel") >> logging.config.logLevel;
-//    cs("logTailLenght") >> logging.config.tailLength;
-//    cs("targetStream") >> logging.config.targetStream;
-//    cs("logFile") >> logging.config.logFile;
     logging.findTag("CS").connectTo(cs["Logging"]);
     process.logging.connectTo(logging.input);
   }
 };
 
 void prepareTest(ChimeraTK::TestFacility *tf, int maxFails, int maxRestarts, std::string cmd, std::string path){
-  auto writeTrigger = tf->getScalar<uint64_t>("trigger/");
-  auto processCMD = tf->getScalar<std::string>("Process/config/command");
-  auto processPath = tf->getScalar<std::string>("Process/config/path");
-  auto enable = tf->getScalar<uint>("Process/enableProcess");
-  auto pmaxFails = tf->getScalar<uint>("Process/config/maxFails");
-  auto pmaxRestarts = tf->getScalar<uint>("Process/config/maxRestarts");
-  BOOST_TEST_MESSAGE("Test maxrestarts==2, maxfails==2 with failing process.");
-  processPath = path;
-  processPath.write();
-  processCMD = cmd;
-  processCMD.write();
-  enable = 1;
-  enable.write();
-  pmaxFails = maxFails;
-  pmaxFails.write();
-  pmaxRestarts = maxRestarts;
-  pmaxRestarts.write();
+  tf->setScalarDefault<std::string>("Process/config/command",cmd);
+  tf->setScalarDefault<std::string>("Process/config/path",path);
+  tf->setScalarDefault<uint>("Process/enableProcess",1);
+  tf->setScalarDefault<uint>("Process/config/maxRestarts",maxRestarts);
+  tf->setScalarDefault<uint>("Process/config/maxFails",maxFails);
 }
 
 BOOST_AUTO_TEST_CASE( testStart) {
@@ -101,18 +76,9 @@ BOOST_AUTO_TEST_CASE( testStart) {
   app.defineConnections();
   ChimeraTK::TestFacility tf;
 
-  // Get the trigger variable thats blocking the application (i.e. ProcessControlModule)
+  prepareTest(&tf,2,2,"sleep 2","/bin/");
   auto writeTrigger = tf.getScalar<uint64_t>("trigger/");
-  auto processCMD = tf.getScalar<std::string>("Process/config/command");
-  auto processPath = tf.getScalar<std::string>("Process/config/path");
   auto enable = tf.getScalar<uint>("Process/enableProcess");
-
-  processPath = std::string("/bin/");
-  processPath.write();
-  processCMD = std::string("sleep 2");
-  processCMD.write();
-  enable = 1;
-  enable.write();
   tf.runApplication();
   writeTrigger.write();
   tf.stepApplication();

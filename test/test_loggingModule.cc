@@ -54,16 +54,12 @@ BOOST_AUTO_TEST_CASE( testLogging) {
   testApp app;
   app.defineConnections();
   ChimeraTK::TestFacility tf;
-
+  tf.setScalarDefault<uint>("Logging/config/logLevel",0);
+  tf.setScalarDefault<uint>("Logging/config/logTailLength",3);
   auto logLevel = tf.getScalar<uint>("Logging/config/logLevel");
-  auto tailLength = tf.getScalar<uint>("Logging/config/logTailLength");
   auto msg = tf.getScalar<std::string>("message");
   auto msgLevel = tf.getScalar<uint>("messageLevel");
 
-  logLevel = 0;
-  logLevel.write();
-  tailLength = 3;
-  tailLength.write();
   tf.runApplication();
   msgLevel = 0;
   msgLevel.write();
