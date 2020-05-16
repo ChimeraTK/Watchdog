@@ -36,12 +36,12 @@ include(cmake/add_dependency.cmake)
 add_dependency(ChimeraTK-ApplicationCore 01.04 REQUIRED)
 
 find_package(ChimeraTK-DAQ 00.04 COMPONENTS ROOT)
-if(ChimeraTK-DAQ)
-  message(STATUS "Found MicroDAQ package and will use ROOT DAQ")
-  message(STATUS "MicroDAQ libraries: ${MicroDAQ_LIBRARIES}")
+if(ChimeraTK-DAQ_FOUND)
+  message(STATUS "Found ChimeraTK-DAQ package and will use ROOT DAQ")
+  message(STATUS "ChimeraTK-DAQ libraries: ${ChimeraTK-DAQ_DAQ_LIBRARIES}")
 else()
-  message(STATUS "MicroDAQ package not found. Will use ApplicationCore DAQ.")
-endif(ChimeraTK-DAQ)
+  message(STATUS "ChimeraTK-DAQ package not found. Will use ApplicationCore DAQ.")
+endif(ChimeraTK-DAQ_FOUND)
 
 find_library(procps NAMES procps REQUIRED)
 # Just check for procps.h although more headers are used by the watchdog
@@ -92,7 +92,7 @@ if(CMAKE_BUILD_TYPE MATCHES Debug)
   set_target_properties(${PROJECT_NAME}lib PROPERTIES VERSION ${${PROJECT_NAME}_FULL_LIBRARY_VERSION}
                                                     SOVERSION ${${PROJECT_NAME}_SOVERSION})
   target_link_libraries(${PROJECT_NAME}lib ${Boost_LIBRARIES}
-                                           ${MicroDAQ_LIBRARIES}
+                                           ${ChimeraTK-DAQ_DAQ_LIBRARIES}
                                            ${ChimeraTK-ApplicationCore_LIBRARIES}
                                            procps
                                            ${Boost_process_LIBRARIES}
@@ -107,10 +107,10 @@ if(CMAKE_BUILD_TYPE MATCHES Debug)
                                         procps
                                         ${PROJECT_NAME}lib)
 
-  if(ChimeraTK-DAQ)
+  if(ChimeraTK-DAQ_FOUND)
     set_target_properties(${PROJECT_NAME}lib PROPERTIES COMPILE_FLAGS "-DROOTDAQ")
     set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS "-DROOTDAQ")
-  endif(ChimeraTK-DAQ)
+  endif(ChimeraTK-DAQ_FOUND)
   
   # XML file generation
   add_executable(${PROJECT_NAME}-xmlGenerator ${server_sources})
@@ -119,7 +119,7 @@ if(CMAKE_BUILD_TYPE MATCHES Debug)
                                                      ${LibXML++_LIBRARIES} 
                                                      procps
                                                      ${PROJECT_NAME}lib
-                                                     ${MicroDAQ_LIBRARIES})
+                                                     ${ChimeraTK-DAQ_DAQ_LIBRARIES})
                                                      
   if( ENABLE_TESTING )
     add_subdirectory(test)
@@ -135,7 +135,7 @@ else()
                                         ${Adapter_LIBRARIES}
                                         ${LibXML++_LIBRARIES} 
                                         procps
-                                        ${MicroDAQ_LIBRARIES})
+                                        ${ChimeraTK-DAQ_DAQ_LIBRARIES})
   if(ChimeraTK-DAQ)
     set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "-DROOTDAQ")
   endif(ChimeraTK-DAQ)                                        
@@ -146,7 +146,7 @@ else()
   target_link_libraries(${PROJECT_NAME}-xmlGenerator ${ChimeraTK-ApplicationCore_LIBRARIES} 
                                                      ${LibXML++_LIBRARIES}
                                                      procps
-                                                     ${MicroDAQ_LIBRARIES}) 
+                                                     ${ChimeraTK-DAQ_DAQ_LIBRARIES}) 
 endif(CMAKE_BUILD_TYPE MATCHES Debug)
 
 # The make coverage command is only available in debug mode
