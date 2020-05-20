@@ -8,6 +8,8 @@
 #include "ProcessModule.h"
 #include <signal.h>
 
+// This symbol is introduced by procps and in boost 1.71 a function likely is used!
+#undef likely
 #include "boost/date_time/posix_time/posix_time.hpp"
 
 void ProcessInfoModule::mainLoop(){

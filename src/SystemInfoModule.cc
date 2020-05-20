@@ -21,6 +21,8 @@
 
 #include "sys_stat.h"
 
+// This symbol is introduced by procps and in boost 1.71 a function likely is used!
+#undef likely
 #include "boost/date_time/posix_time/posix_time.hpp"
 
 #include "Logging.h"

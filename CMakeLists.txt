@@ -43,6 +43,8 @@ else()
   message(STATUS "ChimeraTK-DAQ package not found. Will use ApplicationCore DAQ.")
 endif(ChimeraTK-DAQ_FOUND)
 
+FIND_PACKAGE(Boost COMPONENTS date_time)
+
 find_library(procps NAMES procps REQUIRED)
 # Just check for procps.h although more headers are used by the watchdog
 # If that header is found assume that the dev package is installed
@@ -132,7 +134,8 @@ else()
   if(ADAPTER STREQUAL EPICSIOC) # This is exclusive to EPICSIOC, because this line was not present, before I added EPICSIOS as an adapter.
     set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS ${Adapter_LINK_FLAGS})
   endif(ADAPTER STREQUAL EPICSIOC)
-  target_link_libraries(${PROJECT_NAME} ${ChimeraTK-ApplicationCore_LIBRARIES} 
+  target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES}
+                                        ${ChimeraTK-ApplicationCore_LIBRARIES} 
                                         ${Adapter_LIBRARIES}
                                         ${LibXML++_LIBRARIES} 
                                         procps
@@ -144,7 +147,8 @@ else()
   # XML file generation
   add_executable(${PROJECT_NAME}-xmlGenerator ${server_sources} ${library_sources})
   set_target_properties(${PROJECT_NAME}-xmlGenerator PROPERTIES COMPILE_FLAGS "-DGENERATE_XML")
-  target_link_libraries(${PROJECT_NAME}-xmlGenerator ${ChimeraTK-ApplicationCore_LIBRARIES} 
+  target_link_libraries(${PROJECT_NAME}-xmlGenerator ${Boost_LIBRARIES}
+                                                     ${ChimeraTK-ApplicationCore_LIBRARIES} 
                                                      ${LibXML++_LIBRARIES}
                                                      procps
                                                      ${ChimeraTK-DAQ_DAQ_LIBRARIES}) 
