@@ -140,9 +140,9 @@ else()
                                         ${LibXML++_LIBRARIES} 
                                         procps
                                         ${ChimeraTK-DAQ_DAQ_LIBRARIES})
-  if(ChimeraTK-DAQ)
+  if(ChimeraTK-DAQ_FOUND)
     set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS "-DROOTDAQ")
-  endif(ChimeraTK-DAQ)                                        
+  endif(ChimeraTK-DAQ_FOUND)                                        
   
   # XML file generation
   add_executable(${PROJECT_NAME}-xmlGenerator ${server_sources} ${library_sources})
