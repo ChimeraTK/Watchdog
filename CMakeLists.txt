@@ -5,7 +5,7 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/Modules)
 
 set(${PROJECT_NAME}_MAJOR_VERSION 01)
 set(${PROJECT_NAME}_MINOR_VERSION 02)
-set(${PROJECT_NAME}_PATCH_VERSION 00)
+set(${PROJECT_NAME}_PATCH_VERSION 01)
 include(cmake/set_version_numbers.cmake)
 
 # Options
@@ -153,6 +153,10 @@ else()
                                                      procps
                                                      ${ChimeraTK-DAQ_DAQ_LIBRARIES}) 
 endif(CMAKE_BUILD_TYPE MATCHES Debug)
+
+# Set RPATH to find root dependencies automatically
+set_target_properties( ${PROJECT_NAME} PROPERTIES INSTALL_RPATH_USE_LINK_PATH TRUE)
+set_target_properties( ${PROJECT_NAME}-xmlGenerator PROPERTIES INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 # The make coverage command is only available in debug mode
 if(CMAKE_BUILD_TYPE MATCHES Debug)
