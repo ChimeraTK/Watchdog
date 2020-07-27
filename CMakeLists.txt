@@ -5,7 +5,7 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/Modules)
 
 set(${PROJECT_NAME}_MAJOR_VERSION 01)
 set(${PROJECT_NAME}_MINOR_VERSION 02)
-set(${PROJECT_NAME}_PATCH_VERSION 02)
+set(${PROJECT_NAME}_PATCH_VERSION 03)
 include(cmake/set_version_numbers.cmake)
 
 # Options
@@ -39,6 +39,7 @@ find_package(ChimeraTK-DAQ 00.05 COMPONENTS ROOT)
 if(ChimeraTK-DAQ_FOUND)
   message(STATUS "Found ChimeraTK-DAQ package and will use ROOT DAQ")
   message(STATUS "ChimeraTK-DAQ libraries: ${ChimeraTK-DAQ_DAQ_LIBRARIES}")
+  find_package(ROOT 6.20 REQUIRED COMPONENTS Core Tree)
 else()
   message(STATUS "ChimeraTK-DAQ package not found. Will use ApplicationCore DAQ.")
 endif(ChimeraTK-DAQ_FOUND)
