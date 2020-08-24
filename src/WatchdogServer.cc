@@ -6,6 +6,7 @@
  */
 
 #include "WatchdogServer.h"
+#include "version.h"
 
 #include "boost/filesystem.hpp"
 
@@ -237,6 +238,13 @@ void WatchdogServer::defineConnections() {
     }
     history.findTag("CS").connectTo(cs);
   }
+
+  /**
+   * Server information
+   */
+  ctk::VariableNetworkNode::makeConstant(true, AppVersion::major, 1) >> cs["Server"]["Version"]("major");
+  ctk::VariableNetworkNode::makeConstant(true, AppVersion::minor, 1) >> cs["Server"]["Version"]("minor");
+  ctk::VariableNetworkNode::makeConstant(true, AppVersion::patch, 1) >> cs["Server"]["Version"]("patch");
 //  dumpConnections();
 }
 

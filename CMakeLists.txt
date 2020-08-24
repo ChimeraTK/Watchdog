@@ -5,7 +5,7 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/Modules)
 
 set(${PROJECT_NAME}_MAJOR_VERSION 01)
 set(${PROJECT_NAME}_MINOR_VERSION 02)
-set(${PROJECT_NAME}_PATCH_VERSION 02)
+set(${PROJECT_NAME}_PATCH_VERSION 08)
 include(cmake/set_version_numbers.cmake)
 
 # Options
@@ -33,7 +33,7 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 --coverage")
 set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--export-dynamic -Wl,--no-as-needed")
 
 include(cmake/add_dependency.cmake)
-add_dependency(ChimeraTK-ApplicationCore 01.04 REQUIRED)
+add_dependency(ChimeraTK-ApplicationCore 01.02 REQUIRED)
 
 find_package(ChimeraTK-DAQ 00.05 COMPONENTS ROOT)
 if(ChimeraTK-DAQ_FOUND)
@@ -140,10 +140,7 @@ else()
                                         ${LibXML++_LIBRARIES} 
                                         procps
                                         ${ChimeraTK-DAQ_DAQ_LIBRARIES})
-  if(ChimeraTK-DAQ_FOUND)
-    set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS "-DROOTDAQ")
-  endif(ChimeraTK-DAQ_FOUND)                                        
-  
+ 
   # XML file generation
   add_executable(${PROJECT_NAME}-xmlGenerator ${server_sources} ${library_sources})
   set_target_properties(${PROJECT_NAME}-xmlGenerator PROPERTIES COMPILE_FLAGS "-DGENERATE_XML")
@@ -151,7 +148,14 @@ else()
                                                      ${ChimeraTK-ApplicationCore_LIBRARIES} 
                                                      ${LibXML++_LIBRARIES}
                                                      procps
-                                                     ${ChimeraTK-DAQ_DAQ_LIBRARIES}) 
+                                                     ${ChimeraTK-DAQ_DAQ_LIBRARIES})
+                                                     
+  if(ChimeraTK-DAQ_FOUND)
+    set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS "-DROOTDAQ")
+    set_target_properties(${PROJECT_NAME}-xmlGenerator PROPERTIES COMPILE_FLAGS "-DROOTDAQ") 
+  endif(ChimeraTK-DAQ_FOUND)                                        
+                                                      
+                                                     
 endif(CMAKE_BUILD_TYPE MATCHES Debug)
 
 # Set RPATH to find root dependencies automatically
