@@ -48,6 +48,7 @@ FIND_PACKAGE(Boost COMPONENTS date_time)
 find_library(procps NAMES procps REQUIRED)
 # Just check for procps.h although more headers are used by the watchdog
 # If that header is found assume that the dev package is installed
+include(CheckIncludeFile)
 CHECK_INCLUDE_FILE( proc/procps.h HAS_PROCPS_H)
 if(NOT HAS_PROCPS_H)
   message(FATAL_ERROR "Could not find procps header file. Please install procps dev pacakge.")
