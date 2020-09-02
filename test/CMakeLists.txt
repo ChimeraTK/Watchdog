@@ -39,6 +39,10 @@ target_link_libraries(test_sys_stat procps
                                     ${Boost_LIBRARIES}
                                     ${PROJECT_NAME}lib)
 add_test(test_sys_stat test_sys_stat)
+
+if(ChimeraTK-DAQ_FOUND)
+    set_target_properties(test_watchdog PROPERTIES COMPILE_FLAGS "-DROOTDAQ")
+endif(ChimeraTK-DAQ_FOUND)          
                                     
 FILE( COPY cpuinfo_arm
            cpuinfo_amd64

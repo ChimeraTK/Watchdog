@@ -110,20 +110,20 @@ if(CMAKE_BUILD_TYPE MATCHES Debug)
                                         procps
                                         ${PROJECT_NAME}lib)
 
-  if(ChimeraTK-DAQ_FOUND)
-    set_target_properties(${PROJECT_NAME}lib PROPERTIES COMPILE_FLAGS "-DROOTDAQ")
-    set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS "-DROOTDAQ")
-  endif(ChimeraTK-DAQ_FOUND)
-  
   # XML file generation
   add_executable(${PROJECT_NAME}-xmlGenerator ${server_sources})
-  set_target_properties(${PROJECT_NAME}-xmlGenerator PROPERTIES COMPILE_FLAGS "-DGENERATE_XML")
   target_link_libraries(${PROJECT_NAME}-xmlGenerator ${ChimeraTK-ApplicationCore_LIBRARIES} 
                                                      ${LibXML++_LIBRARIES} 
                                                      procps
                                                      ${PROJECT_NAME}lib
                                                      ${ChimeraTK-DAQ_DAQ_LIBRARIES})
-                                                     
+
+  if(ChimeraTK-DAQ_FOUND)
+    set_target_properties(${PROJECT_NAME}lib PROPERTIES COMPILE_FLAGS "-DROOTDAQ")
+    set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS "-DROOTDAQ")
+    set_target_properties(${PROJECT_NAME}-xmlGenerator PROPERTIES COMPILE_FLAGS "-DROOTDAQ -DGENERATE_XML")
+  endif(ChimeraTK-DAQ_FOUND)
+                                                       
   if( ENABLE_TESTING )
     add_subdirectory(test)
     ENABLE_TESTING()
@@ -144,7 +144,6 @@ else()
  
   # XML file generation
   add_executable(${PROJECT_NAME}-xmlGenerator ${server_sources} ${library_sources})
-  set_target_properties(${PROJECT_NAME}-xmlGenerator PROPERTIES COMPILE_FLAGS "-DGENERATE_XML")
   target_link_libraries(${PROJECT_NAME}-xmlGenerator ${Boost_LIBRARIES}
                                                      ${ChimeraTK-ApplicationCore_LIBRARIES} 
                                                      ${LibXML++_LIBRARIES}
@@ -153,7 +152,7 @@ else()
                                                      
   if(ChimeraTK-DAQ_FOUND)
     set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS "-DROOTDAQ")
-    set_target_properties(${PROJECT_NAME}-xmlGenerator PROPERTIES COMPILE_FLAGS "-DROOTDAQ") 
+    set_target_properties(${PROJECT_NAME}-xmlGenerator PROPERTIES COMPILE_FLAGS "-DROOTDAQ -DGENERATE_XML") 
   endif(ChimeraTK-DAQ_FOUND)                                        
                                                       
                                                      
