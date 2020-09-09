@@ -91,7 +91,7 @@ if( NOT ENABLE_LOGGING )
 endif( NOT ENABLE_LOGGING )
 
 if(CMAKE_BUILD_TYPE MATCHES Debug)
-  add_library(${PROJECT_NAME}lib SHARED ${library_sources} )  
+  add_library(${PROJECT_NAME}lib SHARED ${library_sources} )
   set_target_properties(${PROJECT_NAME}lib PROPERTIES VERSION ${${PROJECT_NAME}_FULL_LIBRARY_VERSION}
                                                     SOVERSION ${${PROJECT_NAME}_SOVERSION})
   target_link_libraries(${PROJECT_NAME}lib ${Boost_LIBRARIES}
@@ -100,20 +100,20 @@ if(CMAKE_BUILD_TYPE MATCHES Debug)
                                            procps
                                            ${Boost_process_LIBRARIES}
                                            )
-  install(TARGETS ${PROJECT_NAME}lib LIBRARY DESTINATION  lib)                                            
-  
+  install(TARGETS ${PROJECT_NAME}lib LIBRARY DESTINATION lib)
+
   # main server executable
   add_executable(${PROJECT_NAME} ${server_sources})
-  target_link_libraries(${PROJECT_NAME} ${ChimeraTK-ApplicationCore_LIBRARIES} 
+  target_link_libraries(${PROJECT_NAME} ${ChimeraTK-ApplicationCore_LIBRARIES}
                                         ${Adapter_LIBRARIES}
-                                        ${LibXML++_LIBRARIES} 
+                                        ${LibXML++_LIBRARIES}
                                         procps
                                         ${PROJECT_NAME}lib)
 
   # XML file generation
   add_executable(${PROJECT_NAME}-xmlGenerator ${server_sources})
-  target_link_libraries(${PROJECT_NAME}-xmlGenerator ${ChimeraTK-ApplicationCore_LIBRARIES} 
-                                                     ${LibXML++_LIBRARIES} 
+  target_link_libraries(${PROJECT_NAME}-xmlGenerator ${ChimeraTK-ApplicationCore_LIBRARIES}
+                                                     ${LibXML++_LIBRARIES}
                                                      procps
                                                      ${PROJECT_NAME}lib
                                                      ${ChimeraTK-DAQ_DAQ_LIBRARIES})
@@ -125,12 +125,12 @@ if(CMAKE_BUILD_TYPE MATCHES Debug)
   else()
     set_target_properties(${PROJECT_NAME}-xmlGenerator PROPERTIES COMPILE_FLAGS "-DGENERATE_XML")
   endif(ChimeraTK-DAQ_FOUND)
-                                                       
+
   if( ENABLE_TESTING )
     add_subdirectory(test)
     ENABLE_TESTING()
-  endif( ENABLE_TESTING )                                                     
-  
+  endif( ENABLE_TESTING )
+
 else()
   # main server executable
   add_executable(${PROJECT_NAME} ${server_sources} ${library_sources})
@@ -138,28 +138,27 @@ else()
     set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS ${Adapter_LINK_FLAGS})
   endif(ADAPTER STREQUAL EPICSIOC)
   target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES}
-                                        ${ChimeraTK-ApplicationCore_LIBRARIES} 
+                                        ${ChimeraTK-ApplicationCore_LIBRARIES}
                                         ${Adapter_LIBRARIES}
-                                        ${LibXML++_LIBRARIES} 
+                                        ${LibXML++_LIBRARIES}
                                         procps
                                         ${ChimeraTK-DAQ_DAQ_LIBRARIES})
- 
+
   # XML file generation
   add_executable(${PROJECT_NAME}-xmlGenerator ${server_sources} ${library_sources})
   target_link_libraries(${PROJECT_NAME}-xmlGenerator ${Boost_LIBRARIES}
-                                                     ${ChimeraTK-ApplicationCore_LIBRARIES} 
+                                                     ${ChimeraTK-ApplicationCore_LIBRARIES}
                                                      ${LibXML++_LIBRARIES}
                                                      procps
                                                      ${ChimeraTK-DAQ_DAQ_LIBRARIES})
-                                                     
+
   if(ChimeraTK-DAQ_FOUND)
     set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS "-DROOTDAQ")
-    set_target_properties(${PROJECT_NAME}-xmlGenerator PROPERTIES COMPILE_FLAGS "-DROOTDAQ -DGENERATE_XML") 
+    set_target_properties(${PROJECT_NAME}-xmlGenerator PROPERTIES COMPILE_FLAGS "-DROOTDAQ -DGENERATE_XML")
   else()
     set_target_properties(${PROJECT_NAME}-xmlGenerator PROPERTIES COMPILE_FLAGS "-DGENERATE_XML")
-  endif(ChimeraTK-DAQ_FOUND)                                        
-                                                      
-                                                     
+  endif(ChimeraTK-DAQ_FOUND)
+
 endif(CMAKE_BUILD_TYPE MATCHES Debug)
 
 # Set RPATH to find root dependencies automatically
@@ -197,12 +196,12 @@ else()
   install(TARGETS ${PROJECT_NAME}-xmlGenerator RUNTIME DESTINATION bin)
 endif()
 
-# install config files to /etc/... This allows the user to change config files and keeping these changes even if a new version of the 
-# package is installed. 
+# install config files to /etc/... This allows the user to change config files and keeping these changes even if a new version of the
+# package is installed.
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/configs/chimeratk-watchdog.service.in ${CMAKE_CURRENT_BINARY_DIR}/chimeratk-watchdog.service @ONLY)
 install(FILES ${CMAKE_SOURCE_DIR}/configs/WatchdogServerConfig.xml
         DESTINATION /etc/chimeratk/${PROJECT_NAME})
-# most systemd service files are stored in /var, but here we want to allow the user to change it -> install to /etc/... like other conf files        
+# most systemd service files are stored in /var, but here we want to allow the user to change it -> install to /etc/... like other conf files
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/chimeratk-watchdog.service
         DESTINATION /etc/chimeratk/${PROJECT_NAME})
 IF(ADAPTER STREQUAL "OPCUA")
