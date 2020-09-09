@@ -122,6 +122,8 @@ if(CMAKE_BUILD_TYPE MATCHES Debug)
     set_target_properties(${PROJECT_NAME}lib PROPERTIES COMPILE_FLAGS "-DROOTDAQ")
     set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS "-DROOTDAQ")
     set_target_properties(${PROJECT_NAME}-xmlGenerator PROPERTIES COMPILE_FLAGS "-DROOTDAQ -DGENERATE_XML")
+  else()
+    set_target_properties(${PROJECT_NAME}-xmlGenerator PROPERTIES COMPILE_FLAGS "-DGENERATE_XML")
   endif(ChimeraTK-DAQ_FOUND)
                                                        
   if( ENABLE_TESTING )
@@ -153,6 +155,8 @@ else()
   if(ChimeraTK-DAQ_FOUND)
     set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS "-DROOTDAQ")
     set_target_properties(${PROJECT_NAME}-xmlGenerator PROPERTIES COMPILE_FLAGS "-DROOTDAQ -DGENERATE_XML") 
+  else()
+    set_target_properties(${PROJECT_NAME}-xmlGenerator PROPERTIES COMPILE_FLAGS "-DGENERATE_XML")
   endif(ChimeraTK-DAQ_FOUND)                                        
                                                       
                                                      
