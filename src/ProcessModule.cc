@@ -74,7 +74,7 @@ void ProcessInfoModule::FillProcInfo(const std::shared_ptr<proc_t> &info){
       boost::posix_time::time_duration diff = now - time_stamp;
       statistics.pcpu = 1. * (statistics.utime + statistics.stime + statistics.cutime + statistics.cstime - old_time) / input.ticksPerSecond
           / (1.*diff.total_milliseconds() / 1000) * 100;
-      statistics.avpcpu = 1. * (statistics.utime + statistics.stime + statistics.cutime + statistics.cstime) / input.ticksPerSecond / statistics.runtime
+      statistics.avgcpu = 1. * (statistics.utime + statistics.stime + statistics.cutime + statistics.cstime) / input.ticksPerSecond / statistics.runtime
           * 100;
     }
     time_stamp = now;
@@ -90,7 +90,7 @@ void ProcessInfoModule::FillProcInfo(const std::shared_ptr<proc_t> &info){
     statistics.nice         = 0;
     statistics.rss          = 0;
     statistics.pcpu         = 0;
-    statistics.avpcpu       = 0;
+    statistics.avgcpu       = 0;
     statistics.runtime      = 0;
     statistics.mem          = 0;
     statistics.memoryUsage  = 0.;

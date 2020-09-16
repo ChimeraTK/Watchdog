@@ -136,7 +136,7 @@ struct ProcessInfoModule : public ctk::ApplicationModule {
      * CPU usage averaged over the whole runtime of the process.
      * The process time includes utime, stime, sutime, sctime.
      */
-    ctk::ScalarOutput<double> avpcpu { this, "avpcpu", "%", "Average CPU usage",
+    ctk::ScalarOutput<double> avgcpu { this, "avgcpu", "%", "Average CPU usage",
       { "CS", "PROCESS", getName(), "DAQ", "History" } };
     /** @} */
   } statistics{this, "statistics", "Process statistics read from the operating system"};
