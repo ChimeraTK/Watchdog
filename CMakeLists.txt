@@ -35,7 +35,7 @@ set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--export-dynamic
 include(cmake/add_dependency.cmake)
 add_dependency(ChimeraTK-ApplicationCore 01.02 REQUIRED)
 
-find_package(ChimeraTK-DAQ 00.05 COMPONENTS ROOT)
+find_package(ChimeraTK-DAQ 00.06 COMPONENTS ROOT)
 if(ChimeraTK-DAQ_FOUND)
   message(STATUS "Found ChimeraTK-DAQ package and will use ROOT DAQ")
   message(STATUS "ChimeraTK-DAQ libraries: ${ChimeraTK-DAQ_DAQ_LIBRARIES}")
