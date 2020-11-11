@@ -4,8 +4,8 @@ cmake_minimum_required(VERSION 2.8)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/Modules)
 
 set(${PROJECT_NAME}_MAJOR_VERSION 01)
-set(${PROJECT_NAME}_MINOR_VERSION 02)
-set(${PROJECT_NAME}_PATCH_VERSION 08)
+set(${PROJECT_NAME}_MINOR_VERSION 03)
+set(${PROJECT_NAME}_PATCH_VERSION 00)
 include(cmake/set_version_numbers.cmake)
 
 # Options
@@ -19,26 +19,14 @@ else()
   SET( SUPPRESS_AUTO_DOC_BUILD TRUE)
 endif( ENABLE_DOCUMENTAION )
 
-# Moderate version of the compiler flags
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -fPIC -Wextra -ansi -Wuninitialized -O3 -fomit-frame-pointer")
-
-# add constants for HOST and USER
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DUSER=\\\"`whoami`\\\" -DHOST=\\\"`hostname`\\\"")
-
-#use -DCMAKE_BUILD_TYPE=Debug in your cmake command to turn on the coverage option
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 --coverage")
-#set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O3 --coverage")
-
-# linker flags
-set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,--export-dynamic -Wl,--no-as-needed")
-
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/set_default_flags.cmake)
 include(cmake/add_dependency.cmake)
-add_dependency(ChimeraTK-ApplicationCore 01.02 REQUIRED)
+add_dependency(ChimeraTK-ApplicationCore 02.00 REQUIRED)
 
-find_package(ChimeraTK-DAQ 00.06 COMPONENTS ROOT)
+find_package(ChimeraTK-DAQ 01.00)
 if(ChimeraTK-DAQ_FOUND)
   message(STATUS "Found ChimeraTK-DAQ package and will use ROOT DAQ")
-  message(STATUS "ChimeraTK-DAQ libraries: ${ChimeraTK-DAQ_DAQ_LIBRARIES}")
+  message(STATUS "ChimeraTK-DAQ libraries: ${ChimeraTK-DAQ_LIBRARIES}")
 else()
   message(STATUS "ChimeraTK-DAQ package not found. Will use ApplicationCore DAQ.")
 endif(ChimeraTK-DAQ_FOUND)
@@ -82,20 +70,16 @@ if(ENABLE_LOGGING)
   add_definitions(-DENABLE_LOGGING)
 else()
   MESSAGE(STATUS "Logging modules are disabled.")
-endif(ENABLE_LOGGING)
-
-
-if( NOT ENABLE_LOGGING )
   list(REMOVE_ITEM library_sources ${CMAKE_CURRENT_SOURCE_DIR}/src/Logging.cc
-                                     ${CMAKE_CURRENT_SOURCE_DIR}/src/LoggingModule.cc)
-endif( NOT ENABLE_LOGGING )
+                                   ${CMAKE_CURRENT_SOURCE_DIR}/src/LoggingModule.cc)
+endif(ENABLE_LOGGING)
 
 if(CMAKE_BUILD_TYPE MATCHES Debug)
   add_library(${PROJECT_NAME}lib SHARED ${library_sources} )
   set_target_properties(${PROJECT_NAME}lib PROPERTIES VERSION ${${PROJECT_NAME}_FULL_LIBRARY_VERSION}
                                                     SOVERSION ${${PROJECT_NAME}_SOVERSION})
   target_link_libraries(${PROJECT_NAME}lib ${Boost_LIBRARIES}
-                                           ${ChimeraTK-DAQ_DAQ_LIBRARIES}
+                                           ${ChimeraTK-DAQ_LIBRARIES}
                                            ${ChimeraTK-ApplicationCore_LIBRARIES}
                                            procps
                                            ${Boost_process_LIBRARIES}
@@ -116,7 +100,7 @@ if(CMAKE_BUILD_TYPE MATCHES Debug)
                                                      ${LibXML++_LIBRARIES}
                                                      procps
                                                      ${PROJECT_NAME}lib
-                                                     ${ChimeraTK-DAQ_DAQ_LIBRARIES})
+                                                     ${ChimeraTK-DAQ_LIBRARIES})
 
   if(ChimeraTK-DAQ_FOUND)
     set_target_properties(${PROJECT_NAME}lib PROPERTIES COMPILE_FLAGS "-DROOTDAQ")

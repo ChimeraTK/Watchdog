@@ -48,12 +48,12 @@ ProcessHandler::ProcessHandler(const std::string &_PIDFileName, const bool _dele
     else
       _PID = -1;
   }
-};
+}
 
 ProcessHandler::ProcessHandler(const std::string &_PIDFileName, const bool _deletePIDFile, std::ostream &_stream, const std::string &_name):
  pid(-1), pidFile("/tmp/" + _PIDFileName + ".PID"), deletePIDFile(_deletePIDFile), signum(SIGINT),
  os(_stream), log(logging::LogLevel::DEBUG), name(_name + "/ProcessHandler: "), connected(true), killTimeout(1) {
-};
+}
 
 
 ProcessHandler::~ProcessHandler() {
@@ -191,7 +191,7 @@ size_t ProcessHandler::startProcess(const std::string &path, const std::string &
     }
 
     // prepare arguments
-    auto args = split_arguments(cmd);
+    const auto args = split_arguments(cmd);
     char * exec_args[args.size()];
     int arg_count = 0;
     if(log == logging::LogLevel::DEBUG){

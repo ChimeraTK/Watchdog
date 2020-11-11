@@ -12,6 +12,17 @@
 #undef likely
 #include "boost/date_time/posix_time/posix_time.hpp"
 
+void ProcessInfoModule::prepare(){
+  auto daq = findTag("DAQ");
+  // ToDo: Remove once the bug in the VitualModule is fixed (issue #30)
+  daq.setOwner(this);
+  daq.writeAll();
+#ifdef ENABLE_LOGGING
+  logging.message.write();
+  logging.messageLevel.write();
+#endif
+}
+
 void ProcessInfoModule::mainLoop(){
   info.processPID = getpid();
   info.processPID.write();
@@ -101,8 +112,9 @@ void ProcessInfoModule::FillProcInfo(const std::shared_ptr<proc_t> &info){
 void ProcessInfoModule::terminate(){
   ApplicationModule::terminate();
 #ifdef ENABLE_LOGGING
-  if(logStream != nullptr)
+  if(logStream != nullptr){
     delete logStream;
+  }
   logStream = 0;
 #endif
 }

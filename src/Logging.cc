@@ -57,9 +57,10 @@ void logging::formatLogTail(std::istream  &data, std::ostream &os, size_t number
   }
 }
 
-std::vector<Message> logging::stripMessages(std::stringstream &msg, size_t maxCharacters){
-  std::vector<Message> l;
-  char s[maxCharacters];
+std::vector<Message> logging::stripMessages(std::stringstream &msg, const size_t maxCharacters){
+  std::vector<Message> messages;
+//  const size_t tmp = maxCharacters;
+  char* s = new char(maxCharacters);
   while(msg.good()){
     Message singleMsg;
     msg.getline(s, maxCharacters);
@@ -73,28 +74,23 @@ std::vector<Message> logging::stripMessages(std::stringstream &msg, size_t maxCh
     } else {
       singleMsg.message << s;
     }
-    if(auto pos = singleMsg.message.str().find("INFO::") != std::string::npos){
-      singleMsg.logLevel = LogLevel::INFO;
-      singleMsg.message.str(singleMsg.message.str().substr(pos+5,singleMsg.message.str().length()));
-    } else if(auto pos = singleMsg.message.str().find("WARNING::") != std::string::npos){
-      singleMsg.logLevel = LogLevel::WARNING;
-      singleMsg.message.str(singleMsg.message.str().substr(pos+8,singleMsg.message.str().length()));
-    } else if(auto pos = singleMsg.message.str().find("ERROR::") != std::string::npos){
-      singleMsg.message.str(singleMsg.message.str().substr(pos+6,singleMsg.message.str().length()));
-    } else if(auto pos = singleMsg.message.str().find("SILENT::") != std::string::npos){
-      singleMsg.logLevel = LogLevel::SILENT;
-      singleMsg.message.str(singleMsg.message.str().substr(pos+7,singleMsg.message.str().length()));
-    } else if(auto pos = singleMsg.message.str().find("DEBUG::") != std::string::npos){
-      singleMsg.logLevel = LogLevel::DEBUG;
-      singleMsg.message.str(singleMsg.message.str().substr(pos+6,singleMsg.message.str().length()));
-    } else {
-      singleMsg.logLevel = LogLevel::DEBUG;
+
+    std::vector<LogLevel> levelNames = {LogLevel::INFO, LogLevel::WARNING, LogLevel::ERROR, LogLevel::DEBUG};
+    for(auto it = levelNames.begin(); it != levelNames.end(); ++it){
+      std::stringstream ss;
+      ss << (*it);
+      size_t pos = singleMsg.message.str().find(ss.str());
+      if(pos != std::string::npos){
+        singleMsg.logLevel = (*it);
+        singleMsg.message.str(singleMsg.message.str().substr(pos+ss.str().length()-1,singleMsg.message.str().length()));
+        break;
+      }
     }
 
-    l.push_back(std::move(singleMsg));
+    messages.push_back(std::move(singleMsg));
   }
-
-  return l;
+  delete [] s;
+  return messages;
 }
 
 Message::Message(const std::string &msg, const LogLevel &level) :

@@ -124,29 +124,16 @@ BOOST_AUTO_TEST_CASE( testPerformance) {
   // Get the trigger variable thats blocking the application (i.e. ProcessControlModule)
   auto writeTrigger = tf.getScalar<uint64_t>("trigger/");
 #ifdef ENABLE_LOGGING
-  auto logFile = tf.getScalar<std::string>("watchdog/config/logFile");
-  ChimeraTK::ScalarRegisterAccessor<uint> targetStream[10] = {
-  tf.getScalar<uint>("processes/0/config/targetStream"),
-  tf.getScalar<uint>("processes/1/config/targetStream"),
-  tf.getScalar<uint>("processes/2/config/targetStream"),
-  tf.getScalar<uint>("processes/3/config/targetStream"),
-  tf.getScalar<uint>("processes/4/config/targetStream"),
-  tf.getScalar<uint>("processes/5/config/targetStream"),
-  tf.getScalar<uint>("processes/6/config/targetStream"),
-  tf.getScalar<uint>("processes/7/config/targetStream"),
-  tf.getScalar<uint>("watchdog/config/targetStream"),
-  tf.getScalar<uint>("system/config/targetStream")};
+  tf.setScalarDefault("watchdog/config/logFile", (std::string)"test_watchdog.log");
+  for(size_t i = 0; i < 8; ++i){
+    std::string name = "processes/";
+    name = name + std::to_string(i) + "/config/targetStream";
+    tf.setScalarDefault(name.data(),(uint)1);
+  }
+  tf.setScalarDefault("watchdog/config/targetStream", (uint)1);
+  tf.setScalarDefault("system/config/targetStream", (uint)1);
 #endif
   tf.runApplication();
-#ifdef ENABLE_LOGGING
-  for(int i = 0; i < 10; i++){
-    targetStream[i] = 1;
-    targetStream[i].write();
-  }
-
-  logFile = std::string("test_watchdog.log");
-  logFile.write();
-#endif
   for(size_t i = 1; i < 5; i++){
     writeTrigger = i;
     writeTrigger.write();

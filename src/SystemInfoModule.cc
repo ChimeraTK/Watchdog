@@ -27,6 +27,13 @@
 
 #include "Logging.h"
 
+void initialiseDAQ(ctk::ApplicationModule* module){
+  auto daq = module->findTag("DAQ");
+  // ToDo: Remove once the bug in the VitualModule is fixed (issue #30)
+  daq.setOwner(module);
+  daq.writeAll();
+}
+
 SystemInfoModule::SystemInfoModule(EntityOwner *owner, const std::string &name,
     const std::string &description, bool eliminateHierarchy,
     const std::unordered_set<std::string> &tags) :
@@ -47,13 +54,45 @@ SystemInfoModule::SystemInfoModule(EntityOwner *owner, const std::string &name,
 #endif
 }
 
+void SystemInfoModule::prepare(){
+  // Set variables that are read by other modules here
+  double uptime_secs;
+  double idle_secs;
+  // read the system start time (uncertainty in the order of seconds...)
+  uptime(&uptime_secs, &idle_secs);
+  auto now = boost::posix_time::second_clock::local_time();
+  status.startTime = boost::posix_time::to_time_t(now) - std::stoi(std::to_string(uptime_secs));
+  status.startTimeStr = boost::posix_time::to_simple_string(boost::posix_time::from_time_t(status.startTime));
+  status.startTime.write();
+  status.startTimeStr.write();
+  status.uptime_secTotal = std::stoi(std::to_string(uptime_secs));
+  status.uptime_secTotal.write();
+
+  meminfo();
+  try {
+    status.maxMem    = std::stoi(std::to_string(kb_main_total));
+    status.maxMem.write();
+  } catch(std::exception &e) {
+    (*logStream) << getTime(this) << "meminfo conversion failed: " << e.what() << std::endl;
+#ifdef ENABLE_LOGGING
+    sendMessage(logging::LogLevel::ERROR);
+#endif
+  }
+
+  info.ticksPerSecond = sysconf(_SC_CLK_TCK);
+  info.ticksPerSecond.write();
+#ifdef ENABLE_LOGGING
+  logging.message.write();
+  logging.messageLevel.write();
+#endif
+  initialiseDAQ(this);
+}
+
 void SystemInfoModule::mainLoop() {
   for(auto it = sysInfo.ibegin(); it != sysInfo.iend(); it++) {
     info.strInfos.at(it->first) = it->second;
   }
   info.nCPU = sysInfo.getNCpu();
-  info.ticksPerSecond = sysconf(_SC_CLK_TCK);
-
   info.writeAll();
 
   if(lastInfo.size() != (unsigned) (info.nCPU + 1)) {
@@ -79,20 +118,13 @@ void SystemInfoModule::mainLoop() {
 
   readCPUInfo(lastInfo);
 
-  // read the system start time (uncertainty in the order of seconds...)
-  double uptime_secs;
-  double idle_secs;
-  uptime(&uptime_secs, &idle_secs);
-  auto now = boost::posix_time::second_clock::local_time();
-  status.startTime = boost::posix_time::to_time_t(now) - std::stoi(std::to_string(uptime_secs));
-  status.startTimeStr = boost::posix_time::to_simple_string(boost::posix_time::from_time_t(status.startTime));
-  status.startTime.write();
-  status.startTimeStr.write();
-  
   // findTag takes some time and should not be called with every loop
   auto toWrite = findTag("SYS");
   // ToDo: Remove once the bug in the VitualModule is fixed (issue #30)
   toWrite.setOwner(this);
+
+  double uptime_secs;
+  double idle_secs;
 
   while(true) {
     trigger.read();
@@ -237,11 +269,11 @@ void SystemInfoModule::readCPUInfo(std::vector<cpu> &vcpu) {
 }
 
 void SystemInfoModule::terminate(){
+  ApplicationModule::terminate();
 #ifdef ENABLE_LOGGING
   delete logStream;
   logStream = 0;
 #endif
-  ApplicationModule::terminate();
 }
 
 #ifdef ENABLE_LOGGING
@@ -354,18 +386,18 @@ void FileSystemModule::sendMessage(const logging::LogLevel &level){
 #endif
 
 void FileSystemModule::terminate(){
+  ApplicationModule::terminate();
 #ifdef ENABLE_LOGGING
   delete logStream;
   logStream = 0;
 #endif
-  ApplicationModule::terminate();
 }
 
 NetworkModule::NetworkModule(const std::string &device, EntityOwner *owner, const std::string &name,
        const std::string &description, bool eliminateHierarchy,
        const std::unordered_set<std::string> &tags):
          ctk::ApplicationModule(owner, name, description, eliminateHierarchy, tags){
-  tmp = device;
+  networkDeviceName = device;
 #ifdef ENABLE_LOGGING
   logStream = new std::stringstream();
 #else
@@ -412,7 +444,7 @@ bool NetworkModule::read(){
 }
 
 void NetworkModule::mainLoop(){
-  deviceName = tmp;
+  deviceName = networkDeviceName;
   deviceName.write();
 
   // findTag takes some time and should not be called with every loop
@@ -442,9 +474,9 @@ void NetworkModule::sendMessage(const logging::LogLevel &level){
 #endif
 
 void NetworkModule::terminate(){
+  ApplicationModule::terminate();
 #ifdef ENABLE_LOGGING
   delete logStream;
   logStream = 0;
 #endif
-  ApplicationModule::terminate();
 }

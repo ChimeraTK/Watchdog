@@ -20,6 +20,8 @@
 
 namespace ctk = ChimeraTK;
 
+static void initialiseDAQ(ctk::ApplicationModule* module);
+
 /**
  * \brief This module is used to read system parameter.
  *
@@ -164,6 +166,8 @@ public:
    */
   void mainLoop() override;
 
+  void prepare() override;
+
   /**
    * Clean up ostream pointer and terminate the application module.
    */
@@ -266,6 +270,8 @@ struct FileSystemModule : public ctk::ApplicationModule {
    */
   void mainLoop() override;
 
+  void prepare() override {initialiseDAQ(this);}
+
   /**
    * Clean up ostream pointer and terminate the application module.
    */
@@ -317,6 +323,8 @@ struct NetworkModule : public ctk::ApplicationModule {
         const std::string &description, bool eliminateHierarchy = false,
         const std::unordered_set<std::string> &tags = { });
 
+  std::string networkDeviceName;
+
   /**
    * Publish the device name although it is also encoded in the path by
    * the watchdog  sever.
@@ -336,8 +344,6 @@ struct NetworkModule : public ctk::ApplicationModule {
       "Trigger used to update the watchdog" };
 
   const double MiB = 1./ 1024/1024; ///< Conversion to MiB (not to be mixed up with MB!)
-
-  std::string tmp; ///<Temporary store device name
 
   struct raw{
     std::vector<unsigned long long> data; ///< Used to store raw data read from sys files
@@ -386,6 +392,8 @@ struct NetworkModule : public ctk::ApplicationModule {
    * Main loop function.
    */
   void mainLoop() override;
+
+  void prepare() override {initialiseDAQ(this);}
 
   /**
    * Clean up ostream pointer and terminate the application module.

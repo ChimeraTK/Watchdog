@@ -45,7 +45,7 @@ namespace proc_util{
    * \param os Stream used to print messages.
    */
   size_t getNChilds(const size_t &PGID, std::ostream &os = std::cout);
-};
+}
 
 /**
  * \return New string where spaces are replaced by underscores.
@@ -106,8 +106,8 @@ public:
   SysInfo(const std::string &cpuinfoFile = "/proc/cpuinfo");
 
   /**
-   * Get a system parameter stored in \c/proc/cpuinfo
-   * \remark Not all parameter found in  \c/proc/cpuinfo are available.
+   * Get a system parameter stored in \c /proc/cpuinfo
+   * \remark Not all parameter found in  \c /proc/cpuinfo are available.
    * \param pattern The key used in \c /proc/cpuinfo and the internal map sysData.
    */
   std::string getInfo(const std::string &pattern) {
