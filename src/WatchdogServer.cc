@@ -219,6 +219,9 @@ void WatchdogServer::defineConnections() {
     microDAQ.findTag("MicroDAQ.STATUS").connectTo(cs["microDAQ"]["status"]);
   }
 
+  /*
+   *  Server history
+   */
   if(config.get<uint>("enableServerHistory") != 0){
     int serverHistroyLength = config.get<int>("serverHistoryLength");
     if(serverHistroyLength != 0)
