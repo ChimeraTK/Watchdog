@@ -223,7 +223,7 @@ void WatchdogServer::defineConnections() {
    *  Server history
    */
   if(config.get<uint>("enableServerHistory") != 0){
-    int serverHistroyLength = config.get<int>("serverHistoryLength");
+    uint serverHistroyLength = config.get<uint>("serverHistoryLength");
     if(serverHistroyLength != 0)
       history = ctk::history::ServerHistory{this, "History", "History", serverHistroyLength};
     else

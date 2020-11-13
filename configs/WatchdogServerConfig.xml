@@ -2,6 +2,6 @@
 <configuration>
   <variable name="enableMicroDAQ" type="int32" value="0" />
   <variable name="enableServerHistory" type="uint32" value="0" />
-  <variable name="serverHistoryLength" type="int32" value="1200" />
+  <variable name="serverHistoryLength" type="uint32" value="1200" />
   <variable name="numberOfProcesses" type="uint32" value="8" />
 </configuration>

@@ -126,7 +126,7 @@ else()
                                         ${Adapter_LIBRARIES}
                                         ${LibXML++_LIBRARIES}
                                         procps
-                                        ${ChimeraTK-DAQ_DAQ_LIBRARIES})
+                                        ${ChimeraTK-DAQ_LIBRARIES})
 
   # XML file generation
   add_executable(${PROJECT_NAME}-xmlGenerator ${server_sources} ${library_sources})
@@ -134,7 +134,7 @@ else()
                                                      ${ChimeraTK-ApplicationCore_LIBRARIES}
                                                      ${LibXML++_LIBRARIES}
                                                      procps
-                                                     ${ChimeraTK-DAQ_DAQ_LIBRARIES})
+                                                     ${ChimeraTK-DAQ_LIBRARIES})
 
   if(ChimeraTK-DAQ_FOUND)
     set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS "-DROOTDAQ")

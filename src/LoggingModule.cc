@@ -56,11 +56,14 @@ void LoggingModule::mainLoop(){
   file.reset(new std::ofstream());
   messageCounter = 0;
   while(1){
-    readAll();
-    if(config.targetStream == 3)
+    if(config.targetStream == 3){
+      readAll();
       continue;
-    if(((std::string)input.message).empty())
+    }
+    if(((std::string)input.message).empty()){
+      readAll();
       continue;
+    }
     logging::LogLevel level = static_cast<logging::LogLevel>((uint)input.messageLevel);
     logging::LogLevel setLevel = static_cast<logging::LogLevel>((uint)config.logLevel);
     std::stringstream ss;
@@ -109,6 +112,7 @@ void LoggingModule::mainLoop(){
       status.logTail = tmpLog;
       status.logTail.write();
     }
+    readAll();
   }
 }
 

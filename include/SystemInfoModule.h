@@ -20,8 +20,6 @@
 
 namespace ctk = ChimeraTK;
 
-static void initialiseDAQ(ctk::ApplicationModule* module);
-
 /**
  * \brief This module is used to read system parameter.
  *
@@ -166,8 +164,6 @@ public:
    */
   void mainLoop() override;
 
-  void prepare() override;
-
   /**
    * Clean up ostream pointer and terminate the application module.
    */
@@ -269,8 +265,6 @@ struct FileSystemModule : public ctk::ApplicationModule {
    * Main loop function.
    */
   void mainLoop() override;
-
-  void prepare() override {initialiseDAQ(this);}
 
   /**
    * Clean up ostream pointer and terminate the application module.
@@ -392,8 +386,6 @@ struct NetworkModule : public ctk::ApplicationModule {
    * Main loop function.
    */
   void mainLoop() override;
-
-  void prepare() override {initialiseDAQ(this);}
 
   /**
    * Clean up ostream pointer and terminate the application module.

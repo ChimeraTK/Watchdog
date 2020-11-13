@@ -27,13 +27,6 @@
 
 #include "Logging.h"
 
-void initialiseDAQ(ctk::ApplicationModule* module){
-  auto daq = module->findTag("DAQ");
-  // ToDo: Remove once the bug in the VitualModule is fixed (issue #30)
-  daq.setOwner(module);
-  daq.writeAll();
-}
-
 SystemInfoModule::SystemInfoModule(EntityOwner *owner, const std::string &name,
     const std::string &description, bool eliminateHierarchy,
     const std::unordered_set<std::string> &tags) :
@@ -54,7 +47,7 @@ SystemInfoModule::SystemInfoModule(EntityOwner *owner, const std::string &name,
 #endif
 }
 
-void SystemInfoModule::prepare(){
+void SystemInfoModule::mainLoop() {
   // Set variables that are read by other modules here
   double uptime_secs;
   double idle_secs;
@@ -85,10 +78,6 @@ void SystemInfoModule::prepare(){
   logging.message.write();
   logging.messageLevel.write();
 #endif
-  initialiseDAQ(this);
-}
-
-void SystemInfoModule::mainLoop() {
   for(auto it = sysInfo.ibegin(); it != sysInfo.iend(); it++) {
     info.strInfos.at(it->first) = it->second;
   }
@@ -123,12 +112,7 @@ void SystemInfoModule::mainLoop() {
   // ToDo: Remove once the bug in the VitualModule is fixed (issue #30)
   toWrite.setOwner(this);
 
-  double uptime_secs;
-  double idle_secs;
-
   while(true) {
-    trigger.read();
-
     meminfo();
     try {
       status.maxMem    = std::stoi(std::to_string(kb_main_total));
@@ -179,6 +163,7 @@ void SystemInfoModule::mainLoop() {
     (*logStream) << getTime(this) << "System data updated" << std::endl;
     sendMessage(logging::LogLevel::DEBUG);
 #endif
+    trigger.read();
   }
 }
 
@@ -340,10 +325,8 @@ void FileSystemModule::mainLoop(){
   auto toWrite = findTag("SYS");
   // ToDo: Remove once the bug in the VitualModule is fixed (issue #30)
   toWrite.setOwner(this);
-
+  auto group = readAnyGroup();
   while(1){
-    trigger.read();
-    config.readAll();
     if(read()){
       status.disk_usage = (status.disk_size-status.disk_user)/status.disk_size*100.;
       if(status.disk_usage > config.errorLevel){
@@ -369,6 +352,7 @@ void FileSystemModule::mainLoop(){
       }
       toWrite.writeAll();
     }
+    group.readUntil(trigger.getId());
   }
 }
 
@@ -453,10 +437,10 @@ void NetworkModule::mainLoop(){
   toWrite.setOwner(this);
 
   while(1){
-    trigger.read();
     if(read()){
       toWrite.writeAll();
     }
+    trigger.read();
   }
 }
 

@@ -35,7 +35,7 @@ struct ProcessInfoModule : public ctk::ApplicationModule {
   using ctk::ApplicationModule::ApplicationModule;
 
   ctk::ScalarPushInput<uint64_t> trigger { this, "trigger", "",
-      "Trigger used to update the watchdog" };
+      "Trigger used to update the watchdog"};
 
   struct Status : public ctk::VariableGroup{
     using ctk::VariableGroup::VariableGroup;
@@ -283,7 +283,7 @@ struct ProcessControlModule : public ProcessInfoModule{
 
   /** Start the process */
   ctk::ScalarPollInput<uint> enableProcess { this, "enableProcess", "", "Start the process",
-    { "CS", "PROCESS", getName() } };
+    { "CS", "PROCESS", getName()} };
 
 
   /**
@@ -307,7 +307,7 @@ struct ProcessControlModule : public ProcessInfoModule{
    * Check if the process with PID is running.
    * If not update status variables (processPID, processIsRunning, processRestarts)
    * \param pid PID of the process that was started.
-   * \ToDo: If using a const reference here, starting a process always results in a positive result here.
+   * \todo: If using a const reference here, starting a process always results in a positive result here.
    * Even if starting the process failed. See test_processModule.cc/testFailed, which can not even reproduce this
    * behavior, but shows what to test witch a real server.
    */

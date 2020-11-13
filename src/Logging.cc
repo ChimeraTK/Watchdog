@@ -8,7 +8,10 @@
 #include <iostream>
 #include <algorithm>
 
-using namespace logging;
+#include "boost/date_time/posix_time/posix_time.hpp"
+
+namespace logging{
+
 
 std::ostream& operator<<(std::ostream &os,const LogLevel &level){
   switch(level){
@@ -30,7 +33,8 @@ std::ostream& operator<<(std::ostream &os,const LogLevel &level){
   return os;
 }
 
-void logging::formatLogTail(std::istream  &data, std::ostream &os, size_t numberOfLines){
+#ifdef ENABLE_LOGGING
+void formatLogTail(std::istream  &data, std::ostream &os, size_t numberOfLines){
   // move to the end
   data.seekg(-1,std::ios_base::end);
   size_t line = 0;
@@ -57,10 +61,9 @@ void logging::formatLogTail(std::istream  &data, std::ostream &os, size_t number
   }
 }
 
-std::vector<Message> logging::stripMessages(std::stringstream &msg, const size_t maxCharacters){
+std::vector<Message> stripMessages(std::stringstream &msg, const size_t maxCharacters){
   std::vector<Message> messages;
-//  const size_t tmp = maxCharacters;
-  char* s = new char(maxCharacters);
+  char* s = new char[maxCharacters];
   while(msg.good()){
     Message singleMsg;
     msg.getline(s, maxCharacters);
@@ -114,8 +117,9 @@ Message& Message::operator<<(LogLevel level){
   logLevel = level;
   return *this;
 }
+#endif
 
-#include "boost/date_time/posix_time/posix_time.hpp"
-std::string logging::getTime(){
+std::string getTime(){
   return boost::posix_time::to_simple_string(boost::posix_time::microsec_clock::local_time()) + " ";
+}
 }
