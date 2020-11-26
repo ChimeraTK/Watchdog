@@ -17,10 +17,10 @@
 #include "SystemInfoModule.h"
 #include "ProcessModule.h"
 
-#ifdef ROOTDAQ
+#if defined MICRODAQ
+#include "MicroDAQHDF5.h"
+#elif defined ROOTDAQ
 #include "MicroDAQROOT.h"
-#else
-#include <ChimeraTK/ApplicationCore/MicroDAQ.h>
 #endif
 
 #ifdef ENABLE_LOGGING
@@ -82,10 +82,10 @@ struct WatchdogServer: public ctk::Application {
   LoggingModule systemInfoLog{this, "systeminfoLog", "Logging module of the system information module"};
 #endif
 
-#ifdef ROOTDAQ
+#if defined MICRODAQ
+  ctk::HDF5DAQ<uint64_t> microDAQ;
+#elif defined ROOTDAQ
   ctk::RootDAQ<uint64_t> microDAQ;
-#else
-  ctk::MicroDAQ<uint64_t> microDAQ;
 #endif
   /*
    * History module if history is enabled in the config file.

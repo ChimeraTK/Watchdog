@@ -41,7 +41,11 @@ target_link_libraries(test_sys_stat procps
 add_test(test_sys_stat test_sys_stat)
 
 if(ChimeraTK-DAQ_FOUND)
+  if(USE_ROOT_DAQ)
     set_target_properties(test_watchdog PROPERTIES COMPILE_FLAGS "-DROOTDAQ")
+  else()
+    set_target_properties(test_watchdog PROPERTIES COMPILE_FLAGS "-DMICRODAQ")
+  endif()
 endif(ChimeraTK-DAQ_FOUND)          
                                     
 FILE( COPY cpuinfo_arm

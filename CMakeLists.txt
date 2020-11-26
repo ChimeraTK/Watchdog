@@ -1,17 +1,18 @@
 PROJECT(watchdog-server)
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 2.8.12)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/Modules)
 
 set(${PROJECT_NAME}_MAJOR_VERSION 01)
-set(${PROJECT_NAME}_MINOR_VERSION 03)
-set(${PROJECT_NAME}_PATCH_VERSION 01)
+set(${PROJECT_NAME}_MINOR_VERSION 04)
+set(${PROJECT_NAME}_PATCH_VERSION 00)
 include(cmake/set_version_numbers.cmake)
 
 # Options
 option(ENABLE_TESTING      "Build unit tests"      ON)
 option(ENABLE_LOGGING      "Enable logging for the watchdog server"      ON)
 option(ENABLE_DOCUMENTAION "Enable create of doxygen documentation"      ON)
+option(USE_ROOT_DAQ        "Use ROOT DAQ. Else HDF5 based DAQ is used."  OFF)
 
 if( ENABLE_DOCUMENTAION )
   SET( SUPPRESS_AUTO_DOC_BUILD FALSE)
@@ -23,15 +24,8 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/set_default_flags.cmake)
 include(cmake/add_dependency.cmake)
 add_dependency(ChimeraTK-ApplicationCore 02.00 REQUIRED)
 
-find_package(ChimeraTK-DAQ 01.00)
-if(ChimeraTK-DAQ_FOUND)
-  message(STATUS "Found ChimeraTK-DAQ package and will use ROOT DAQ")
-  message(STATUS "ChimeraTK-DAQ libraries: ${ChimeraTK-DAQ_LIBRARIES}")
-else()
-  message(STATUS "ChimeraTK-DAQ package not found. Will use ApplicationCore DAQ.")
-endif(ChimeraTK-DAQ_FOUND)
-
-FIND_PACKAGE(Boost COMPONENTS date_time)
+find_package(ApplicationCore-MicroDAQ 01.00)
+find_package(Boost COMPONENTS date_time REQUIRED)
 
 find_library(procps NAMES procps REQUIRED)
 # Just check for procps.h although more headers are used by the watchdog
@@ -79,7 +73,7 @@ if(CMAKE_BUILD_TYPE MATCHES Debug)
   set_target_properties(${PROJECT_NAME}lib PROPERTIES VERSION ${${PROJECT_NAME}_FULL_LIBRARY_VERSION}
                                                     SOVERSION ${${PROJECT_NAME}_SOVERSION})
   target_link_libraries(${PROJECT_NAME}lib ${Boost_LIBRARIES}
-                                           ${ChimeraTK-DAQ_LIBRARIES}
+                                           ${ApplicationCore-MicroDAQ_LIBRARIES}
                                            ${ChimeraTK-ApplicationCore_LIBRARIES}
                                            procps
                                            ${Boost_process_LIBRARIES}
@@ -99,16 +93,21 @@ if(CMAKE_BUILD_TYPE MATCHES Debug)
   target_link_libraries(${PROJECT_NAME}-xmlGenerator ${ChimeraTK-ApplicationCore_LIBRARIES}
                                                      ${LibXML++_LIBRARIES}
                                                      procps
-                                                     ${PROJECT_NAME}lib
-                                                     ${ChimeraTK-DAQ_LIBRARIES})
+                                                     ${PROJECT_NAME}lib)
 
-  if(ChimeraTK-DAQ_FOUND)
-    set_target_properties(${PROJECT_NAME}lib PROPERTIES COMPILE_FLAGS "-DROOTDAQ")
-    set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS "-DROOTDAQ")
-    set_target_properties(${PROJECT_NAME}-xmlGenerator PROPERTIES COMPILE_FLAGS "-DROOTDAQ -DGENERATE_XML")
+  if(ApplicationCore-MicroDAQ_FOUND)
+    if(USE_ROOT_DAQ)
+      set_target_properties(${PROJECT_NAME}lib PROPERTIES COMPILE_FLAGS "-DROOTDAQ")
+      set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS "-DROOTDAQ")
+      set_target_properties(${PROJECT_NAME}-xmlGenerator PROPERTIES COMPILE_FLAGS "-DROOTDAQ -DGENERATE_XML")
+    else()
+      set_target_properties(${PROJECT_NAME}lib PROPERTIES COMPILE_FLAGS "-DMICRODAQ")
+      set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS "-DMICRODAQ")
+      set_target_properties(${PROJECT_NAME}-xmlGenerator PROPERTIES COMPILE_FLAGS "-DMICRODAQ -DGENERATE_XML")
+    endif()
   else()
     set_target_properties(${PROJECT_NAME}-xmlGenerator PROPERTIES COMPILE_FLAGS "-DGENERATE_XML")
-  endif(ChimeraTK-DAQ_FOUND)
+  endif(ApplicationCore-MicroDAQ_FOUND)
 
   if( ENABLE_TESTING )
     add_subdirectory(test)
@@ -126,7 +125,7 @@ else()
                                         ${Adapter_LIBRARIES}
                                         ${LibXML++_LIBRARIES}
                                         procps
-                                        ${ChimeraTK-DAQ_LIBRARIES})
+                                        ${ApplicationCore-MicroDAQ_LIBRARIES})
 
   # XML file generation
   add_executable(${PROJECT_NAME}-xmlGenerator ${server_sources} ${library_sources})
@@ -134,14 +133,19 @@ else()
                                                      ${ChimeraTK-ApplicationCore_LIBRARIES}
                                                      ${LibXML++_LIBRARIES}
                                                      procps
-                                                     ${ChimeraTK-DAQ_LIBRARIES})
+                                                     ${ApplicationCore-MicroDAQ_LIBRARIES})
 
-  if(ChimeraTK-DAQ_FOUND)
-    set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS "-DROOTDAQ")
-    set_target_properties(${PROJECT_NAME}-xmlGenerator PROPERTIES COMPILE_FLAGS "-DROOTDAQ -DGENERATE_XML")
+  if(ApplicationCore-MicroDAQ_FOUND)
+    if(USE_ROOT_DAQ)
+      set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS "-DROOTDAQ")
+      set_target_properties(${PROJECT_NAME}-xmlGenerator PROPERTIES COMPILE_FLAGS "-DROOTDAQ -DGENERATE_XML")
+    else()
+      set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS "-DMICRODAQ")
+      set_target_properties(${PROJECT_NAME}-xmlGenerator PROPERTIES COMPILE_FLAGS "-DMICRODAQ -DGENERATE_XML")
+    endif()
   else()
     set_target_properties(${PROJECT_NAME}-xmlGenerator PROPERTIES COMPILE_FLAGS "-DGENERATE_XML")
-  endif(ChimeraTK-DAQ_FOUND)
+  endif(ApplicationCore-MicroDAQ_FOUND)
 
 endif(CMAKE_BUILD_TYPE MATCHES Debug)
 

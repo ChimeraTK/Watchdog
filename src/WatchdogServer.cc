@@ -193,6 +193,7 @@ void WatchdogServer::defineConnections() {
 #endif
   }
 
+#if defined ROOTDAQ || defined MICRODAQ
   /*
    *  Micro DAQ system
    */
@@ -200,7 +201,7 @@ void WatchdogServer::defineConnections() {
 #ifdef ROOTDAQ
     microDAQ = ctk::RootDAQ<uint64_t>{this, "watchdog_server_data", "Local ringbuffer DAQ system"};
 #else
-    microDAQ = ctk::MicroDAQ<uint64_t>(this, "MicroDAQ", "Local ringbuffer DAQ system");
+    microDAQ = ctk::HDF5DAQ<uint64_t>{this, "watchdog_server_data", "Local ringbuffer DAQ system"};
 #endif
     microDAQ.addSource(watchdog.findTag("DAQ"), watchdog.getName());
     microDAQ.addSource(systemInfo.findTag("DAQ"), systemInfo.getName());
@@ -218,6 +219,7 @@ void WatchdogServer::defineConnections() {
     microDAQ.findTag("MicroDAQ.CONFIG").connectTo(cs["microDAQ"]);
     microDAQ.findTag("MicroDAQ.STATUS").connectTo(cs["microDAQ"]["status"]);
   }
+#endif
 
   /*
    *  Server history
