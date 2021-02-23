@@ -11,16 +11,16 @@
 #undef GENERATE_XML
 #include <ChimeraTK/ApplicationCore/ApplicationCore.h>
 #include <ChimeraTK/ApplicationCore/ConfigReader.h>
-#include "ChimeraTK/ApplicationCore/PeriodicTrigger.h"
-#include "ChimeraTK/ApplicationCore/ServerHistory.h"
+#include <ChimeraTK/ApplicationCore/PeriodicTrigger.h>
+#include <ChimeraTK/ApplicationCore/ServerHistory.h>
 
 #include "SystemInfoModule.h"
 #include "ProcessModule.h"
 
 #if defined MICRODAQ
-#include "MicroDAQHDF5.h"
+#include <ChimeraTK/ApplicationCore/MicroDAQHDF5.h>
 #elif defined ROOTDAQ
-#include "MicroDAQROOT.h"
+#include <ChimeraTK/ApplicationCore/MicroDAQROOT.h>
 #endif
 
 #ifdef ENABLE_LOGGING
