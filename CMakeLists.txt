@@ -24,7 +24,7 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/set_default_flags.cmake)
 include(cmake/add_dependency.cmake)
 add_dependency(ChimeraTK-ApplicationCore 02.00 REQUIRED)
 
-find_package(ApplicationCore-MicroDAQ 01.00)
+find_package(ChimeraTK-ApplicationCore-MicroDAQ 01.00)
 find_package(Boost COMPONENTS date_time REQUIRED)
 
 find_library(procps NAMES procps REQUIRED)
