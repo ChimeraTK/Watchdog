@@ -1,6 +1,6 @@
 /**
 \author Klaus Zenker (HZDR)
-\version @watchdog_server_VERSION@
+\version @watchdog-server_VERSION@
 \mainpage Watchdog Server
 The watchdog contains five main moudles:
   - system: Monitors system paramters
