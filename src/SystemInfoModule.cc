@@ -28,9 +28,10 @@
 #include "Logging.h"
 
 SystemInfoModule::SystemInfoModule(EntityOwner *owner, const std::string &name,
-    const std::string &description, bool eliminateHierarchy,
-    const std::unordered_set<std::string> &tags) :
-    ctk::ApplicationModule(owner, name, description, eliminateHierarchy, tags) {
+    const std::string &description, ctk::HierarchyModifier hierarchyModifier,
+    const std::unordered_set<std::string> &tags, const std::string &pathToTrigger) :
+    ctk::ApplicationModule(owner, name, description, hierarchyModifier, tags),
+    triggerGroup(this, pathToTrigger, {"CS"}){
   for(auto it = sysInfo.ibegin(); it != sysInfo.iend(); it++) {
     info.strInfos.emplace(it->first, ctk::ScalarOutput<std::string> {&info,
               space2underscore(it->first), "", space2underscore(it->first), {"CS"} });
@@ -163,7 +164,7 @@ void SystemInfoModule::mainLoop() {
     (*logStream) << getTime(this) << "System data updated" << std::endl;
     sendMessage(logging::LogLevel::DEBUG);
 #endif
-    trigger.read();
+    triggerGroup.trigger.read();
   }
 }
 
@@ -285,9 +286,10 @@ std::string getTime(ctk::ApplicationModule* mod){
 }
 
 FileSystemModule::FileSystemModule(const std::string &devName, const std::string &mntPoint, EntityOwner *owner, const std::string &name,
-       const std::string &description, bool eliminateHierarchy,
-       const std::unordered_set<std::string> &tags):
-         ctk::ApplicationModule(owner, name, description, eliminateHierarchy, tags){
+       const std::string &description, ctk::HierarchyModifier hierarchyModifier,
+       const std::unordered_set<std::string> &tags, const std::string& pathToTrigger):
+         ctk::ApplicationModule(owner, name, description, hierarchyModifier, tags),
+         triggerGroup(this, pathToTrigger, {"CS"}){
   tmp[0] = devName;
   tmp[1] = mntPoint;
 #ifdef ENABLE_LOGGING
@@ -352,7 +354,7 @@ void FileSystemModule::mainLoop(){
       }
       toWrite.writeAll();
     }
-    group.readUntil(trigger.getId());
+    group.readUntil(triggerGroup.trigger.getId());
   }
 }
 
@@ -378,9 +380,10 @@ void FileSystemModule::terminate(){
 }
 
 NetworkModule::NetworkModule(const std::string &device, EntityOwner *owner, const std::string &name,
-       const std::string &description, bool eliminateHierarchy,
-       const std::unordered_set<std::string> &tags):
-         ctk::ApplicationModule(owner, name, description, eliminateHierarchy, tags){
+       const std::string &description, ctk::HierarchyModifier hierarchyModifier,
+       const std::unordered_set<std::string> &tags, const std::string& pathToTrigger):
+         ctk::ApplicationModule(owner, name, description, hierarchyModifier, tags),
+         triggerGroup(this, pathToTrigger, {"CS"}){
   networkDeviceName = device;
 #ifdef ENABLE_LOGGING
   logStream = new std::stringstream();
@@ -440,7 +443,7 @@ void NetworkModule::mainLoop(){
     if(read()){
       toWrite.writeAll();
     }
-    trigger.read();
+    triggerGroup.trigger.read();
   }
 }
 

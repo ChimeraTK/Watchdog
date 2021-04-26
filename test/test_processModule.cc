@@ -38,7 +38,7 @@ struct testApp : public ChimeraTK::Application {
     shutdown();
   }
 
-  ProcessControlModule process { this, "ProcessControlModule",
+  ProcessControlModule process { this, "Process",
       "ProcessControlModule test" };
 
   LoggingModule logging {this, "Logging", "Logging module"};
@@ -51,14 +51,15 @@ struct testApp : public ChimeraTK::Application {
      * Now there is a blocking read in the ProcessControlModule, which is used to step through the
      * application.
      */
-    cs("trigger") >> process.trigger;
 
     /**
      * Define all other connections as done in the ProcessControlModule
      */
-    process.findTag("CS").connectTo(cs["Process"]);
-    logging.findTag("CS").connectTo(cs["Logging"]);
+//    process.findTag("CS").connectTo(cs["Process"]);
+//    logging.findTag("CS").connectTo(cs["Logging"]);
     process.logging.connectTo(logging.input);
+    findTag("CS").connectTo(cs);
+//    dumpConnections();
   }
 };
 
@@ -77,7 +78,7 @@ BOOST_AUTO_TEST_CASE( testStart) {
   ChimeraTK::TestFacility tf;
 
   prepareTest(&tf,2,2,"sleep 2","/bin/");
-  auto writeTrigger = tf.getScalar<uint64_t>("trigger/");
+  auto writeTrigger = tf.getScalar<uint64_t>("Configuration/tick");
   auto enable = tf.getScalar<uint>("Process/enableProcess");
   tf.runApplication();
   writeTrigger.write();
@@ -97,7 +98,7 @@ BOOST_AUTO_TEST_CASE( testProcessFailLimit) {
   app.defineConnections();
   ChimeraTK::TestFacility tf;
   prepareTest(&tf, 2, 2, std::string("sleep 1"), std::string("/etc/bin"));
-  auto writeTrigger = tf.getScalar<uint64_t>("trigger/");
+  auto writeTrigger = tf.getScalar<uint64_t>("Configuration/tick");
   tf.runApplication();
   for(size_t i = 1; i < 5 ; i++){
     writeTrigger.write();
@@ -105,7 +106,7 @@ BOOST_AUTO_TEST_CASE( testProcessFailLimit) {
     if(i > 2)
       BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/status/nFailed"), 2);
     else
-      BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/status/nFailed"), i);\
+      BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/status/nFailed"), i);
     if(i > 2)
       BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/status/nRestarts"), 1);
     else
@@ -119,7 +120,7 @@ BOOST_AUTO_TEST_CASE( testProcessRestartLimit) {
   app.defineConnections();
   ChimeraTK::TestFacility tf;
   prepareTest(&tf, 5, 2, std::string("sleep 1"), std::string("/etc/bin"));
-  auto writeTrigger = tf.getScalar<uint64_t>("trigger/");
+  auto writeTrigger = tf.getScalar<uint64_t>("Configuration/tick");
   tf.runApplication();
   for(int i = 0; i < 4; i++){
     writeTrigger.write();
@@ -135,7 +136,7 @@ BOOST_AUTO_TEST_CASE( testProcessDefaultLimit) {
   app.defineConnections();
   ChimeraTK::TestFacility tf;
   prepareTest(&tf, 0, 0, std::string("sleep 1"), std::string("/etc/bin"));
-  auto writeTrigger = tf.getScalar<uint64_t>("trigger/");
+  auto writeTrigger = tf.getScalar<uint64_t>("Configuration/tick");
   tf.runApplication();
   for(int i = 0; i < 3; i++){
     writeTrigger.write();
@@ -151,7 +152,7 @@ BOOST_AUTO_TEST_CASE( testProcess){
   app.defineConnections();
   ChimeraTK::TestFacility tf;
   prepareTest(&tf, 0, 0, std::string("sleep 1"), std::string("/bin"));
-  auto writeTrigger = tf.getScalar<uint64_t>("trigger/");
+  auto writeTrigger = tf.getScalar<uint64_t>("Configuration/tick");
   tf.runApplication();
   for(int i = 0; i < 3; i++){
     writeTrigger.write();
@@ -172,7 +173,7 @@ BOOST_AUTO_TEST_CASE( testProcessRestartCounter1){
   app.defineConnections();
   ChimeraTK::TestFacility tf;
   prepareTest(&tf, 0, 2, std::string("sleep 1"), std::string("/bin"));
-  auto writeTrigger = tf.getScalar<uint64_t>("trigger/");
+  auto writeTrigger = tf.getScalar<uint64_t>("Configuration/tick");
   tf.runApplication();
   writeTrigger.write();
   tf.stepApplication();
@@ -196,7 +197,7 @@ BOOST_AUTO_TEST_CASE( testProcessRestartCounter2){
   app.defineConnections();
   ChimeraTK::TestFacility tf;
   prepareTest(&tf, 0, 2, std::string("sleep 1"), std::string("/bin"));
-  auto writeTrigger = tf.getScalar<uint64_t>("trigger/");
+  auto writeTrigger = tf.getScalar<uint64_t>("Configuration/tick");
   tf.runApplication();
   writeTrigger.write();
   tf.stepApplication();

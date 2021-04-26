@@ -10,6 +10,7 @@
 
 #undef GENERATE_XML
 #include <ChimeraTK/ApplicationCore/ApplicationCore.h>
+#include <ChimeraTK/ApplicationCore/HierarchyModifyingGroup.h>
 
 #include <memory>
 
@@ -32,10 +33,25 @@ namespace ctk = ChimeraTK;
  * \todo Implement proper data types instead of using int for all of them!
  */
 struct ProcessInfoModule : public ctk::ApplicationModule {
-  using ctk::ApplicationModule::ApplicationModule;
 
-  ctk::ScalarPushInput<uint64_t> trigger { this, "trigger", "",
-      "Trigger used to update the watchdog"};
+  ProcessInfoModule(EntityOwner *owner, const std::string &name,
+      const std::string &description, ctk::HierarchyModifier hierarchyModifier = ctk::HierarchyModifier::none,
+      const std::unordered_set<std::string> &tags = { },
+      const std::string &pathToTrigger="/Configuration/tick"):
+        ctk::ApplicationModule(owner, name, description, hierarchyModifier, tags),
+        triggerGroup(this, pathToTrigger, {"CS"}),
+        logStream(nullptr){};
+
+  struct TriggerGroup : ctk::HierarchyModifyingGroup {
+    TriggerGroup(EntityOwner* owner, const std::string& pathToTrigger,
+                 const std::unordered_set<std::string>& tags = {})
+    : ctk::HierarchyModifyingGroup(owner, ctk::HierarchyModifyingGroup::getPathName(pathToTrigger), "", tags),
+      trigger{this, HierarchyModifyingGroup::getUnqualifiedName(pathToTrigger), "", "Trigger input"} {}
+
+    TriggerGroup() {}
+
+    ctk::ScalarPushInput<uint64_t> trigger;
+  } triggerGroup;
 
   struct Status : public ctk::VariableGroup{
     using ctk::VariableGroup::VariableGroup;
@@ -68,11 +84,11 @@ struct ProcessInfoModule : public ctk::ApplicationModule {
      * @{
      */
     /** Number of clock ticks per second */
-    ctk::ScalarPollInput<uint> ticksPerSecond { this, "tickPerSecond", "Hz",
+    ctk::ScalarPollInput<uint> ticksPerSecond { this, "ticksPerSecond", "Hz",
         "Number of clock ticks per second" };
     /** Uptime of the system */
-    ctk::ScalarPollInput<uint> sysUpTime { this, "sysUpTime", "s", "Uptime of the system" };
-    ctk::ScalarPollInput<uint> sysStartTime { this, "sysStartTime", "s", "System start time (seconds since EPOCH)" };
+    ctk::ScalarPollInput<uint> sysUpTime { this, "uptimeSecTotal", "s", "Uptime of the system" };
+    ctk::ScalarPollInput<uint> sysStartTime { this, "startTime", "s", "System start time (seconds since EPOCH)" };
     ctk::ScalarPollInput<uint> maxMem { this, "maxMem", "kB", "Maximum available memory" };
     /** @} */
   } input{this, "input", "Moudle input from SystemInfoModule"};
@@ -189,8 +205,10 @@ struct ProcessControlModule : public ProcessInfoModule{
    * This is needed in order to have constant filling of the history buffer written by the History module of the watchdog.
    */
   ProcessControlModule(EntityOwner *owner, const std::string &name,
-      const std::string &description, bool historyOn = false, bool eliminateHierarchy = false,
-      const std::unordered_set<std::string> &tags = { }): ProcessInfoModule(owner, name, description, eliminateHierarchy, tags),
+      const std::string &description, bool historyOn = false, ctk::HierarchyModifier hierarchyModifier = ctk::HierarchyModifier::none,
+      const std::unordered_set<std::string> &tags = { },
+      const std::string &pathToTrigger="/Configuration/tick"):
+        ProcessInfoModule(owner, name, description, hierarchyModifier, tags, pathToTrigger),
           _stop(false), _restartRequired(false), _historyOn(historyOn){ };
 
   /* Use terminate function to delete the ProcessHandler, since it is using a local stringstream constructed in the main loop
@@ -279,7 +297,6 @@ struct ProcessControlModule : public ProcessInfoModule{
   /** Start the process */
   ctk::ScalarPollInput<uint> enableProcess { this, "enableProcess", "", "Start the process",
     { "CS", "PROCESS", getName()} };
-
 
   /**
    * Set the PID and set status to running.

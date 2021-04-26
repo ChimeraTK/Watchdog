@@ -72,7 +72,7 @@ WatchdogServer::WatchdogServer() :
       processGroup.processes.back().logStream = nullptr;
 #ifdef ENABLE_LOGGING
       processGroup.processesLog.emplace_back(&processGroup, processName, "process log");
-      processGroup.processesLogExternal.emplace_back(&processGroup, processName , "process external log");
+      processGroup.processesLogExternal.emplace_back(&processGroup, processName , "process external log", "/Configuration/tick", "/processes/" + processName + "/config/logfileExternal");
 #endif
     }
   } catch (std::out_of_range &e){
@@ -87,7 +87,7 @@ WatchdogServer::WatchdogServer() :
     processGroup.processes.back().logStream = nullptr;
 #ifdef ENABLE_LOGGING
     processGroup.processesLog.emplace_back(&processGroup, "0", "Process log");
-    processGroup.processesLogExternal.emplace_back(&processGroup, "0", "Process external log");
+    processGroup.processesLogExternal.emplace_back(&processGroup, "0", "Process external log", "/Configuration/tick", "/processes/0/config/logfileExternal");
 #endif
   }
   size_t i =0;
@@ -116,110 +116,47 @@ WatchdogServer::WatchdogServer() :
 }
 
 void WatchdogServer::defineConnections() {
-  systemInfo.findTag("CS").connectTo(cs[systemInfo.getName()]);
-  trigger.tick >> systemInfo.trigger;
-  cs["configuration"]("UpdateTime") >> trigger.period;
-
-	watchdog.findTag("CS").connectTo(cs[watchdog.getName()]);
-
-#ifdef ENABLE_LOGGING
-  // allow to set the logFile name -> other modules will use the same log file
-  watchdogLog.findTag("CS_OPTIONAL").connectTo(cs[watchdog.getName()]);
-	watchdog.logging.connectTo(watchdogLog.input);
-  watchdogLog.findTag("CS").connectTo(cs[watchdog.getName()]);
-
-  watchdogLog.config.logFile >> watchdogLogFile.config.logFile;
-  trigger.tick >> watchdogLogFile.trigger;
-  watchdogLogFile.findTag("CS").connectTo(cs[watchdog.getName()]);
-
-  systemInfo.logging.connectTo(systemInfoLog.input);
-  watchdogLog.config.logFile >> systemInfoLog.config.logFile;
-  systemInfoLog.findTag("CS").connectTo(cs[systemInfo.getName()]);
-
-
-  //ToDo: Include after bug in OPC UA Adapter was fixed
-  // publish configuration
-//  config.connectTo(cs["Configuration"]);
-
-  auto log = processGroup.processesLog.begin();
-  auto logExternal = processGroup.processesLogExternal.begin();
+#ifdef WITHDAQ
+  daq = ctk::MicroDAQ<uint64_t>{this, "MicroDAQ", "DAQ module", "DAQ", "/Configuration/tick", ctk::HierarchyModifier::none, {"CS"}};
 #endif
 
-	systemInfo.info.ticksPerSecond >> watchdog.input.ticksPerSecond;
-  systemInfo.status.uptime_secTotal >> watchdog.input.sysUpTime;
-  systemInfo.status.startTime >> watchdog.input.sysStartTime;
-  systemInfo.status.maxMem >> watchdog.input.maxMem;
-  trigger.tick >> watchdog.trigger;
-
-  processGroup.findTag("CS").connectTo(cs["processes"]);
-  for(auto &item : processGroup.processes) {
-    systemInfo.info.ticksPerSecond >> item.input.ticksPerSecond;
-    systemInfo.status.uptime_secTotal >> item.input.sysUpTime;
-    systemInfo.status.startTime >> item.input.sysStartTime;
-    systemInfo.status.maxMem >> item.input.maxMem;
-    trigger.tick >> item.trigger;
+  trigger.connectTo(cs["Configuration"]);
 
 #ifdef ENABLE_LOGGING
+	watchdog.process.logging.connectTo(watchdog.logging.input);
+  systemInfo.info.logging.connectTo(systemInfo.logging.input);
+  config.connectTo(cs["Configuration"]);
+
+  auto log = processGroup.processesLog.begin();
+#endif
+
+  systemInfo.findTag("ProcessModuleInput").flatten().connectTo(watchdog.process.input);
+
+  for(auto &item : processGroup.processes) {
+    systemInfo.findTag("ProcessModuleInput").flatten().connectTo(item.input);
+#ifdef ENABLE_LOGGING
     item.logging.connectTo((*log).input);
-    watchdogLog.config.logFile >> (*log).config.logFile;
-    item.config.externalLogfile >> (*logExternal).config.logFile;
-    trigger.tick >> (*logExternal).trigger;
     log++;
-    logExternal++;
 #endif
   }
 #ifdef ENABLE_LOGGING
   log = filesystemGroup.loggingModules.begin();
 #endif
-  filesystemGroup.findTag("CS").connectTo(cs["filesystem"]);
   for(auto &item : filesystemGroup.fsMonitors){
-    trigger.tick >> item.trigger;
 #ifdef ENABLE_LOGGING
     item.logging.connectTo((*log).input);
-    watchdogLog.config.logFile >> (*log).config.logFile;
     log++;
 #endif
   }
 #ifdef ENABLE_LOGGING
   log = networkGroup.loggingModules.begin();
 #endif
-  networkGroup.findTag("CS").connectTo(cs["network"]);
   for(auto &item : networkGroup.networkMonitors){
-    trigger.tick >> item.trigger;
 #ifdef ENABLE_LOGGING
     item.logging.connectTo((*log).input);
-    watchdogLog.config.logFile >> (*log).config.logFile;
     log++;
 #endif
   }
-
-#if defined ROOTDAQ || defined MICRODAQ
-  /*
-   *  Micro DAQ system
-   */
-  if(config.get<int>("enableMicroDAQ") != 0) {
-#ifdef ROOTDAQ
-    microDAQ = ctk::RootDAQ<uint64_t>{this, "watchdog_server_data", "Local ringbuffer DAQ system"};
-#else
-    microDAQ = ctk::HDF5DAQ<uint64_t>{this, "watchdog_server_data", "Local ringbuffer DAQ system"};
-#endif
-    microDAQ.addSource(watchdog.findTag("DAQ"), watchdog.getName());
-    microDAQ.addSource(systemInfo.findTag("DAQ"), systemInfo.getName());
-    for(auto &item : processGroup.processes) {
-      microDAQ.addSource(item.findTag("DAQ"), "processes/"+item.getName());
-    }
-    for(auto &item : networkGroup.networkMonitors) {
-      microDAQ.addSource(item.findTag("DAQ"), "network/" + item.getName());
-    }
-    for(auto &item : filesystemGroup.fsMonitors) {
-      microDAQ.addSource(item.findTag("DAQ"), "filesystem/" + item.getName());
-    }
-    // configuration of the DAQ system itself
-    trigger.tick >> microDAQ.trigger;
-    microDAQ.findTag("MicroDAQ.CONFIG").connectTo(cs["microDAQ"]);
-    microDAQ.findTag("MicroDAQ.STATUS").connectTo(cs["microDAQ"]["status"]);
-  }
-#endif
 
   /*
    *  Server history
@@ -241,15 +178,17 @@ void WatchdogServer::defineConnections() {
     for(auto &item : networkGroup.networkMonitors){
       history.addSource(item.findTag("History"), "history/network/" + item.getName());
     }
-    history.findTag("CS").connectTo(cs);
   }
+
+  findTag("CS").connectTo(cs);
 
   /**
    * Server information
    */
-  ctk::VariableNetworkNode::makeConstant(true, AppVersion::major, 1) >> cs["Server"]["Version"]("major");
-  ctk::VariableNetworkNode::makeConstant(true, AppVersion::minor, 1) >> cs["Server"]["Version"]("minor");
-  ctk::VariableNetworkNode::makeConstant(true, AppVersion::patch, 1) >> cs["Server"]["Version"]("patch");
+  ctk::VariableNetworkNode::makeConstant(true, AppVersion::major, 1) >> cs["server"]["version"]("major");
+  ctk::VariableNetworkNode::makeConstant(true, AppVersion::minor, 1) >> cs["server"]["version"]("minor");
+  ctk::VariableNetworkNode::makeConstant(true, AppVersion::patch, 1) >> cs["server"]["version"]("patch");
+//  warnUnconnectedVariables();
 //  dumpConnections();
 }
 

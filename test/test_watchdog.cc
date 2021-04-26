@@ -17,6 +17,7 @@
 #include "WatchdogServer.h"
 #include "ChimeraTK/ApplicationCore/TestFacility.h"
 #include <ChimeraTK/ApplicationCore/ConfigReader.h>
+#include <ChimeraTK/ApplicationCore/PeriodicTrigger.h>
 #include <ChimeraTK/RegisterPath.h>
 #include <libxml++/libxml++.h>
 
@@ -24,18 +25,13 @@
 using namespace boost::unit_test_framework;
 
 struct testWD: public ctk::Application {
-  SystemInfoModule systemInfo { this, "system",
+  SystemInfoGroup systemInfo { this, "system",
       "Module reading system information" };
 
   ProcessGroup processGroup{this, "process", "Process module group"};
 
-  ProcessInfoModule watchdog{this, "watchdog", "Module monitoring the watchdog process"};
+  WatchdogModuleGroup watchdog{this, "watchdog", "Module monitoring the watchdog process"};
 
-#ifdef ENABLE_LOGGING
-  LogFileModule watchdogLogFile{this, "watchdogLog", "Logging module of all watchdog processes"};
-  LoggingModule watchdogLog{this, "watchdogLog", "Logging module of the watchdog process"};
-  LoggingModule systemInfoLog{this, "systeminfoLog", "Logging module of the system information module"};
-#endif
   ctk::ControlSystemModule cs;
 //  testWD():WatchdogServer(){ };
 
@@ -49,7 +45,7 @@ struct testWD: public ctk::Application {
       processGroup.processes.back().logStream = nullptr;
 #ifdef ENABLE_LOGGING
       processGroup.processesLog.emplace_back(&processGroup, processName, "process log");
-      processGroup.processesLogExternal.emplace_back(&processGroup, processName , "process external log");
+      processGroup.processesLogExternal.emplace_back(&processGroup, processName , "process external log", "/Configuration/tick", "/processes/" + processName + "/config/logfileExternal");
 #endif
     }
     ProcessHandler::setupHandler();
@@ -60,55 +56,22 @@ struct testWD: public ctk::Application {
   }
 
   void defineConnections() override{
-    systemInfo.findTag("CS").connectTo(cs[systemInfo.getName()]);
-    cs("trigger")  >> systemInfo.trigger;
-
-    watchdog.findTag("CS").connectTo(cs[watchdog.getName()]);
   #ifdef ENABLE_LOGGING
-    // allow to set the logFile name -> other modules will use the same log file
-    watchdogLog.findTag("CS_OPTIONAL").connectTo(cs[watchdog.getName()]);
-    watchdog.logging.connectTo(watchdogLog.input);
-    watchdogLog.findTag("CS").connectTo(cs[watchdog.getName()]);
-
-    watchdogLog.config.logFile >> watchdogLogFile.config.logFile;
-    systemInfo.trigger >> watchdogLogFile.trigger;
-    watchdogLogFile.findTag("CS").connectTo(cs[watchdog.getName()]);
-
-    systemInfo.logging.connectTo(systemInfoLog.input);
-    watchdogLog.config.logFile >> systemInfoLog.config.logFile;
-    systemInfoLog.findTag("CS").connectTo(cs[systemInfo.getName()]);
-
-
-    //ToDo: Include after bug in OPC UA Adapter was fixed
-    // publish configuration
-  //  config.connectTo(cs["Configuration"]);
-
+    watchdog.process.logging.connectTo(watchdog.logging.input);
+    systemInfo.info.logging.connectTo(systemInfo.logging.input);
     auto log = processGroup.processesLog.begin();
-    auto logExternal = processGroup.processesLogExternal.begin();
   #endif
 
-    systemInfo.info.ticksPerSecond >> watchdog.input.ticksPerSecond;
-    systemInfo.status.uptime_secTotal >> watchdog.input.sysUpTime;
-    systemInfo.status.startTime >> watchdog.input.sysStartTime;
-
-    systemInfo.trigger >> watchdog.trigger;
-
+    systemInfo.findTag("ProcessModuleInput").flatten().connectTo(watchdog.process.input);
     processGroup.findTag("CS").connectTo(cs["processes"]);
     for(auto &item : processGroup.processes) {
-      systemInfo.info.ticksPerSecond >> item.input.ticksPerSecond;
-      systemInfo.status.uptime_secTotal >> item.input.sysUpTime;
-      systemInfo.status.startTime >> item.input.sysStartTime;
-      systemInfo.trigger  >> item.trigger;
-
+      systemInfo.findTag("ProcessModuleInput").flatten().connectTo(item.input);
   #ifdef ENABLE_LOGGING
       item.logging.connectTo((*log).input);
-      watchdogLog.config.logFile >> (*log).config.logFile;
-      item.config.externalLogfile >> (*logExternal).config.logFile;
-      systemInfo.trigger >> (*logExternal).trigger;
       log++;
-      logExternal++;
   #endif
     }
+    findTag("CS").connectTo(cs);
     dumpConnections();
   }
 };
@@ -122,9 +85,9 @@ BOOST_AUTO_TEST_CASE( testPerformance) {
   ChimeraTK::TestFacility tf;
 
   // Get the trigger variable thats blocking the application (i.e. ProcessControlModule)
-  auto writeTrigger = tf.getScalar<uint64_t>("trigger/");
+  auto writeTrigger = tf.getScalar<uint64_t>("Configuration/tick");
 #ifdef ENABLE_LOGGING
-  tf.setScalarDefault("watchdog/config/logFile", (std::string)"test_watchdog.log");
+  tf.setScalarDefault("watchdog/config/logfile", (std::string)"test_watchdog.log");
   for(size_t i = 0; i < 8; ++i){
     std::string name = "processes/";
     name = name + std::to_string(i) + "/config/targetStream";

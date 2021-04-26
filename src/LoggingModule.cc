@@ -8,10 +8,10 @@
 #include "LoggingModule.h"
 
 void LogFileModule::mainLoop(){
-  config.logFile.read();
+  logFileGroup.logFile.read();
 //  std::string currentFile = (std::string)logFile;
   logFileBuffer.reset(new std::filebuf);
-  logFileBuffer->open((std::string)config.logFile,std::ios::in);
+  logFileBuffer->open((std::string)logFileGroup.logFile,std::ios::in);
   std::stringstream messageTail;
   while(1){
     readAll();
@@ -20,7 +20,7 @@ void LogFileModule::mainLoop(){
     if(config.tailLength < 1){
       messageTail << "Tail length is <1. No messages from the log file read." << std::endl;
     } else {
-      if(((std::string)config.logFile).empty()){
+      if(((std::string)logFileGroup.logFile).empty()){
          messageTail << "No log file is set. Try starting the process and setting a LogFile." << std::endl;
       } else {
         /**
@@ -31,12 +31,12 @@ void LogFileModule::mainLoop(){
          * show the last update (of the log file that was deleted). Updates of the new log file would not be
          * updated here.
          */
-        logFileBuffer->open((std::string)config.logFile,std::ios::in);
+        logFileBuffer->open((std::string)logFileGroup.logFile,std::ios::in);
         if(logFileBuffer->is_open()){
           std::istream i(&(*logFileBuffer));
           logging::formatLogTail(i, messageTail, config.tailLength);
         } else {
-          messageTail << "Can not open file: " << (std::string)config.logFile << std::endl;
+          messageTail << "Can not open file: " << (std::string)logFileGroup.logFile << std::endl;
         }
         logFileBuffer->close();
       }
@@ -69,17 +69,17 @@ void LoggingModule::mainLoop(){
     std::stringstream ss;
     ss << level << (std::string)input.message;
     if(config.targetStream == 0 || config.targetStream == 1){
-      if(((std::string)config.logFile).compare(currentFile.c_str()) != 0 && file->is_open()){
+      if(((std::string)logFileGroup.logFile).compare(currentFile.c_str()) != 0 && file->is_open()){
         // new log file name was set during runtime
         file->close();
       }
-      if(!((std::string)config.logFile).empty() && !file->is_open()){
-        file->open((std::string)config.logFile,  std::ofstream::out | std::ofstream::app);
+      if(!((std::string)logFileGroup.logFile).empty() && !file->is_open()){
+        file->open((std::string)logFileGroup.logFile,  std::ofstream::out | std::ofstream::app);
         if(!file->is_open() && level <= logging::LogLevel::ERROR)
-          std::cerr << logging::LogLevel::ERROR << this->getName() << "LoggingModule failed to open log file for writing: " << (std::string)config.logFile << std::endl;
+          std::cerr << logging::LogLevel::ERROR << this->getName() << "LoggingModule failed to open log file for writing: " << (std::string)logFileGroup.logFile << std::endl;
         else if (file->is_open() && level <= logging::LogLevel::INFO){
-          std::cout << logging::LogLevel::INFO << this->getName() << " Opened log file for writing: " << (std::string)config.logFile << std::endl;
-          currentFile = (std::string)config.logFile;
+          std::cout << logging::LogLevel::INFO << this->getName() << " Opened log file for writing: " << (std::string)logFileGroup.logFile << std::endl;
+          currentFile = (std::string)logFileGroup.logFile;
         }
       }
     }

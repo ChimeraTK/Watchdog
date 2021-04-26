@@ -17,10 +17,8 @@
 #include "SystemInfoModule.h"
 #include "ProcessModule.h"
 
-#if defined MICRODAQ
-#include <ChimeraTK/ApplicationCore/MicroDAQHDF5.h>
-#elif defined ROOTDAQ
-#include <ChimeraTK/ApplicationCore/MicroDAQROOT.h>
+#ifdef WITHDAQ
+#include <ChimeraTK/ApplicationCore/MicroDAQ.h>
 #endif
 
 #ifdef ENABLE_LOGGING
@@ -29,35 +27,10 @@
 
 namespace ctk = ChimeraTK;
 
-/**
- * \brief The watchdog application
- *
- * WatchdogServerConfig.xml file is used to read the number of processes and to enable/disable
- * - microDAQ
- * - history
- */
-struct WatchdogServer: public ctk::Application {
-  WatchdogServer();
-  ~WatchdogServer() {
-    shutdown();
-  }
-
-  SystemInfoModule systemInfo { this, "system",
-      "Module reading system information" };
-
-  ProcessGroup processGroup{this, "process", "Process module group"};
-
-  FileSystemGroup filesystemGroup{this, "filesystem", "File system module group"};
-
-  NetworkGroup networkGroup{this, "network", "Network module group"};
-
-
-  ProcessInfoModule watchdog{this, "watchdog", "Module monitoring the watchdog process"};
-
-  ctk::ConfigReader config{this, "Configuration", "WatchdogServerConfig.xml"};
-
+struct WatchdogModuleGroup : ctk::ModuleGroup{
+  using ctk::ModuleGroup::ModuleGroup;
+  ProcessInfoModule process{this, "watchdog", "Module monitoring the watchdog process", ctk::HierarchyModifier::hideThis};
 #ifdef ENABLE_LOGGING
-
   /**
    * This module is used to read the watchdog log file, which includes messages from the
    * watchdog process and all other processes controlled by the watchdog.
@@ -72,20 +45,54 @@ struct WatchdogServer: public ctk::Application {
    * AND the watchdog LoggingModule. But this is not possible, since it is not possible to connect multiple
    * outputs to a single push input variable.
    */
-  LogFileModule watchdogLogFile{this, "watchdogLogFile", "Logging module reading the watchdog logfile"};
+  LogFileModule logFile{this, "watchdogLogFile", "Logging module reading the watchdog logfile", "/Configuration/tick", "/watchdog/config/logfile", ctk::HierarchyModifier::hideThis};
 
   /**
    * This module is used to handle messages from the watchdog process it self.
    */
-  LoggingModule watchdogLog{this, "watchdogLog", "Logging module of the watchdog process"};
-
-  LoggingModule systemInfoLog{this, "systeminfoLog", "Logging module of the system information module"};
+  LoggingModule logging{this, "watchdogLog", "Logging module of the watchdog process", ctk::HierarchyModifier::hideThis};
 #endif
+};
 
-#if defined MICRODAQ
-  ctk::HDF5DAQ<uint64_t> microDAQ;
-#elif defined ROOTDAQ
-  ctk::RootDAQ<uint64_t> microDAQ;
+struct SystemInfoGroup : ctk::ModuleGroup{
+  using ctk::ModuleGroup::ModuleGroup;
+
+  SystemInfoModule info{this, "system", "Module reading system information", ctk::HierarchyModifier::hideThis};
+#ifdef ENABLE_LOGGING
+  LoggingModule logging{this, "systeminfoLog", "Logging module of the system information module", ctk::HierarchyModifier::hideThis};
+#endif
+};
+
+/**
+ * \brief The watchdog application
+ *
+ * WatchdogServerConfig.xml file is used to read the number of processes and to enable/disable
+ * - microDAQ
+ * - history
+ */
+struct WatchdogServer: public ctk::Application {
+  WatchdogServer();
+  ~WatchdogServer() {
+    shutdown();
+  }
+  ctk::ControlSystemModule cs;
+
+  ctk::PeriodicTrigger trigger{this, "Trigger", "Trigger used for other modules"};
+
+  ctk::ConfigReader config{this, "Configuration", "WatchdogServerConfig.xml"};
+
+  SystemInfoGroup systemInfo { this, "system", "Module reading system information" };
+
+  ProcessGroup processGroup{this, "processes", "Process module group"};
+
+  FileSystemGroup filesystemGroup{this, "filesystem", "File system module group"};
+
+  NetworkGroup networkGroup{this, "network", "Network module group"};
+
+  WatchdogModuleGroup watchdog{this, "watchdog", "Module monitoring the watchdog process"};
+
+#ifdef WITHDAQ
+  ctk::MicroDAQ<uint64_t> daq;
 #endif
   /*
    * History module if history is enabled in the config file.
@@ -94,10 +101,6 @@ struct WatchdogServer: public ctk::Application {
    * <variable name="serverHistoryLength" type="int32" value="1200" />
    */
   ctk::history::ServerHistory history;
-
-  ctk::ControlSystemModule cs;
-
-  ctk::PeriodicTrigger trigger{this, "Trigger", "Trigger used for other modules"};
 
   void defineConnections() override;
 
