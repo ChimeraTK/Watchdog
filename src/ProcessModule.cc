@@ -153,8 +153,6 @@ void ProcessControlModule::mainLoop() {
   auto group = readAnyGroup();
   status.nFailed = 0;
   status.nRestarts = 0;
-  _stop = false;
-  _restartRequired = false;
   while(true) {
     // reset number of failed tries and restarts in case the process is set offline
     if(!enableProcess) {

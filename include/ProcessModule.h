@@ -208,8 +208,7 @@ struct ProcessControlModule : public ProcessInfoModule{
       const std::string &description, bool historyOn = false, ctk::HierarchyModifier hierarchyModifier = ctk::HierarchyModifier::none,
       const std::unordered_set<std::string> &tags = { },
       const std::string &pathToTrigger="/Configuration/tick"):
-        ProcessInfoModule(owner, name, description, hierarchyModifier, tags, pathToTrigger),
-          _stop(false), _restartRequired(false), _historyOn(historyOn){ };
+        ProcessInfoModule(owner, name, description, hierarchyModifier, tags, pathToTrigger), _historyOn(historyOn){ };
 
   /* Use terminate function to delete the ProcessHandler, since it is using a local stringstream constructed in the main loop
    * which is not existing at the time the ProcessHandler destructor is called!
@@ -340,13 +339,13 @@ private:
    * Stop is used to enter the idle state.
    * To escape the idle state enableProcess needs to be set false.
    */
-  bool _stop;
+  bool _stop{false};
 
   /**
    * This flag is used to know if a process is started because a client enabled the process or
    * if it is started because the process terminated without client interaction.
    */
-  bool _restartRequired;
+  bool _restartRequired{false};
 
   /**
    * This flags is  used decide if empty data is written in case the process is not running.

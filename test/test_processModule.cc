@@ -99,9 +99,15 @@ BOOST_AUTO_TEST_CASE( testProcessFailLimit) {
   ChimeraTK::TestFacility tf;
   prepareTest(&tf, 2, 2, std::string("sleep 1"), std::string("/etc/bin"));
   auto writeTrigger = tf.getScalar<uint64_t>("Configuration/tick");
+  tf.setScalarDefault<uint>("Process/enableProcess",0);
+  auto enable = tf.getScalar<uint>("Process/enableProcess");
   tf.runApplication();
+  BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/status/nFailed"), 0);
+  BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/status/nRestarts"), 0);
   for(size_t i = 1; i < 5 ; i++){
     writeTrigger.write();
+    enable =1;
+    enable.write();
     tf.stepApplication();
     if(i > 2)
       BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/status/nFailed"), 2);
