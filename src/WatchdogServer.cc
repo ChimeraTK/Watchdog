@@ -117,7 +117,7 @@ WatchdogServer::WatchdogServer() :
 
 void WatchdogServer::defineConnections() {
 #ifdef WITHDAQ
-  daq = ctk::MicroDAQ<uint64_t>{this, "MicroDAQ", "DAQ module", "DAQ", "/Configuration/tick", ctk::HierarchyModifier::none, {"CS"}};
+  daq = ctk::MicroDAQ<uint64_t>{this, "MicroDAQ", "DAQ module", "DAQ", "/Configuration/tick", ctk::HierarchyModifier::none, {"MicroDAQ"}};
 #endif
 
   trigger.connectTo(cs["Configuration"]);
@@ -181,7 +181,7 @@ void WatchdogServer::defineConnections() {
   }
 
   findTag("CS").connectTo(cs);
-
+  findTag("MicroDAQ").connectTo(cs["MicroDAQ"]);
   /**
    * Server information
    */
