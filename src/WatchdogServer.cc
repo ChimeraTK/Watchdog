@@ -189,7 +189,7 @@ void WatchdogServer::defineConnections() {
   ctk::VariableNetworkNode::makeConstant(true, AppVersion::major, 1) >> cs["server"]["version"]("major");
   ctk::VariableNetworkNode::makeConstant(true, AppVersion::minor, 1) >> cs["server"]["version"]("minor");
   ctk::VariableNetworkNode::makeConstant(true, AppVersion::patch, 1) >> cs["server"]["version"]("patch");
-  warnUnconnectedVariables();
-  dumpConnections();
+//  warnUnconnectedVariables();
+//  dumpConnections();
 }
 
