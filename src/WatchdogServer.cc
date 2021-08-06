@@ -116,16 +116,12 @@ WatchdogServer::WatchdogServer() :
 }
 
 void WatchdogServer::defineConnections() {
-#ifdef WITHDAQ
-  daq = ctk::MicroDAQ<uint64_t>{this, "MicroDAQ", "DAQ module", "DAQ", "/Configuration/tick", ctk::HierarchyModifier::none, {"MicroDAQ"}};
-#endif
-
-  trigger.connectTo(cs["Configuration"]);
+ trigger.connectTo(cs["Configuration"]);
 
 #ifdef ENABLE_LOGGING
 	watchdog.process.logging.connectTo(watchdog.logging.input);
   systemInfo.info.logging.connectTo(systemInfo.logging.input);
-  config.connectTo(cs["Configuration"]);
+//  config.connectTo(cs["Configuration"]);
 
   auto log = processGroup.processesLog.begin();
 #endif
@@ -164,9 +160,9 @@ void WatchdogServer::defineConnections() {
   if(config.get<uint>("enableServerHistory") != 0){
     uint serverHistroyLength = config.get<uint>("serverHistoryLength");
     if(serverHistroyLength != 0)
-      history = ctk::history::ServerHistory{this, "History", "History", serverHistroyLength};
+      history = ctk::history::ServerHistory{this, "History", "History", serverHistroyLength,false, true};
     else
-      history = ctk::history::ServerHistory{this, "History", "History", 100};
+      history = ctk::history::ServerHistory{this, "History", "History", 100, false, true};
     history.addSource(systemInfo.findTag("History"), "history/" + systemInfo.getName());
     history.addSource(watchdog.findTag("History"), "history/" + watchdog.getName());
     for(auto &item : processGroup.processes) {
@@ -180,6 +176,11 @@ void WatchdogServer::defineConnections() {
     }
   }
 
+#ifdef WITHDAQ
+  daq = ctk::MicroDAQ<uint64_t>{this, "MicroDAQ", "DAQ module", "DAQ", "/Configuration/tick", ctk::HierarchyModifier::hideThis, {"MicroDAQ"}};
+#endif
+
+
   findTag("CS").connectTo(cs);
   findTag("MicroDAQ").connectTo(cs["MicroDAQ"]);
   /**
@@ -188,7 +189,7 @@ void WatchdogServer::defineConnections() {
   ctk::VariableNetworkNode::makeConstant(true, AppVersion::major, 1) >> cs["server"]["version"]("major");
   ctk::VariableNetworkNode::makeConstant(true, AppVersion::minor, 1) >> cs["server"]["version"]("minor");
   ctk::VariableNetworkNode::makeConstant(true, AppVersion::patch, 1) >> cs["server"]["version"]("patch");
-//  warnUnconnectedVariables();
-//  dumpConnections();
+  warnUnconnectedVariables();
+  dumpConnections();
 }
 
