@@ -121,7 +121,7 @@ void WatchdogServer::defineConnections() {
 #ifdef ENABLE_LOGGING
 	watchdog.process.logging.connectTo(watchdog.logging.input);
   systemInfo.info.logging.connectTo(systemInfo.logging.input);
-//  config.connectTo(cs["Configuration"]);
+  config.connectTo(cs["Configuration"]);
 
   auto log = processGroup.processesLog.begin();
 #endif
@@ -177,12 +177,10 @@ void WatchdogServer::defineConnections() {
   }
 
 #ifdef WITHDAQ
-  daq = ctk::MicroDAQ<uint64_t>{this, "MicroDAQ", "DAQ module", "DAQ", "/Configuration/tick", ctk::HierarchyModifier::hideThis, {"MicroDAQ"}};
+  daq = ctk::MicroDAQ<uint64_t>{this, "MicroDAQ", "DAQ module", "DAQ", "/Configuration/tick", ctk::HierarchyModifier::none, {"CS"}};
 #endif
 
-
   findTag("CS").connectTo(cs);
-  findTag("MicroDAQ").connectTo(cs["MicroDAQ"]);
   /**
    * Server information
    */
