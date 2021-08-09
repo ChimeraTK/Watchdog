@@ -106,8 +106,8 @@ if(CMAKE_BUILD_TYPE MATCHES Debug)
   endif(ChimeraTK-ApplicationCore-MicroDAQ_FOUND)
 
   if( ENABLE_TESTING )
-    add_subdirectory(test)
     ENABLE_TESTING()
+    add_subdirectory(test)
   endif( ENABLE_TESTING )
 
 else()
