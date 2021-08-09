@@ -109,7 +109,7 @@ struct LoggingModule: public ctk::ApplicationModule {
   LoggingModule(EntityOwner *owner, const std::string &name,
       const std::string &description, ctk::HierarchyModifier hierarchyModifier = ctk::HierarchyModifier::none,
       const std::unordered_set<std::string> &tags = { },
-      const std::string &pathToLogFile="/watchdog/config/logfile"):
+      const std::string &pathToLogFile="/watchdog/config/logFile"):
         ctk::ApplicationModule(owner, name, description, hierarchyModifier, tags),
         messageCounter(0), logFileGroup(this, pathToLogFile, {"CS"}) {};
 

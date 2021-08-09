@@ -87,7 +87,7 @@ BOOST_AUTO_TEST_CASE( testPerformance) {
   // Get the trigger variable thats blocking the application (i.e. ProcessControlModule)
   auto writeTrigger = tf.getScalar<uint64_t>("Configuration/tick");
 #ifdef ENABLE_LOGGING
-  tf.setScalarDefault("watchdog/config/logfile", (std::string)"test_watchdog.log");
+  tf.setScalarDefault("watchdog/config/logFile", (std::string)"test_watchdog.log");
   for(size_t i = 0; i < 8; ++i){
     std::string name = "processes/";
     name = name + std::to_string(i) + "/config/targetStream";

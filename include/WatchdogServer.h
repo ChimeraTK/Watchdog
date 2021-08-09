@@ -45,7 +45,7 @@ struct WatchdogModuleGroup : ctk::ModuleGroup{
    * AND the watchdog LoggingModule. But this is not possible, since it is not possible to connect multiple
    * outputs to a single push input variable.
    */
-  LogFileModule logFile{this, "watchdogLogFile", "Logging module reading the watchdog logfile", "/Configuration/tick", "/watchdog/config/logfile", ctk::HierarchyModifier::hideThis};
+  LogFileModule logFile{this, "watchdogLogFile", "Logging module reading the watchdog logfile", "/Configuration/tick", "/watchdog/config/logFile", ctk::HierarchyModifier::hideThis};
 
   /**
    * This module is used to handle messages from the watchdog process it self.
