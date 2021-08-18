@@ -45,7 +45,7 @@ struct testWD: public ctk::Application {
       processGroup.processes.back().logStream = nullptr;
 #ifdef ENABLE_LOGGING
       processGroup.processesLog.emplace_back(&processGroup, processName, "process log");
-      processGroup.processesLogExternal.emplace_back(&processGroup, processName , "process external log", "/Configuration/tick", "/processes/" + processName + "/config/logfileExternal");
+      processGroup.processesLogExternal.emplace_back(&processGroup, processName , "process external log", "/configuration/tick", "/processes/" + processName + "/config/logfileExternal");
 #endif
     }
     ProcessHandler::setupHandler();
@@ -85,7 +85,7 @@ BOOST_AUTO_TEST_CASE( testPerformance) {
   ChimeraTK::TestFacility tf;
 
   // Get the trigger variable thats blocking the application (i.e. ProcessControlModule)
-  auto writeTrigger = tf.getScalar<uint64_t>("Configuration/tick");
+  auto writeTrigger = tf.getScalar<uint64_t>("configuration/tick");
 #ifdef ENABLE_LOGGING
   tf.setScalarDefault("watchdog/config/logFile", (std::string)"test_watchdog.log");
   for(size_t i = 0; i < 8; ++i){

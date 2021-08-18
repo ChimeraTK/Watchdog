@@ -78,7 +78,7 @@ BOOST_AUTO_TEST_CASE( testStart) {
   ChimeraTK::TestFacility tf;
 
   prepareTest(&tf,2,2,"sleep 2","/bin/");
-  auto writeTrigger = tf.getScalar<uint64_t>("Configuration/tick");
+  auto writeTrigger = tf.getScalar<uint64_t>("configuration/tick");
   auto enable = tf.getScalar<uint>("Process/enableProcess");
   tf.runApplication();
   writeTrigger.write();
@@ -98,7 +98,7 @@ BOOST_AUTO_TEST_CASE( testProcessFailLimit) {
   app.defineConnections();
   ChimeraTK::TestFacility tf;
   prepareTest(&tf, 2, 2, std::string("sleep 1"), std::string("/etc/bin"));
-  auto writeTrigger = tf.getScalar<uint64_t>("Configuration/tick");
+  auto writeTrigger = tf.getScalar<uint64_t>("configuration/tick");
   tf.setScalarDefault<uint>("Process/enableProcess",0);
   auto enable = tf.getScalar<uint>("Process/enableProcess");
   tf.runApplication();
@@ -126,7 +126,7 @@ BOOST_AUTO_TEST_CASE( testProcessRestartLimit) {
   app.defineConnections();
   ChimeraTK::TestFacility tf;
   prepareTest(&tf, 5, 2, std::string("sleep 1"), std::string("/etc/bin"));
-  auto writeTrigger = tf.getScalar<uint64_t>("Configuration/tick");
+  auto writeTrigger = tf.getScalar<uint64_t>("configuration/tick");
   tf.runApplication();
   for(int i = 0; i < 4; i++){
     writeTrigger.write();
@@ -142,7 +142,7 @@ BOOST_AUTO_TEST_CASE( testProcessDefaultLimit) {
   app.defineConnections();
   ChimeraTK::TestFacility tf;
   prepareTest(&tf, 0, 0, std::string("sleep 1"), std::string("/etc/bin"));
-  auto writeTrigger = tf.getScalar<uint64_t>("Configuration/tick");
+  auto writeTrigger = tf.getScalar<uint64_t>("configuration/tick");
   tf.runApplication();
   for(int i = 0; i < 3; i++){
     writeTrigger.write();
@@ -158,7 +158,7 @@ BOOST_AUTO_TEST_CASE( testProcess){
   app.defineConnections();
   ChimeraTK::TestFacility tf;
   prepareTest(&tf, 0, 0, std::string("sleep 1"), std::string("/bin"));
-  auto writeTrigger = tf.getScalar<uint64_t>("Configuration/tick");
+  auto writeTrigger = tf.getScalar<uint64_t>("configuration/tick");
   tf.runApplication();
   for(int i = 0; i < 3; i++){
     writeTrigger.write();
@@ -179,7 +179,7 @@ BOOST_AUTO_TEST_CASE( testProcessRestartCounter1){
   app.defineConnections();
   ChimeraTK::TestFacility tf;
   prepareTest(&tf, 0, 2, std::string("sleep 1"), std::string("/bin"));
-  auto writeTrigger = tf.getScalar<uint64_t>("Configuration/tick");
+  auto writeTrigger = tf.getScalar<uint64_t>("configuration/tick");
   tf.runApplication();
   writeTrigger.write();
   tf.stepApplication();
@@ -203,7 +203,7 @@ BOOST_AUTO_TEST_CASE( testProcessRestartCounter2){
   app.defineConnections();
   ChimeraTK::TestFacility tf;
   prepareTest(&tf, 0, 2, std::string("sleep 1"), std::string("/bin"));
-  auto writeTrigger = tf.getScalar<uint64_t>("Configuration/tick");
+  auto writeTrigger = tf.getScalar<uint64_t>("configuration/tick");
   tf.runApplication();
   writeTrigger.write();
   tf.stepApplication();
