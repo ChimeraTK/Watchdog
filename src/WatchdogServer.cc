@@ -72,7 +72,7 @@ WatchdogServer::WatchdogServer() :
       processGroup.processes.back().logStream = nullptr;
 #ifdef ENABLE_LOGGING
       processGroup.processesLog.emplace_back(&processGroup, processName, "process log");
-      processGroup.processesLogExternal.emplace_back(&processGroup, processName , "process external log", "/Configuration/tick", "/processes/" + processName + "/config/logfileExternal");
+      processGroup.processesLogExternal.emplace_back(&processGroup, processName , "process external log", "/configuration/tick", "/processes/" + processName + "/config/logfileExternal");
 #endif
     }
   } catch (std::out_of_range &e){
@@ -87,7 +87,7 @@ WatchdogServer::WatchdogServer() :
     processGroup.processes.back().logStream = nullptr;
 #ifdef ENABLE_LOGGING
     processGroup.processesLog.emplace_back(&processGroup, "0", "Process log");
-    processGroup.processesLogExternal.emplace_back(&processGroup, "0", "Process external log", "/Configuration/tick", "/processes/0/config/logfileExternal");
+    processGroup.processesLogExternal.emplace_back(&processGroup, "0", "Process external log", "/configuration/tick", "/processes/0/config/logfileExternal");
 #endif
   }
   size_t i =0;
@@ -116,12 +116,12 @@ WatchdogServer::WatchdogServer() :
 }
 
 void WatchdogServer::defineConnections() {
- trigger.connectTo(cs["Configuration"]);
+ trigger.connectTo(cs["configuration"]);
 
 #ifdef ENABLE_LOGGING
 	watchdog.process.logging.connectTo(watchdog.logging.input);
   systemInfo.info.logging.connectTo(systemInfo.logging.input);
-  config.connectTo(cs["Configuration"]);
+  config.connectTo(cs["configuration"]);
 
   auto log = processGroup.processesLog.begin();
 #endif
@@ -177,7 +177,7 @@ void WatchdogServer::defineConnections() {
   }
 
 #ifdef WITHDAQ
-  daq = ctk::MicroDAQ<uint64_t>{this, "MicroDAQ", "DAQ module", "DAQ", "/Configuration/tick", ctk::HierarchyModifier::none, {"CS"}};
+  daq = ctk::MicroDAQ<uint64_t>{this, "microDAQ", "DAQ module", "DAQ", "/configuration/tick", ctk::HierarchyModifier::none, {"CS"}};
 #endif
 
   findTag("CS").connectTo(cs);

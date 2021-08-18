@@ -73,7 +73,7 @@ public:
   SystemInfoModule(EntityOwner *owner, const std::string &name,
       const std::string &description, ctk::HierarchyModifier hierarchyModifier = ctk::HierarchyModifier::none,
       const std::unordered_set<std::string> &tags = { },
-      const std::string &pathToTrigger="/Configuration/tick");
+      const std::string &pathToTrigger="/configuration/tick");
 
   struct TriggerGroup : ctk::HierarchyModifyingGroup {
     TriggerGroup(EntityOwner* owner, const std::string& pathToTrigger,
@@ -211,7 +211,7 @@ struct FileSystemModule : public ctk::ApplicationModule {
    */
   FileSystemModule(const std::string &devName, const std::string &mntPoint, EntityOwner *owner, const std::string &name,
         const std::string &description, ctk::HierarchyModifier hierarchyModifier = ctk::HierarchyModifier::none,
-        const std::unordered_set<std::string> &tags = { }, const std::string &pathToTrigger="/Configuration/tick");
+        const std::unordered_set<std::string> &tags = { }, const std::string &pathToTrigger="/configuration/tick");
 
   ctk::ScalarOutput<std::string> deviceName { this, "deviceName", "", "Name of the device",
         { "CS" } };
@@ -335,7 +335,7 @@ struct FileSystemGroup : public ctk::ModuleGroup{
 struct NetworkModule : public ctk::ApplicationModule {
   NetworkModule(const std::string &device, EntityOwner *owner, const std::string &name,
         const std::string &description, ctk::HierarchyModifier hierarchyModifier = ctk::HierarchyModifier::none,
-        const std::unordered_set<std::string> &tags = { }, const std::string& pathToTrigger="/Configuration/tick");
+        const std::unordered_set<std::string> &tags = { }, const std::string& pathToTrigger="/configuration/tick");
 
   std::string networkDeviceName;
 

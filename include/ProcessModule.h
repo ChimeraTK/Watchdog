@@ -37,7 +37,7 @@ struct ProcessInfoModule : public ctk::ApplicationModule {
   ProcessInfoModule(EntityOwner *owner, const std::string &name,
       const std::string &description, ctk::HierarchyModifier hierarchyModifier = ctk::HierarchyModifier::none,
       const std::unordered_set<std::string> &tags = { },
-      const std::string &pathToTrigger="/Configuration/tick"):
+      const std::string &pathToTrigger="/configuration/tick"):
         ctk::ApplicationModule(owner, name, description, hierarchyModifier, tags),
         triggerGroup(this, pathToTrigger, {"CS"}),
         logStream(nullptr){};
@@ -207,7 +207,7 @@ struct ProcessControlModule : public ProcessInfoModule{
   ProcessControlModule(EntityOwner *owner, const std::string &name,
       const std::string &description, bool historyOn = false, ctk::HierarchyModifier hierarchyModifier = ctk::HierarchyModifier::none,
       const std::unordered_set<std::string> &tags = { },
-      const std::string &pathToTrigger="/Configuration/tick"):
+      const std::string &pathToTrigger="/configuration/tick"):
         ProcessInfoModule(owner, name, description, hierarchyModifier, tags, pathToTrigger), _historyOn(historyOn){ };
 
   /* Use terminate function to delete the ProcessHandler, since it is using a local stringstream constructed in the main loop
