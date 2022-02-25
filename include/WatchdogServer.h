@@ -13,6 +13,7 @@
 #include <ChimeraTK/ApplicationCore/ConfigReader.h>
 #include <ChimeraTK/ApplicationCore/PeriodicTrigger.h>
 #include <ChimeraTK/ApplicationCore/ServerHistory.h>
+#include <ChimeraTK/ApplicationCore/DataLossCounter.h>
 
 #include "SystemInfoModule.h"
 #include "ProcessModule.h"
@@ -90,6 +91,8 @@ struct WatchdogServer: public ctk::Application {
   NetworkGroup networkGroup{this, "network", "Network module group"};
 
   WatchdogModuleGroup watchdog{this, "watchdog", "Module monitoring the watchdog process"};
+
+  ctk::DataLossCounter<uint64_t> dataLossCounter{this, "DataLossCounter", "Statistics on lost data within this watchdog server", ctk::HierarchyModifier::none};
 
 #ifdef WITHDAQ
   ctk::MicroDAQ<uint64_t> daq;

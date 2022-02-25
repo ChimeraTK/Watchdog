@@ -180,6 +180,8 @@ void WatchdogServer::defineConnections() {
   daq = ctk::MicroDAQ<uint64_t>{this, "microDAQ", "DAQ module", "DAQ", "/configuration/tick", ctk::HierarchyModifier::none, {"CS"}};
 #endif
 
+  trigger.tick >> dataLossCounter.trigger;
+  dataLossCounter.connectTo(cs["DataLossCounter"]);
   findTag("CS").connectTo(cs);
   /**
    * Server information
