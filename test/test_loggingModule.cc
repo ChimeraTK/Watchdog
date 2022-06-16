@@ -24,18 +24,14 @@ using namespace boost::unit_test_framework;
  * Define a test app to test the LoggingModule.
  */
 struct testApp : public ChimeraTK::Application {
-  testApp() : Application("test"){ }
-  ~testApp() {
-    shutdown();
-  }
+  testApp() : Application("test") {}
+  ~testApp() { shutdown(); }
 
-  LoggingModule logging { this, "LoggingModule",
-      "LoggingModule test" };
+  LoggingModule logging{this, "LoggingModule", "LoggingModule test"};
 
   ChimeraTK::ControlSystemModule cs;
 
-
-  void defineConnections() override{
+  void defineConnections() override {
     /**
      * Connect a control system variable to the ProcessControlModule instead of the trigger module.
      * Now there is a blocking read in the ProcessControlModule, which is used to step through the
@@ -46,16 +42,16 @@ struct testApp : public ChimeraTK::Application {
     cs("message") >> logging.input.message;
     cs("messageLevel") >> logging.input.messageLevel;
 
-//    dumpConnections();
+    //    dumpConnections();
   }
 };
 
-BOOST_AUTO_TEST_CASE( testLogging) {
+BOOST_AUTO_TEST_CASE(testLogging) {
   testApp app;
   app.defineConnections();
   ChimeraTK::TestFacility tf;
-  tf.setScalarDefault<uint>("Logging/config/logLevel",0);
-  tf.setScalarDefault<uint>("Logging/config/logTailLength",3);
+  tf.setScalarDefault<uint>("Logging/config/logLevel", 0);
+  tf.setScalarDefault<uint>("Logging/config/logTailLength", 3);
   auto logLevel = tf.getScalar<uint>("Logging/config/logLevel");
   auto msg = tf.getScalar<std::string>("message");
   auto msgLevel = tf.getScalar<uint>("messageLevel");
@@ -72,7 +68,7 @@ BOOST_AUTO_TEST_CASE( testLogging) {
   msgLevel.write();
   tf.stepApplication();
   auto tail = tf.readScalar<std::string>("Logging/status/logTail");
-  std::vector< std::string > result;
+  std::vector<std::string> result;
   boost::algorithm::split(result, tail, boost::is_any_of("\n"));
   // result length should be 3 not 2, because new line is used to split, which results in 3 items although there are only two messages.
   BOOST_CHECK_EQUAL(result.size(), 3);

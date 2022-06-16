@@ -21,7 +21,7 @@
  *
  * The libproc library is not thread safe. Therefore a mutex is used here.
  */
-namespace proc_util{
+namespace proc_util {
   extern std::mutex proc_mutex;
 
   /**
@@ -30,22 +30,22 @@ namespace proc_util{
    * \param PID Process ID to look for
    * \return True if the process is running and registered in the \c /proc folder
    */
-  bool isProcessRunning(const int &PID);
+  bool isProcessRunning(const int& PID);
 
   /**
    * Read procps information of a certain process.
    * \param PID pid of the process to be considered.
    * \throws std::runtime_error In case no process with the given PID exists.
    */
-  std::shared_ptr<proc_t> getInfo(const size_t &PID);
+  std::shared_ptr<proc_t> getInfo(const size_t& PID);
 
   /**
    * Read the number of processes that belong to the same process group id (PGID).
    * \param PGID The process group id used to look for processes
    * \param os Stream used to print messages.
    */
-  size_t getNChilds(const size_t &PGID, std::ostream &os = std::cout);
-}
+  size_t getNChilds(const size_t& PGID, std::ostream& os = std::cout);
+} // namespace proc_util
 
 /**
  * \return New string where spaces are replaced by underscores.
@@ -59,7 +59,7 @@ std::string space2underscore(std::string text);
  * \param token The token used to split the string
  * \return Tokens of the split string.
  */
-std::vector<std::string> split_arguments(const std::string &arguments, const std::string &token = "\t ");
+std::vector<std::string> split_arguments(const std::string& arguments, const std::string& token = "\t ");
 
 /**
  * \brief Class that reads static system information from the system by reading
@@ -68,7 +68,7 @@ std::vector<std::string> split_arguments(const std::string &arguments, const std
  * \throws runtime_error Exception is thrown in case one of the /proc/ files could not be read.
  */
 class SysInfo {
-private:
+ private:
   /**
    * System data are stored in this map. The keys are equivalent to the keys found
    * in \c /proc/cpuinfo.
@@ -88,14 +88,13 @@ private:
    * Only lines that contain a delimiter ":" are considered. All other lines
    * are skipped.
    */
-  void parseInfoFile(const std::string &file);
+  void parseInfoFile(const std::string& file);
 
-public:
-
+ public:
   /** Iterator pointing to the beginning of the system data map */
-  std::map<std::string, std::string>::iterator ibegin(){return sysData.begin();}
+  std::map<std::string, std::string>::iterator ibegin() { return sysData.begin(); }
   /** Iterator pointing to the end of the system data map */
-  std::map<std::string, std::string>::iterator iend(){return sysData.end();}
+  std::map<std::string, std::string>::iterator iend() { return sysData.end(); }
 
   /**
    * Read information about the system.
@@ -103,24 +102,19 @@ public:
    *                    this for test purposes.
    * \throws runtime_error Exception is thrown in case one of the /proc/ files could not be read.
    */
-  SysInfo(const std::string &cpuinfoFile = "/proc/cpuinfo");
+  SysInfo(const std::string& cpuinfoFile = "/proc/cpuinfo");
 
   /**
    * Get a system parameter stored in \c /proc/cpuinfo
    * \remark Not all parameter found in  \c /proc/cpuinfo are available.
    * \param pattern The key used in \c /proc/cpuinfo and the internal map sysData.
    */
-  std::string getInfo(const std::string &pattern) {
-    return sysData.at(pattern);
-  }
+  std::string getInfo(const std::string& pattern) { return sysData.at(pattern); }
 
   /**
    * \return Number cpu cores of the system
    */
-  unsigned int getNCpu() {
-    return CPUcount;
-  }
-
+  unsigned int getNCpu() { return CPUcount; }
 };
 
 #endif /* INCLUDE_SYS_STAT_H_ */

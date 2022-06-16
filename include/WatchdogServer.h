@@ -19,18 +19,19 @@
 #include "ProcessModule.h"
 
 #ifdef WITHDAQ
-#include <ChimeraTK/ApplicationCore/MicroDAQ.h>
+#  include <ChimeraTK/ApplicationCore/MicroDAQ.h>
 #endif
 
 #ifdef ENABLE_LOGGING
-#include "LoggingModule.h"
+#  include "LoggingModule.h"
 #endif
 
 namespace ctk = ChimeraTK;
 
-struct WatchdogModuleGroup : ctk::ModuleGroup{
+struct WatchdogModuleGroup : ctk::ModuleGroup {
   using ctk::ModuleGroup::ModuleGroup;
-  ProcessInfoModule process{this, "watchdog", "Module monitoring the watchdog process", ctk::HierarchyModifier::hideThis};
+  ProcessInfoModule process{
+      this, "watchdog", "Module monitoring the watchdog process", ctk::HierarchyModifier::hideThis};
 #ifdef ENABLE_LOGGING
   /**
    * This module is used to read the watchdog log file, which includes messages from the
@@ -46,21 +47,24 @@ struct WatchdogModuleGroup : ctk::ModuleGroup{
    * AND the watchdog LoggingModule. But this is not possible, since it is not possible to connect multiple
    * outputs to a single push input variable.
    */
-  LogFileModule logFile{this, "watchdogLogFile", "Logging module reading the watchdog logfile", "/configuration/tick", "/watchdog/config/logFile", ctk::HierarchyModifier::hideThis};
+  LogFileModule logFile{this, "watchdogLogFile", "Logging module reading the watchdog logfile", "/configuration/tick",
+      "/watchdog/config/logFile", ctk::HierarchyModifier::hideThis};
 
   /**
    * This module is used to handle messages from the watchdog process it self.
    */
-  LoggingModule logging{this, "watchdogLog", "Logging module of the watchdog process", ctk::HierarchyModifier::hideThis};
+  LoggingModule logging{
+      this, "watchdogLog", "Logging module of the watchdog process", ctk::HierarchyModifier::hideThis};
 #endif
 };
 
-struct SystemInfoGroup : ctk::ModuleGroup{
+struct SystemInfoGroup : ctk::ModuleGroup {
   using ctk::ModuleGroup::ModuleGroup;
 
   SystemInfoModule info{this, "system", "Module reading system information", ctk::HierarchyModifier::hideThis};
 #ifdef ENABLE_LOGGING
-  LoggingModule logging{this, "systeminfoLog", "Logging module of the system information module", ctk::HierarchyModifier::hideThis};
+  LoggingModule logging{
+      this, "systeminfoLog", "Logging module of the system information module", ctk::HierarchyModifier::hideThis};
 #endif
 };
 
@@ -71,18 +75,16 @@ struct SystemInfoGroup : ctk::ModuleGroup{
  * - microDAQ
  * - history
  */
-struct WatchdogServer: public ctk::Application {
+struct WatchdogServer : public ctk::Application {
   WatchdogServer();
-  ~WatchdogServer() {
-    shutdown();
-  }
+  ~WatchdogServer() { shutdown(); }
   ctk::ControlSystemModule cs;
 
   ctk::PeriodicTrigger trigger{this, "Trigger", "Trigger used for other modules"};
 
   ctk::ConfigReader config{this, "Configuration", "WatchdogServerConfig.xml"};
 
-  SystemInfoGroup systemInfo { this, "system", "Module reading system information" };
+  SystemInfoGroup systemInfo{this, "system", "Module reading system information"};
 
   ProcessGroup processGroup{this, "processes", "Process module group"};
 
@@ -92,7 +94,8 @@ struct WatchdogServer: public ctk::Application {
 
   WatchdogModuleGroup watchdog{this, "watchdog", "Module monitoring the watchdog process"};
 
-  ctk::DataLossCounter<uint64_t> dataLossCounter{this, "DataLossCounter", "Statistics on lost data within this watchdog server", ctk::HierarchyModifier::none};
+  ctk::DataLossCounter<uint64_t> dataLossCounter{
+      this, "DataLossCounter", "Statistics on lost data within this watchdog server", ctk::HierarchyModifier::none};
 
 #ifdef WITHDAQ
   ctk::MicroDAQ<uint64_t> daq;
@@ -106,7 +109,6 @@ struct WatchdogServer: public ctk::Application {
   ctk::history::ServerHistory history;
 
   void defineConnections() override;
-
 };
 
 #endif /* INCLUDE_WATCHDOGSERVER_H_ */

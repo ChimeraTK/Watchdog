@@ -40,12 +40,11 @@
  * SIGCHLD signal!
  */
 struct ProcessHandler {
-private:
-
+ private:
   /**
    * Read the PID from a temporary file that is created by the child process.
    */
-  bool readTempPID(int &PID);
+  bool readTempPID(int& PID);
 
   /**
    * If a process was started using the ProcessHandler this method can be used
@@ -67,16 +66,16 @@ private:
    */
   bool isPIDFolderWritable();
 
-  int pid; ///< The pid of the last process that was started.
-  std::string pidFile; ///< Name of the temporary file that holds the child PID
-  bool deletePIDFile; ///< If true the PID file is deleted after reading the PID.
-  int signum;///< Signal used to stop a process
-  std::ostream &os; ///< Stream used to send messages
-  logging::LogLevel log;///< The current log level
+  int pid;                ///< The pid of the last process that was started.
+  std::string pidFile;    ///< Name of the temporary file that holds the child PID
+  bool deletePIDFile;     ///< If true the PID file is deleted after reading the PID.
+  int signum;             ///< Signal used to stop a process
+  std::ostream& os;       ///< Stream used to send messages
+  logging::LogLevel log;  ///< The current log level
   const std::string name; ///< Name of this class
-  bool connected; ///< If false no cleanup is performed on destructor call
-  size_t killTimeout;///< Time in seconds to wait for a process to exit before using SIGKILL
-public:
+  bool connected;         ///< If false no cleanup is performed on destructor call
+  size_t killTimeout;     ///< Time in seconds to wait for a process to exit before using SIGKILL
+ public:
   /**
    * Constructor.
    * It is checked if a process is already running. This is done by testing if the
@@ -91,8 +90,8 @@ public:
    * ProcessHandler is not terminated correctly and started again.
    * \param PID The PID is set in case a running process was found. Else it is set to -1.
    */
-  ProcessHandler(const std::string &PIDFileName,
-      const bool deletePIDFile, int &PID, std::ostream &os, const std::string &name = "");
+  ProcessHandler(const std::string& PIDFileName, const bool deletePIDFile, int& PID, std::ostream& os,
+      const std::string& name = "");
 
   /**
      * Constructor.
@@ -105,8 +104,8 @@ public:
      * with the same PID file settings. But you can not check for a running process if the
      * ProcessHandler is not terminated correctly and started again.
      */
-  ProcessHandler(const std::string &PIDFileName,
-       const bool deletePIDFile = false, std::ostream &os = std::cout, const std::string &name = "");
+  ProcessHandler(const std::string& PIDFileName, const bool deletePIDFile = false, std::ostream& os = std::cout,
+      const std::string& name = "");
   ~ProcessHandler();
 
   /**
@@ -139,13 +138,13 @@ public:
    * \remark The command will not be executated in the working directory of the
    * calling process but in the given path!
    */
-  size_t startProcess(const std::string &path, const std::string &cmd, const std::string &logfile,
-      const std::string &environment = "", const bool &overwriteENV = false);
+  size_t startProcess(const std::string& path, const std::string& cmd, const std::string& logfile,
+      const std::string& environment = "", const bool& overwriteENV = false);
 
   /**
    * \param sig Signal used to kill the process (e.g. SIGINT = 2, SIGKILL = 9)
    */
-  void setSigNum(int sig){signum = sig;}
+  void setSigNum(int sig) { signum = sig; }
 
   /**
    * Tell all file handles to be closed when exec is called.
@@ -163,8 +162,7 @@ public:
    *
    * Depending on the level messages are put to the ostream.
    */
-  void SetLogLevel(const logging::LogLevel &level){log = level;}
-
+  void SetLogLevel(const logging::LogLevel& level) { log = level; }
 
   /**
    * Setup handler for SIGCHLD signals.
@@ -180,12 +178,9 @@ public:
    *
    * \param timeout The time (given in seconds) to wait before killing the process using SIGKILL
    */
-  void setKillTimeout(const size_t timeout){killTimeout = timeout;}
+  void setKillTimeout(const size_t timeout) { killTimeout = timeout; }
 
   void Disconnect();
-
 };
-
-
 
 #endif /* INCLUDE_PROCESSHANDLER_H_ */
