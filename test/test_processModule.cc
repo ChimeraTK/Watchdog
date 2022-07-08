@@ -30,15 +30,12 @@ using namespace boost::unit_test_framework;
  * blocking read!
  */
 struct testApp : public ChimeraTK::Application {
-  testApp() : Application("test") {
-    process.logStream = 0;
-    ProcessHandler::setupHandler();
-  }
+  testApp() : Application("test") { ProcessHandler::setupHandler(); }
   ~testApp() { shutdown(); }
 
   ProcessControlModule process{this, "Process", "ProcessControlModule test"};
 
-  LoggingModule logging{this, "Logging", "Logging module"};
+  //  LoggingModule logging{this, "Logging", "Logging module"};
 
   ChimeraTK::ControlSystemModule cs;
 
@@ -54,7 +51,7 @@ struct testApp : public ChimeraTK::Application {
      */
     //    process.findTag("CS").connectTo(cs["Process"]);
     //    logging.findTag("CS").connectTo(cs["Logging"]);
-    process.logging.connectTo(logging.input);
+    //    process.logging.connectTo(logging.input);
     findTag("CS").connectTo(cs);
     //    dumpConnections();
   }

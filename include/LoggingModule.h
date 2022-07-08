@@ -94,60 +94,61 @@ struct LogFileModule : public ctk::ApplicationModule {
  *
  * The logfile is given by the client using the logFile variable.
  */
-struct LoggingModule : public ctk::ApplicationModule {
-  /** Number of messages stored in the tail */
-  size_t messageCounter;
-
-  LoggingModule(EntityOwner* owner, const std::string& name, const std::string& description,
-      ctk::HierarchyModifier hierarchyModifier = ctk::HierarchyModifier::none,
-      const std::unordered_set<std::string>& tags = {}, const std::string& pathToLogFile = "/watchdog/config/logFile")
-  : ctk::ApplicationModule(owner, name, description, hierarchyModifier, tags), messageCounter(0),
-    logFileGroup(this, pathToLogFile, {"CS"}){};
-
-  struct Input : ctk::VariableGroup {
-    using ctk::VariableGroup::VariableGroup;
-    ctk::ScalarPushInput<std::string> message{this, "message", "", "Message to be logged."};
-
-    ctk::ScalarPushInput<uint> messageLevel{this, "messageLevel", "", "Message log level."};
-  } input{this, "input", "Input to the LoggingModule"};
-
-  struct Config : public ctk::VariableGroup {
-    using ctk::VariableGroup::VariableGroup;
-    ctk::ScalarPollInput<uint> targetStream{this, "targetStream", "",
-        "Set the tagret stream: 0 (cout/cerr+logfile), 1 (logfile), 2 (cout/cerr), 3 (none)", {"CS"}};
-
-    ctk::ScalarPollInput<uint> tailLength{
-        this, "logTailLength", "", "Maximum number of messages to be shown in the logging stream tail.", {"CS"}};
-
-    ctk::ScalarPollInput<uint> logLevel{this, "logLevel", "", "Current log level used for messages.", {"CS"}};
-
-  } config{this, "config", "Configuration parameters of the process"};
-
-  struct Status : ctk::VariableGroup {
-    using ctk::VariableGroup::VariableGroup;
-    ctk::ScalarOutput<std::string> logTail{
-        this, "logTail", "", "Tail of the logging stream.", {"CS", "PROCESS", getName()}};
-  } status{this, "status", "Status parameter of the process"};
-
-  struct LogFileGroup : ctk::HierarchyModifyingGroup {
-    LogFileGroup(EntityOwner* owner, const std::string& pathToLogFile, const std::unordered_set<std::string>& tags = {})
-    : ctk::HierarchyModifyingGroup(owner, ctk::HierarchyModifyingGroup::getPathName(pathToLogFile), "", tags),
-      logFile{this, HierarchyModifyingGroup::getUnqualifiedName(pathToLogFile), "", "Logfile input"} {}
-
-    LogFileGroup() {}
-    /** Log file name. It will be created in the given processPath */
-    ctk::ScalarPollInput<std::string> logFile;
-  } logFileGroup;
-
-  std::unique_ptr<std::ofstream> file; ///< Log file where to write log messages
-
-  std::string currentFile; ///<Name of the current log file
-
-  /**
-   * Application core main loop.
-   */
-  virtual void mainLoop();
-
-  void terminate();
-};
+//
+//struct LoggingModule : public ctk::ApplicationModule {
+//  /** Number of messages stored in the tail */
+//  size_t messageCounter;
+//
+//  LoggingModule(EntityOwner* owner, const std::string& name, const std::string& description,
+//      ctk::HierarchyModifier hierarchyModifier = ctk::HierarchyModifier::none,
+//      const std::unordered_set<std::string>& tags = {}, const std::string& pathToLogFile = "/watchdog/config/logFile")
+//  : ctk::ApplicationModule(owner, name, description, hierarchyModifier, tags), messageCounter(0),
+//    logFileGroup(this, pathToLogFile, {"CS"}){};
+//
+//  struct Input : ctk::VariableGroup {
+//    using ctk::VariableGroup::VariableGroup;
+//    ctk::ScalarPushInput<std::string> message{this, "message", "", "Message to be logged."};
+//
+//    ctk::ScalarPushInput<uint> messageLevel{this, "messageLevel", "", "Message log level."};
+//  } input{this, "input", "Input to the LoggingModule"};
+//
+//  struct Config : public ctk::VariableGroup {
+//    using ctk::VariableGroup::VariableGroup;
+//    ctk::ScalarPollInput<uint> targetStream{this, "targetStream", "",
+//        "Set the tagret stream: 0 (cout/cerr+logfile), 1 (logfile), 2 (cout/cerr), 3 (none)", {"CS"}};
+//
+//    ctk::ScalarPollInput<uint> tailLength{
+//        this, "logTailLength", "", "Maximum number of messages to be shown in the logging stream tail.", {"CS"}};
+//
+//    ctk::ScalarPollInput<uint> logLevel{this, "logLevel", "", "Current log level used for messages.", {"CS"}};
+//
+//  } config{this, "config", "Configuration parameters of the process"};
+//
+//  struct Status : ctk::VariableGroup {
+//    using ctk::VariableGroup::VariableGroup;
+//    ctk::ScalarOutput<std::string> logTail{
+//        this, "logTail", "", "Tail of the logging stream.", {"CS", "PROCESS", getName()}};
+//  } status{this, "status", "Status parameter of the process"};
+//
+//  struct LogFileGroup : ctk::HierarchyModifyingGroup {
+//    LogFileGroup(EntityOwner* owner, const std::string& pathToLogFile, const std::unordered_set<std::string>& tags = {})
+//    : ctk::HierarchyModifyingGroup(owner, ctk::HierarchyModifyingGroup::getPathName(pathToLogFile), "", tags),
+//      logFile{this, HierarchyModifyingGroup::getUnqualifiedName(pathToLogFile), "", "Logfile input"} {}
+//
+//    LogFileGroup() {}
+//    /** Log file name. It will be created in the given processPath */
+//    ctk::ScalarPollInput<std::string> logFile;
+//  } logFileGroup;
+//
+//  std::unique_ptr<std::ofstream> file; ///< Log file where to write log messages
+//
+//  std::string currentFile; ///<Name of the current log file
+//
+//  /**
+//   * Application core main loop.
+//   */
+//  virtual void mainLoop();
+//
+//  void terminate();
+//};
 #endif /* INCLUDE_LOGGINGMODULE_H_ */

@@ -27,7 +27,7 @@ struct testApp : public ChimeraTK::Application {
   testApp() : Application("test") {}
   ~testApp() { shutdown(); }
 
-  LoggingModule logging{this, "LoggingModule", "LoggingModule test"};
+  //  LoggingModule logging{this, "LoggingModule", "LoggingModule test"};
 
   ChimeraTK::ControlSystemModule cs;
 
@@ -37,10 +37,10 @@ struct testApp : public ChimeraTK::Application {
      * Now there is a blocking read in the ProcessControlModule, which is used to step through the
      * application.
      */
-    logging.findTag("CS").connectTo(cs["Logging"]);
+    //    logging.findTag("CS").connectTo(cs["Logging"]);
 
-    cs("message") >> logging.input.message;
-    cs("messageLevel") >> logging.input.messageLevel;
+    //    cs("message") >> logging.input.message;
+    //    cs("messageLevel") >> logging.input.messageLevel;
 
     //    dumpConnections();
   }

@@ -5,7 +5,7 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/Modules)
 
 set(${PROJECT_NAME}_MAJOR_VERSION 01)
 set(${PROJECT_NAME}_MINOR_VERSION 04)
-set(${PROJECT_NAME}_PATCH_VERSION 05)
+set(${PROJECT_NAME}_PATCH_VERSION 06)
 include(cmake/set_version_numbers.cmake)
 
 # Options
@@ -21,12 +21,10 @@ endif( ENABLE_DOCUMENTAION )
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/set_default_flags.cmake)
 include(cmake/add_dependency.cmake)
-add_dependency(ChimeraTK-ApplicationCore 02.02 REQUIRED)
 
-add_dependency(ChimeraTK-ApplicationCore-MicroDAQ 01.01)
-if(NOT ChimeraTK-ApplicationCore-MicroDAQ_FOUND)
-  message(STATUS "ChimeraTK-ApplicationCore-MicroDAQ not found. ChimeraTK based DAQ will not be available.")
-endif(NOT ChimeraTK-ApplicationCore-MicroDAQ_FOUND)
+add_dependency(ChimeraTK-ApplicationCore 02.02 REQUIRED)
+add_dependency(ChimeraTK-ApplicationCore-MicroDAQ 02.00)
+
 find_package(Boost COMPONENTS date_time REQUIRED)
 
 find_library(procps NAMES procps REQUIRED)
@@ -96,14 +94,7 @@ if(CMAKE_BUILD_TYPE MATCHES Debug)
                                                      ${LibXML++_LIBRARIES}
                                                      procps
                                                      ${PROJECT_NAME}lib)
-
-  if(ChimeraTK-ApplicationCore-MicroDAQ_FOUND)
-    set_target_properties(${PROJECT_NAME}lib PROPERTIES COMPILE_FLAGS "-DWITHDAQ")
-    set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS "-DWITHDAQ")
-    set_target_properties(${PROJECT_NAME}-xmlGenerator PROPERTIES COMPILE_FLAGS "-DWITHDAQ -DGENERATE_XML")
-  else()
-    set_target_properties(${PROJECT_NAME}-xmlGenerator PROPERTIES COMPILE_FLAGS "-DGENERATE_XML")
-  endif(ChimeraTK-ApplicationCore-MicroDAQ_FOUND)
+  set_target_properties(${PROJECT_NAME}-xmlGenerator PROPERTIES COMPILE_FLAGS "-DGENERATE_XML")
 
   if( ENABLE_TESTING )
     ENABLE_TESTING()
@@ -131,13 +122,7 @@ else()
                                                      procps
                                                      ${ChimeraTK-ApplicationCore-MicroDAQ_LIBRARIES})
 
-  if(ChimeraTK-ApplicationCore-MicroDAQ_FOUND)
-    set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS "-DWITHDAQ")
-    set_target_properties(${PROJECT_NAME}-xmlGenerator PROPERTIES COMPILE_FLAGS "-DWITHDAQ -DGENERATE_XML")
-  else()
-    set_target_properties(${PROJECT_NAME}-xmlGenerator PROPERTIES COMPILE_FLAGS "-DGENERATE_XML")
-  endif(ChimeraTK-ApplicationCore-MicroDAQ_FOUND)
-
+  set_target_properties(${PROJECT_NAME}-xmlGenerator PROPERTIES COMPILE_FLAGS "-DGENERATE_XML")
 endif(CMAKE_BUILD_TYPE MATCHES Debug)
 
 # Set RPATH to find root dependencies automatically

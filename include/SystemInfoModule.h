@@ -11,6 +11,7 @@
 #undef GENERATE_XML
 #include <ChimeraTK/ApplicationCore/ApplicationCore.h>
 #include <ChimeraTK/ApplicationCore/HierarchyModifyingGroup.h>
+#include <ChimeraTK/ApplicationCore/Logging.h>
 
 #ifdef ENABLE_LOGGING
 #  include "LoggingModule.h"
@@ -72,7 +73,7 @@ class SystemInfoModule : public ctk::ApplicationModule {
  public:
   SystemInfoModule(EntityOwner* owner, const std::string& name, const std::string& description,
       ctk::HierarchyModifier hierarchyModifier = ctk::HierarchyModifier::none,
-      const std::unordered_set<std::string>& tags = {}, const std::string& pathToTrigger = "/configuration/tick");
+      const std::unordered_set<std::string>& tags = {}, const std::string& pathToTrigger = "/Trigger/tick");
 
   struct TriggerGroup : ctk::HierarchyModifyingGroup {
     TriggerGroup(EntityOwner* owner, const std::string& pathToTrigger, const std::unordered_set<std::string>& tags = {})
@@ -136,21 +137,7 @@ class SystemInfoModule : public ctk::ApplicationModule {
    * \name Logging
    * @{
    */
-  std::ostream* logStream;
-#ifdef ENABLE_LOGGING
-  struct Logging : ctk::VariableGroup {
-    using ctk::VariableGroup::VariableGroup;
-    /** Message to be send to the logging module */
-    ctk::ScalarOutput<std::string> message{
-        this, "message", "", "Message of the module to the logging System", {"Logging", getName()}};
-
-    /** Message to be send to the logging module */
-    ctk::ScalarOutput<uint> messageLevel{
-        this, "messageLevel", "", "Logging level of the message", {"Logging", getName()}};
-  } logging{this, "logging", "Logging messages"};
-  void sendMessage(const logging::LogLevel& level = logging::LogLevel::INFO);
-
-#endif
+  boost::shared_ptr<logging::Logger> logger{new logging::Logger(this)};
   /** @} */
 
   /**
@@ -158,11 +145,6 @@ class SystemInfoModule : public ctk::ApplicationModule {
    * Reads number of cores and system clock ticks and other static parameter only once before the loop.
    */
   void mainLoop() override;
-
-  /**
-   * Clean up ostream pointer and terminate the application module.
-   */
-  void terminate() override;
 };
 
 /*
@@ -192,7 +174,7 @@ struct FileSystemModule : public ctk::ApplicationModule {
    */
   FileSystemModule(const std::string& devName, const std::string& mntPoint, EntityOwner* owner, const std::string& name,
       const std::string& description, ctk::HierarchyModifier hierarchyModifier = ctk::HierarchyModifier::none,
-      const std::unordered_set<std::string>& tags = {}, const std::string& pathToTrigger = "/configuration/tick");
+      const std::unordered_set<std::string>& tags = {}, const std::string& pathToTrigger = "/Trigger/tick");
 
   ctk::ScalarOutput<std::string> deviceName{this, "deviceName", "", "Name of the device", {"CS"}};
 
@@ -238,33 +220,13 @@ struct FileSystemModule : public ctk::ApplicationModule {
    * \name Logging
    * @{
    */
-  std::ostream* logStream;
-#ifdef ENABLE_LOGGING
-  struct Logging : ctk::VariableGroup {
-    using ctk::VariableGroup::VariableGroup;
-    /** Message to be send to the logging module */
-    ctk::ScalarOutput<std::string> message{
-        this, "message", "", "Message of the module to the logging System", {"Logging", getName()}};
-
-    /** Message to be send to the logging module */
-    ctk::ScalarOutput<uint> messageLevel{
-        this, "messageLevel", "", "Logging level of the message", {"Logging", getName()}};
-  } logging{this, "logging", "Logging messages"};
-
-  void sendMessage(const logging::LogLevel& level = logging::LogLevel::INFO);
-
-#endif
+  boost::shared_ptr<logging::Logger> logger{new logging::Logger(this)};
   /** @} */
 
   /**
    * Main loop function.
    */
   void mainLoop() override;
-
-  /**
-   * Clean up ostream pointer and terminate the application module.
-   */
-  void terminate() override;
 
   /**
    * Use statfs to read information about the device.
@@ -284,9 +246,7 @@ struct FileSystemGroup : public ctk::ModuleGroup {
    */
   std::vector<FileSystemModule> fsMonitors;
 
-#ifdef ENABLE_LOGGING
-  std::vector<LoggingModule> loggingModules;
-#endif
+  logging::LoggingModule logging;
 };
 
 /**
@@ -309,7 +269,7 @@ struct FileSystemGroup : public ctk::ModuleGroup {
 struct NetworkModule : public ctk::ApplicationModule {
   NetworkModule(const std::string& device, EntityOwner* owner, const std::string& name, const std::string& description,
       ctk::HierarchyModifier hierarchyModifier = ctk::HierarchyModifier::none,
-      const std::unordered_set<std::string>& tags = {}, const std::string& pathToTrigger = "/configuration/tick");
+      const std::unordered_set<std::string>& tags = {}, const std::string& pathToTrigger = "/Trigger/tick");
 
   std::string networkDeviceName;
 
@@ -364,33 +324,13 @@ struct NetworkModule : public ctk::ApplicationModule {
    * \name Logging
    * @{
    */
-  std::ostream* logStream;
-#ifdef ENABLE_LOGGING
-  struct Logging : ctk::VariableGroup {
-    using ctk::VariableGroup::VariableGroup;
-    /** Message to be send to the logging module */
-    ctk::ScalarOutput<std::string> message{
-        this, "message", "", "Message of the module to the logging System", {"Logging", getName()}};
-
-    /** Message to be send to the logging module */
-    ctk::ScalarOutput<uint> messageLevel{
-        this, "messageLevel", "", "Logging level of the message", {"Logging", getName()}};
-  } logging{this, "logging", "Logging messages"};
-
-  void sendMessage(const logging::LogLevel& level = logging::LogLevel::INFO);
-
-#endif
+  boost::shared_ptr<logging::Logger> logger{new logging::Logger(this)};
   /** @} */
 
   /**
    * Main loop function.
    */
   void mainLoop() override;
-
-  /**
-   * Clean up ostream pointer and terminate the application module.
-   */
-  void terminate() override;
 
   /**
    * Use statfs to read information about the device.
@@ -410,9 +350,7 @@ struct NetworkGroup : public ctk::ModuleGroup {
    */
   std::vector<NetworkModule> networkMonitors;
 
-#ifdef ENABLE_LOGGING
-  std::vector<LoggingModule> loggingModules;
-#endif
+  logging::LoggingModule logging;
 };
 
 #endif /* INCLUDE_SYSTEMINFOMODULE_H_ */

@@ -40,12 +40,9 @@ struct testWD : public ctk::Application {
       std::string processName = std::to_string(i);
       std::cout << "Adding process: " << processName << std::endl;
       processGroup.processes.emplace_back(&processGroup, processName, "process", true);
-      processGroup.processes.back().logStream = nullptr;
-#ifdef ENABLE_LOGGING
-      processGroup.processesLog.emplace_back(&processGroup, processName, "process log");
+      //      processGroup.processes.back().logStream = nullptr;
       processGroup.processesLogExternal.emplace_back(&processGroup, processName, "process external log",
-          "/configuration/tick", "/processes/" + processName + "/config/logfileExternal");
-#endif
+          "/Trigger/tick", "/processes/" + processName + "/config/logfileExternal");
     }
     ProcessHandler::setupHandler();
   }
@@ -53,22 +50,7 @@ struct testWD : public ctk::Application {
   ~testWD() { shutdown(); }
 
   void defineConnections() override {
-#ifdef ENABLE_LOGGING
-    watchdog.process.logging.connectTo(watchdog.logging.input);
-    systemInfo.info.logging.connectTo(systemInfo.logging.input);
-    auto log = processGroup.processesLog.begin();
-#endif
-
-    systemInfo.findTag("ProcessModuleInput").flatten().connectTo(watchdog.process.input);
-    processGroup.findTag("CS").connectTo(cs["processes"]);
-    for(auto& item : processGroup.processes) {
-      systemInfo.findTag("ProcessModuleInput").flatten().connectTo(item.input);
-#ifdef ENABLE_LOGGING
-      item.logging.connectTo((*log).input);
-      log++;
-#endif
-    }
-    findTag("CS").connectTo(cs);
+    findTag(".*").connectTo(cs);
     dumpConnections();
   }
 };
@@ -81,7 +63,7 @@ BOOST_AUTO_TEST_CASE(testPerformance) {
   ChimeraTK::TestFacility tf;
 
   // Get the trigger variable thats blocking the application (i.e. ProcessControlModule)
-  auto writeTrigger = tf.getScalar<uint64_t>("configuration/tick");
+  auto writeTrigger = tf.getScalar<uint64_t>("Trigger/tick");
 #ifdef ENABLE_LOGGING
   tf.setScalarDefault("watchdog/config/logFile", (std::string) "test_watchdog.log");
   for(size_t i = 0; i < 8; ++i) {

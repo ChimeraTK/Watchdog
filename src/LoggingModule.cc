@@ -54,75 +54,75 @@ void LogFileModule::terminate() {
   ApplicationModule::terminate();
 }
 
-void LoggingModule::mainLoop() {
-  file.reset(new std::ofstream());
-  messageCounter = 0;
-  while(1) {
-    if(config.targetStream == 3) {
-      readAll();
-      continue;
-    }
-    if(((std::string)input.message).empty()) {
-      readAll();
-      continue;
-    }
-    logging::LogLevel level = static_cast<logging::LogLevel>((uint)input.messageLevel);
-    logging::LogLevel setLevel = static_cast<logging::LogLevel>((uint)config.logLevel);
-    std::stringstream ss;
-    ss << level << (std::string)input.message;
-    if(config.targetStream == 0 || config.targetStream == 1) {
-      if(((std::string)logFileGroup.logFile).compare(currentFile.c_str()) != 0 && file->is_open()) {
-        // new log file name was set during runtime
-        file->close();
-      }
-      if(!((std::string)logFileGroup.logFile).empty() && !file->is_open()) {
-        file->open((std::string)logFileGroup.logFile, std::ofstream::out | std::ofstream::app);
-        if(!file->is_open() && level <= logging::LogLevel::ERROR)
-          std::cerr << logging::LogLevel::ERROR << this->getName()
-                    << "LoggingModule failed to open log file for writing: " << (std::string)logFileGroup.logFile
-                    << std::endl;
-        else if(file->is_open() && level <= logging::LogLevel::INFO) {
-          std::cout << logging::LogLevel::INFO << this->getName()
-                    << " Opened log file for writing: " << (std::string)logFileGroup.logFile << std::endl;
-          currentFile = (std::string)logFileGroup.logFile;
-        }
-      }
-    }
-    if(level >= setLevel) {
-      std::string tmpLog = (std::string)status.logTail;
-      if(config.tailLength == 0 && messageCounter > 20) {
-        messageCounter--;
-        tmpLog = tmpLog.substr(tmpLog.find_first_of("\n") + 1, tmpLog.length());
-      }
-      else if(config.tailLength > 0) {
-        while(messageCounter >= config.tailLength) {
-          messageCounter--;
-          tmpLog = tmpLog.substr(tmpLog.find_first_of("\n") + 1, tmpLog.length());
-        }
-      }
-      if(config.targetStream == 0 || config.targetStream == 2) {
-        if(level <= logging::LogLevel::ERROR)
-          std::cout << ss.str();
-        else
-          std::cerr << ss.str();
-      }
-      if(config.targetStream == 0 || config.targetStream == 1) {
-        if(file->is_open()) {
-          (*file) << ss.str().c_str();
-          file->flush();
-        }
-      }
-
-      tmpLog.append(ss.str());
-      messageCounter++;
-      status.logTail = tmpLog;
-      status.logTail.write();
-    }
-    readAll();
-  }
-}
-
-void LoggingModule::terminate() {
-  if((file.get() != nullptr) && (file->is_open())) file->close();
-  ApplicationModule::terminate();
-}
+//void LoggingModule::mainLoop() {
+//  file.reset(new std::ofstream());
+//  messageCounter = 0;
+//  while(1) {
+//    if(config.targetStream == 3) {
+//      readAll();
+//      continue;
+//    }
+//    if(((std::string)input.message).empty()) {
+//      readAll();
+//      continue;
+//    }
+//    logging::Level level = static_cast<logging::Level>((uint)input.messageLevel);
+//    logging::Level setLevel = static_cast<logging::Level>((uint)config.logLevel);
+//    std::stringstream ss;
+//    ss << level << (std::string)input.message;
+//    if(config.targetStream == 0 || config.targetStream == 1) {
+//      if(((std::string)logFileGroup.logFile).compare(currentFile.c_str()) != 0 && file->is_open()) {
+//        // new log file name was set during runtime
+//        file->close();
+//      }
+//      if(!((std::string)logFileGroup.logFile).empty() && !file->is_open()) {
+//        file->open((std::string)logFileGroup.logFile, std::ofstream::out | std::ofstream::app);
+//        if(!file->is_open() && level <= logging::Level::ERROR)
+//          std::cerr << logging::Level::ERROR << this->getName()
+//                    << "LoggingModule failed to open log file for writing: " << (std::string)logFileGroup.logFile
+//                    << std::endl;
+//        else if(file->is_open() && level <= logging::Level::INFO) {
+//          std::cout << logging::Level::INFO << this->getName()
+//                    << " Opened log file for writing: " << (std::string)logFileGroup.logFile << std::endl;
+//          currentFile = (std::string)logFileGroup.logFile;
+//        }
+//      }
+//    }
+//    if(level >= setLevel) {
+//      std::string tmpLog = (std::string)status.logTail;
+//      if(config.tailLength == 0 && messageCounter > 20) {
+//        messageCounter--;
+//        tmpLog = tmpLog.substr(tmpLog.find_first_of("\n") + 1, tmpLog.length());
+//      }
+//      else if(config.tailLength > 0) {
+//        while(messageCounter >= config.tailLength) {
+//          messageCounter--;
+//          tmpLog = tmpLog.substr(tmpLog.find_first_of("\n") + 1, tmpLog.length());
+//        }
+//      }
+//      if(config.targetStream == 0 || config.targetStream == 2) {
+//        if(level <= logging::Level::ERROR)
+//          std::cout << ss.str();
+//        else
+//          std::cerr << ss.str();
+//      }
+//      if(config.targetStream == 0 || config.targetStream == 1) {
+//        if(file->is_open()) {
+//          (*file) << ss.str().c_str();
+//          file->flush();
+//        }
+//      }
+//
+//      tmpLog.append(ss.str());
+//      messageCounter++;
+//      status.logTail = tmpLog;
+//      status.logTail.write();
+//    }
+//    readAll();
+//  }
+//}
+//
+//void LoggingModule::terminate() {
+//  if((file.get() != nullptr) && (file->is_open())) file->close();
+//  ApplicationModule::terminate();
+//}

@@ -60,40 +60,36 @@ std::set<std::string> findNetworkDevices() {
 
 WatchdogServer::WatchdogServer() : Application("WatchdogServer") {
   try {
-    auto nProcesses = config.get<uint>("numberOfProcesses");
+    auto nProcesses = config.get<uint>("Configuration/numberOfProcesses");
     std::cout << "Adding " << nProcesses << " processes." << std::endl;
     for(size_t i = 0; i < nProcesses; i++) {
       std::string processName = std::to_string(i);
-      if(config.get<uint>("enableServerHistory") != 0) {
+      if(config.get<uint>("Configuration/enableServerHistory") != 0) {
         processGroup.processes.emplace_back(&processGroup, processName, "process", true);
       }
       else {
         processGroup.processes.emplace_back(&processGroup, processName, "process");
       }
-      processGroup.processes.back().logStream = nullptr;
-#ifdef ENABLE_LOGGING
-      processGroup.processesLog.emplace_back(&processGroup, processName, "process log");
       processGroup.processesLogExternal.emplace_back(&processGroup, processName, "process external log",
-          "/configuration/tick", "/processes/" + processName + "/config/logfileExternal");
-#endif
+          "/Trigger/tick", "/processes/" + processName + "/config/logfileExternal");
     }
   }
   catch(std::out_of_range& e) {
     std::cerr << "Error in the xml file 'WatchdogServerConfig.xml': " << e.what() << std::endl;
     std::cout << "I will create only one process named PROCESS..." << std::endl;
-    if(config.get<uint>("enableServerHistory") != 0) {
+    if(config.get<uint>("Configuration/enableServerHistory") != 0) {
       processGroup.processes.emplace_back(&processGroup, "0", "Test process", true);
     }
     else {
       processGroup.processes.emplace_back(&processGroup, "0", "Test process");
     }
-    processGroup.processes.back().logStream = nullptr;
-#ifdef ENABLE_LOGGING
-    processGroup.processesLog.emplace_back(&processGroup, "0", "Process log");
     processGroup.processesLogExternal.emplace_back(
-        &processGroup, "0", "Process external log", "/configuration/tick", "/processes/0/config/logfileExternal");
-#endif
+        &processGroup, "0", "Process external log", "/Trigger/tick", "/processes/0/config/logfileExternal");
   }
+
+  processGroup.logging =
+      logging::LoggingModule{&processGroup, "processLogging", "LoggingModule logging process related messages"};
+  ProcessHandler::setupHandler();
   size_t i = 0;
   auto fs = findMountPoints();
   for(auto& mountPoint : fs) {
@@ -102,69 +98,36 @@ WatchdogServer::WatchdogServer() : Application("WatchdogServer") {
               << name << std::endl;
     filesystemGroup.fsMonitors.emplace_back(
         mountPoint.first, mountPoint.second, &filesystemGroup, name, "Filesystem monitor");
-#ifdef ENABLE_LOGGING
-    filesystemGroup.loggingModules.emplace_back(&filesystemGroup, name, "File system monitor log");
-#endif
     i++;
   }
+  filesystemGroup.logging = logging::LoggingModule{
+      &filesystemGroup, "filesystemLogging", "LoggingModule logging file system related messages"};
   i = 0;
   auto net = findNetworkDevices();
   for(auto& dev : net) {
     std::string name = std::to_string(i);
     std::cout << "Adding network monitor for device: " << dev << " -->" << name << std::endl;
     networkGroup.networkMonitors.emplace_back(dev, &networkGroup, name, "Network monitor");
-#ifdef ENABLE_LOGGING
-    networkGroup.loggingModules.emplace_back(&networkGroup, name, "Network monitor log");
-#endif
     i++;
   }
-  ProcessHandler::setupHandler();
-}
+  networkGroup.logging =
+      logging::LoggingModule{&networkGroup, "networkLogging", "LoggingModule logging network related messages"};
 
-void WatchdogServer::defineConnections() {
-  trigger.connectTo(cs["configuration"]);
+  /*
+   *  Server DAQ
+   */
 
-#ifdef ENABLE_LOGGING
-  watchdog.process.logging.connectTo(watchdog.logging.input);
-  systemInfo.info.logging.connectTo(systemInfo.logging.input);
-  config.connectTo(cs["configuration"]);
-
-  auto log = processGroup.processesLog.begin();
-#endif
-
-  systemInfo.findTag("ProcessModuleInput").flatten().connectTo(watchdog.process.input);
-
-  for(auto& item : processGroup.processes) {
-    systemInfo.findTag("ProcessModuleInput").flatten().connectTo(item.input);
-#ifdef ENABLE_LOGGING
-    item.logging.connectTo((*log).input);
-    log++;
-#endif
-  }
-#ifdef ENABLE_LOGGING
-  log = filesystemGroup.loggingModules.begin();
-#endif
-  for(auto& item : filesystemGroup.fsMonitors) {
-#ifdef ENABLE_LOGGING
-    item.logging.connectTo((*log).input);
-    log++;
-#endif
-  }
-#ifdef ENABLE_LOGGING
-  log = networkGroup.loggingModules.begin();
-#endif
-  for(auto& item : networkGroup.networkMonitors) {
-#ifdef ENABLE_LOGGING
-    item.logging.connectTo((*log).input);
-    log++;
-#endif
+  if(config.get<ChimeraTK::Boolean>("Configuration/MicroDAQ/enable") == true) {
+    daq = ctk::MicroDAQ<uint64_t>{
+        this, "microDAQ", "DAQ module", "DAQ", "/Trigger/tick", ctk::HierarchyModifier::none, {"CS", "MicroDAQ"}};
   }
 
   /*
    *  Server history
    */
-  if(config.get<uint>("enableServerHistory") != 0) {
-    uint serverHistroyLength = config.get<uint>("serverHistoryLength");
+
+  if(config.get<uint>("Configuration/enableServerHistory") != 0) {
+    uint serverHistroyLength = config.get<uint>("Configuration/serverHistoryLength");
     if(serverHistroyLength != 0)
       history = ctk::history::ServerHistory{this, "History", "History", serverHistroyLength, false, true};
     else
@@ -181,21 +144,53 @@ void WatchdogServer::defineConnections() {
       history.addSource(item.findTag("History"), "history/network/" + item.getName());
     }
   }
+}
 
-#ifdef WITHDAQ
-  daq = ctk::MicroDAQ<uint64_t>{
-      this, "microDAQ", "DAQ module", "DAQ", "/configuration/tick", ctk::HierarchyModifier::none, {"CS"}};
-#endif
+void WatchdogServer::defineConnections() {
+  ctk::ControlSystemModule cs;
+  //  trigger.connectTo(cs["configuration"]);
 
-  trigger.tick >> dataLossCounter.trigger;
-  dataLossCounter.connectTo(cs["DataLossCounter"]);
-  findTag("CS").connectTo(cs);
+  //#ifdef ENABLE_LOGGING
+  //  watchdog.process.logging.connectTo(watchdog.logging.input);
+  //  systemInfo.info.logging.connectTo(systemInfo.logging.input);
+  //  auto log = processGroup.processesLog.begin();
+  //#endif
+  //  config.connectTo(cs);
+  //  systemInfo.findTag("ProcessModuleInput").flatten().connectTo(watchdog.process.input);
+
+  //  for(auto& item : processGroup.processes) {
+  //    systemInfo.findTag("ProcessModuleInput").flatten().connectTo(item.input);
+  //#ifdef ENABLE_LOGGING
+  //    item.logging.connectTo((*log).input);
+  //    log++;
+  //#endif
+  //  }
+  //#ifdef ENABLE_LOGGING
+  //  log = filesystemGroup.loggingModules.begin();
+  //#endif
+  //  for(auto& item : filesystemGroup.fsMonitors) {
+  //#ifdef ENABLE_LOGGING
+  //    item.logging.connectTo((*log).input);
+  //    log++;
+  //#endif
+  //  }
+  //#ifdef ENABLE_LOGGING
+  //  log = networkGroup.loggingModules.begin();
+  //#endif
+  //  for(auto& item : networkGroup.networkMonitors) {
+  //#ifdef ENABLE_LOGGING
+  //    item.logging.connectTo((*log).input);
+  //    log++;
+  //#endif
+  //  }
+
   /**
    * Server information
    */
   ctk::VariableNetworkNode::makeConstant(true, AppVersion::major, 1) >> cs["server"]["version"]("major");
   ctk::VariableNetworkNode::makeConstant(true, AppVersion::minor, 1) >> cs["server"]["version"]("minor");
   ctk::VariableNetworkNode::makeConstant(true, AppVersion::patch, 1) >> cs["server"]["version"]("patch");
-  //  warnUnconnectedVariables();
+  findTag(".*").connectTo(cs);
+  warnUnconnectedVariables();
   //  dumpConnections();
 }

@@ -11,6 +11,7 @@
 #undef GENERATE_XML
 #include <ChimeraTK/ApplicationCore/ApplicationCore.h>
 #include <ChimeraTK/ApplicationCore/HierarchyModifyingGroup.h>
+#include <ChimeraTK/ApplicationCore/Logging.h>
 
 #include <memory>
 
@@ -35,9 +36,9 @@ namespace ctk = ChimeraTK;
 struct ProcessInfoModule : public ctk::ApplicationModule {
   ProcessInfoModule(EntityOwner* owner, const std::string& name, const std::string& description,
       ctk::HierarchyModifier hierarchyModifier = ctk::HierarchyModifier::none,
-      const std::unordered_set<std::string>& tags = {}, const std::string& pathToTrigger = "/configuration/tick")
+      const std::unordered_set<std::string>& tags = {}, const std::string& pathToTrigger = "/Trigger/tick")
   : ctk::ApplicationModule(owner, name, description, hierarchyModifier, tags),
-    triggerGroup(this, pathToTrigger, {"CS"}), logStream(nullptr){};
+    triggerGroup(this, pathToTrigger, {"CS"}){};
 
   struct TriggerGroup : ctk::HierarchyModifyingGroup {
     TriggerGroup(EntityOwner* owner, const std::string& pathToTrigger, const std::unordered_set<std::string>& tags = {})
@@ -54,42 +55,32 @@ struct ProcessInfoModule : public ctk::ApplicationModule {
     /** PID of the process */
     ctk::ScalarOutput<int> processPID{this, "PID", "", "PID of the process", {"CS", "PROCESS", getName(), "DAQ"}};
   } info{this, "status", "Status parameter of the process"};
-#ifdef ENABLE_LOGGING
-  struct Logging : public ctk::VariableGroup {
-    using ctk::VariableGroup::VariableGroup;
-    /** Message to be send to the logging module */
-    ctk::ScalarOutput<std::string> message{this, "message", "", "Message of the module to the logging System",
-        { "Logging",
-          "PROCESS",
-          getName() }};
 
-    /** Message to be send to the logging module */
-    ctk::ScalarOutput<uint> messageLevel{this, "messageLevel", "", "Logging level of the message",
-        { "Logging",
-          "PROCESS",
-          getName() }};
-  } logging{this, "logging", "Logging variables"};
-#endif
+  boost::shared_ptr<logging::Logger> logger{new logging::Logger(this)};
 
-  /**
-   * Store an internal time stamp that is used to calculate the cpu usage.
-   */
   boost::posix_time::ptime time_stamp;
-
-  struct Input : public ctk::VariableGroup {
+  /**
+   * \name Information from the SystemInfoModule
+   * @{
+   */
+  struct System : public ctk::VariableGroup {
     using ctk::VariableGroup::VariableGroup;
-    /**
-     * \name Information from the SystemInfoModule
-     * @{
-     */
-    /** Number of clock ticks per second */
-    ctk::ScalarPollInput<uint> ticksPerSecond{this, "ticksPerSecond", "Hz", "Number of clock ticks per second"};
-    /** Uptime of the system */
-    ctk::ScalarPollInput<uint> sysUpTime{this, "uptimeSecTotal", "s", "Uptime of the system"};
-    ctk::ScalarPollInput<uint> sysStartTime{this, "startTime", "s", "System start time (seconds since EPOCH)"};
-    ctk::ScalarPollInput<uint> maxMem{this, "maxMem", "kB", "Maximum available memory"};
-    /** @} */
-  } input{this, "input", "Moudle input from SystemInfoModule"};
+    struct Status : public ctk::VariableGroup {
+      using ctk::VariableGroup::VariableGroup;
+      /** Uptime of the system */
+      ctk::ScalarPollInput<uint> sysStartTime{this, "startTime", "s", "System start time (seconds since EPOCH)"};
+      ctk::ScalarPollInput<uint> sysUpTime{this, "uptimeSecTotal", "s", "Uptime of the system"};
+      ctk::ScalarPollInput<uint> maxMem{this, "maxMem", "kB", "Maximum available memory"};
+    } status{this, "status", ""};
+
+    struct Info : public ctk::VariableGroup {
+      using ctk::VariableGroup::VariableGroup;
+      /** Number of clock ticks per second */
+      ctk::ScalarPollInput<uint> ticksPerSecond{this, "ticksPerSecond", "Hz", "Number of clock ticks per second"};
+    } info{this, "info", ""};
+
+  } system{this, "system", "", ctk::HierarchyModifier::moveToRoot};
+  /** @} */
 
   struct Statistics : public ctk::VariableGroup {
     using ctk::VariableGroup::VariableGroup;
@@ -164,18 +155,6 @@ struct ProcessInfoModule : public ctk::ApplicationModule {
    */
   void FillProcInfo(const std::shared_ptr<proc_t>& info);
 
-  std::ostream* logStream;
-#ifdef ENABLE_LOGGING
-
-  void sendMessage(const logging::LogLevel& level = logging::LogLevel::INFO);
-
-  /**
-   * Search for key words in the given stream (LogLevels like DEBUG, INFO...).
-   * Splits the stream using Logging::stripMessages().
-   * Then sends individual messages to the LoggingModule.
-   */
-  void evaluateMessage(std::stringstream& msg);
-#endif
   /* Don't overload the stream operator of ProcessInfoModule -> will cause Segfaults. Use getTime() instead. */
   //  friend std::stringstream& operator<<(std::stringstream &ss, const ProcessInfoModule* module);
 
@@ -184,8 +163,6 @@ struct ProcessInfoModule : public ctk::ApplicationModule {
    * Result is: 'WATCHDOG_SERVER: "day of week"  "month" "day" hh:mm:ss yyyy "module_name" -> '
    */
   virtual std::string getTime();
-
-  void terminate() override;
 };
 
 /**
@@ -201,8 +178,15 @@ struct ProcessControlModule : public ProcessInfoModule {
    */
   ProcessControlModule(EntityOwner* owner, const std::string& name, const std::string& description,
       bool historyOn = false, ctk::HierarchyModifier hierarchyModifier = ctk::HierarchyModifier::none,
-      const std::unordered_set<std::string>& tags = {}, const std::string& pathToTrigger = "/configuration/tick")
+      const std::unordered_set<std::string>& tags = {}, const std::string& pathToTrigger = "/Trigger/tick")
   : ProcessInfoModule(owner, name, description, hierarchyModifier, tags, pathToTrigger), _historyOn(historyOn){};
+
+  /**
+   * Search for key words in the given stream (LogLevels like DEBUG, INFO...).
+   * Splits the stream using Logging::stripMessages().
+   * Then sends individual messages to the LoggingModule.
+   */
+  void evaluateMessage(std::stringstream& msg);
 
   /* Use terminate function to delete the ProcessHandler, since it is using a local stringstream constructed in the main loop
    * which is not existing at the time the ProcessHandler destructor is called!
@@ -360,6 +344,11 @@ struct ProcessControlModule : public ProcessInfoModule {
 
 struct ProcessGroup : public ctk::ModuleGroup {
   using ctk::ModuleGroup::ModuleGroup;
+
+  ProcessInfoModule process{this, "watchdog", "Module monitoring the watchdog process"};
+
+  LogFileModule logFile{this, "watchdog", "Logging module reading the watchdog logfile", "/Trigger/tick",
+      "/processes/watchdog/config/logFile"};
   /**
    * \brief This module is used to start and stop subprocess controlled by the watchdog.
    */
@@ -370,10 +359,7 @@ struct ProcessGroup : public ctk::ModuleGroup {
    * watchdog_server_processes.xml
    */
   std::vector<ProcessControlModule> processes;
-
-#ifdef ENABLE_LOGGING
-  std::vector<LoggingModule> processesLog;
+  logging::LoggingModule logging;
   std::vector<LogFileModule> processesLogExternal;
-#endif
 };
 #endif /* INCLUDE_PROCESSMODULE_H_ */

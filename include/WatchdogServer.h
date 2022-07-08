@@ -14,13 +14,11 @@
 #include <ChimeraTK/ApplicationCore/PeriodicTrigger.h>
 #include <ChimeraTK/ApplicationCore/ServerHistory.h>
 #include <ChimeraTK/ApplicationCore/DataLossCounter.h>
+#include <ChimeraTK/ApplicationCore/MicroDAQ.h>
+#include <ChimeraTK/ApplicationCore/Logging.h>
 
 #include "SystemInfoModule.h"
 #include "ProcessModule.h"
-
-#ifdef WITHDAQ
-#  include <ChimeraTK/ApplicationCore/MicroDAQ.h>
-#endif
 
 #ifdef ENABLE_LOGGING
 #  include "LoggingModule.h"
@@ -30,8 +28,6 @@ namespace ctk = ChimeraTK;
 
 struct WatchdogModuleGroup : ctk::ModuleGroup {
   using ctk::ModuleGroup::ModuleGroup;
-  ProcessInfoModule process{
-      this, "watchdog", "Module monitoring the watchdog process", ctk::HierarchyModifier::hideThis};
 #ifdef ENABLE_LOGGING
   /**
    * This module is used to read the watchdog log file, which includes messages from the
@@ -47,14 +43,9 @@ struct WatchdogModuleGroup : ctk::ModuleGroup {
    * AND the watchdog LoggingModule. But this is not possible, since it is not possible to connect multiple
    * outputs to a single push input variable.
    */
-  LogFileModule logFile{this, "watchdogLogFile", "Logging module reading the watchdog logfile", "/configuration/tick",
-      "/watchdog/config/logFile", ctk::HierarchyModifier::hideThis};
+  //  LogFileModule logFile{this, "watchdogLogFile", "Logging module reading the watchdog logfile", "/Trigger/tick",
+  //      "/watchdog/config/logFile", ctk::HierarchyModifier::hideThis};
 
-  /**
-   * This module is used to handle messages from the watchdog process it self.
-   */
-  LoggingModule logging{
-      this, "watchdogLog", "Logging module of the watchdog process", ctk::HierarchyModifier::hideThis};
 #endif
 };
 
@@ -62,10 +53,7 @@ struct SystemInfoGroup : ctk::ModuleGroup {
   using ctk::ModuleGroup::ModuleGroup;
 
   SystemInfoModule info{this, "system", "Module reading system information", ctk::HierarchyModifier::hideThis};
-#ifdef ENABLE_LOGGING
-  LoggingModule logging{
-      this, "systeminfoLog", "Logging module of the system information module", ctk::HierarchyModifier::hideThis};
-#endif
+  logging::LoggingModule logging{this, "logging", "LoggingModule logging system related messages"};
 };
 
 /**
@@ -77,12 +65,15 @@ struct SystemInfoGroup : ctk::ModuleGroup {
  */
 struct WatchdogServer : public ctk::Application {
   WatchdogServer();
+  WatchdogServer(const WatchdogServer&) = delete;
+  WatchdogServer& operator=(WatchdogServer const&) = delete;
+  WatchdogServer(WatchdogServer&&) = delete;
+  WatchdogServer& operator=(WatchdogServer&&) = delete;
   ~WatchdogServer() { shutdown(); }
-  ctk::ControlSystemModule cs;
 
   ctk::PeriodicTrigger trigger{this, "Trigger", "Trigger used for other modules"};
 
-  ctk::ConfigReader config{this, "Configuration", "WatchdogServerConfig.xml"};
+  ctk::ConfigReader config{this, "Configuration", "WatchdogServerConfig.xml", ctk::HierarchyModifier::hideThis};
 
   SystemInfoGroup systemInfo{this, "system", "Module reading system information"};
 
@@ -97,9 +88,7 @@ struct WatchdogServer : public ctk::Application {
   ctk::DataLossCounter<uint64_t> dataLossCounter{
       this, "DataLossCounter", "Statistics on lost data within this watchdog server", ctk::HierarchyModifier::none};
 
-#ifdef WITHDAQ
   ctk::MicroDAQ<uint64_t> daq;
-#endif
   /*
    * History module if history is enabled in the config file.
    * In th config file use:

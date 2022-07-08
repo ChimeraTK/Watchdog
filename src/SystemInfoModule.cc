@@ -25,8 +25,6 @@
 #undef likely
 #include "boost/date_time/posix_time/posix_time.hpp"
 
-#include "Logging.h"
-
 SystemInfoModule::SystemInfoModule(EntityOwner* owner, const std::string& name, const std::string& description,
     ctk::HierarchyModifier hierarchyModifier, const std::unordered_set<std::string>& tags,
     const std::string& pathToTrigger)
@@ -39,11 +37,6 @@ SystemInfoModule::SystemInfoModule(EntityOwner* owner, const std::string& name, 
       "CPU usage for each processor", std::unordered_set<std::string>{"CS", "SYS", "History"});
   //  // add 1 since cpuTotal should be added too
   lastInfo = std::vector<cpu>(sysInfo.getNCpu() + 1);
-#ifdef ENABLE_LOGGING
-  logStream = new std::stringstream();
-#else
-  logStream = &std::cerr;
-#endif
 }
 
 void SystemInfoModule::mainLoop() {
@@ -66,18 +59,11 @@ void SystemInfoModule::mainLoop() {
     status.maxMem.write();
   }
   catch(std::exception& e) {
-    (*logStream) << getTime(this) << "meminfo conversion failed: " << e.what() << std::endl;
-#ifdef ENABLE_LOGGING
-    sendMessage(logging::LogLevel::ERROR);
-#endif
+    logger->sendMessage(std::string("meminfo conversion failed: ") + e.what(), logging::LogLevel::ERROR);
   }
 
   info.ticksPerSecond = sysconf(_SC_CLK_TCK);
   info.ticksPerSecond.write();
-#ifdef ENABLE_LOGGING
-  logging.message.write();
-  logging.messageLevel.write();
-#endif
   for(auto it = sysInfo.ibegin(); it != sysInfo.iend(); it++) {
     info.strInfos.at(it->first) = it->second;
   }
@@ -85,19 +71,15 @@ void SystemInfoModule::mainLoop() {
   info.writeAll();
 
   if(lastInfo.size() != (unsigned)(info.nCPU + 1)) {
-    (*logStream) << getName() << "Size of lastInfo: " << lastInfo.size() << "\t nCPU: " << info.nCPU << std::endl;
-#ifdef ENABLE_LOGGING
-    sendMessage(logging::LogLevel::ERROR);
-#endif
+    logger->sendMessage(std::string("Failed to open system file /proc/stat") + std::to_string(lastInfo.size()) +
+            "\t nCPU" + std::to_string(info.nCPU),
+        logging::LogLevel::ERROR);
     throw std::runtime_error("Vector size mismatch in SystemInfoModule::mainLoop.");
   }
 
   std::ifstream file("/proc/stat");
   if(!file.is_open()) {
-    (*logStream) << getTime(this) << "Failed to open system file /proc/stat" << std::endl;
-#ifdef ENABLE_LOGGING
-    sendMessage(logging::LogLevel::ERROR);
-#endif
+    logger->sendMessage("Failed to open system file /proc/stat", logging::LogLevel::ERROR);
     file.close();
     return;
   }
@@ -121,10 +103,7 @@ void SystemInfoModule::mainLoop() {
       status.usedSwap = std::stoi(std::to_string(status.maxSwap - status.freeSwap));
     }
     catch(std::exception& e) {
-      (*logStream) << getTime(this) << "meminfo conversion failed: " << e.what() << std::endl;
-#ifdef ENABLE_LOGGING
-      sendMessage(logging::LogLevel::ERROR);
-#endif
+      logger->sendMessage(std::string("meminfo conversion failed: ") + e.what(), logging::LogLevel::ERROR);
     }
     status.memoryUsage = 1. * status.usedMem / status.maxMem * 100.;
     status.swapUsage = 1. * status.usedSwap / status.maxSwap * 100.;
@@ -142,10 +121,7 @@ void SystemInfoModule::mainLoop() {
           (status.uptime_hour * 3600) - (status.uptime_min * 60)));
     }
     catch(std::exception& e) {
-      (*logStream) << getTime(this) << "uptime conversion failed: " << e.what() << std::endl;
-#ifdef ENABLE_LOGGING
-      sendMessage(logging::LogLevel::ERROR);
-#endif
+      logger->sendMessage(std::string("uptime conversion failed: ") + e.what(), logging::LogLevel::ERROR);
     }
 
     std::vector<double> v_tmp(3);
@@ -156,10 +132,8 @@ void SystemInfoModule::mainLoop() {
     calculatePCPU();
 
     toWrite.writeAll();
-#ifdef ENABLE_LOGGING
-    (*logStream) << getTime(this) << "System data updated" << std::endl;
-    sendMessage(logging::LogLevel::DEBUG);
-#endif
+    logger->sendMessage("System data updated", logging::LogLevel::DEBUG);
+
     triggerGroup.trigger.read();
   }
 }
@@ -200,10 +174,7 @@ void SystemInfoModule::calculatePCPU() {
 void SystemInfoModule::readCPUInfo(std::vector<cpu>& vcpu) {
   std::ifstream file("/proc/stat");
   if(!file.is_open()) {
-    (*logStream) << getTime(this) << "Failed to open system file /proc/stat" << std::endl;
-#ifdef ENABLE_LOGGING
-    sendMessage(logging::LogLevel::ERROR);
-#endif
+    logger->sendMessage("Failed to open system file /proc/stat", logging::LogLevel::ERROR);
     file.close();
     return;
   }
@@ -211,16 +182,14 @@ void SystemInfoModule::readCPUInfo(std::vector<cpu>& vcpu) {
   std::string line;
   for(auto it = vcpu.begin(); it != vcpu.end(); it++) {
     if(!std::getline(file, line)) {
-      (*logStream) << getTime(this) << "Could not find enough lines in /proc/stat" << std::endl;
-#ifdef ENABLE_LOGGING
-      sendMessage(logging::LogLevel::ERROR);
-#endif
+      logger->sendMessage("Could not find enough lines in /proc/stat", logging::LogLevel::ERROR);
       file.close();
       return;
     }
     auto strs = split_arguments(line);
     if(strs.size() < 5) {
-      (*logStream) << getTime(this) << "Line seems to contain not enough data. Line: " << line << std::endl;
+      logger->sendMessage(
+          std::string("Line seems to contain not enough data. Line: ") + line, logging::LogLevel::ERROR);
     }
 
     try {
@@ -230,40 +199,16 @@ void SystemInfoModule::readCPUInfo(std::vector<cpu>& vcpu) {
       it->totalIdle = std::stoull(strs.at(4), &sz, 0);
     }
     catch(std::exception& e) {
-      (*logStream) << getTime(this) << "Caught an exception: " << e.what() << std::endl;
-#ifdef ENABLE_LOGGING
-      sendMessage(logging::LogLevel::ERROR);
-#endif
+      std::stringstream ss;
+      ss << "Caught an exception: " << e.what() << "\n";
+
       for(auto s : strs) {
-        (*logStream) << getTime(this) << "String token: " << s << std::endl;
-#ifdef ENABLE_LOGGING
-        sendMessage(logging::LogLevel::ERROR);
-#endif
+        ss << "String token: " << s << "\n";
       }
+      logger->sendMessage(ss.str(), logging::LogLevel::ERROR);
     }
   }
 }
-
-void SystemInfoModule::terminate() {
-  ApplicationModule::terminate();
-#ifdef ENABLE_LOGGING
-  delete logStream;
-  logStream = 0;
-#endif
-}
-
-#ifdef ENABLE_LOGGING
-void SystemInfoModule::sendMessage(const logging::LogLevel& level) {
-  auto logging_ss = dynamic_cast<std::stringstream*>(logStream);
-  if(logging_ss) {
-    logging.message = logging_ss->str();
-    logging.messageLevel = level;
-    logging.writeAll();
-    logging_ss->clear();
-    logging_ss->str("");
-  }
-}
-#endif
 
 std::string getTime(ctk::ApplicationModule* mod) {
   std::string str{"WATCHDOG_SERVER: "};
@@ -281,11 +226,6 @@ FileSystemModule::FileSystemModule(const std::string& devName, const std::string
 : ctk::ApplicationModule(owner, name, description, hierarchyModifier, tags), triggerGroup(this, pathToTrigger, {"CS"}) {
   tmp[0] = devName;
   tmp[1] = mntPoint;
-#ifdef ENABLE_LOGGING
-  logStream = new std::stringstream();
-#else
-  logStream = &std::cerr;
-#endif
 }
 
 std::mutex fs_mutex;
@@ -293,10 +233,8 @@ bool FileSystemModule::read() {
   std::lock_guard<std::mutex> lock(fs_mutex);
   struct statfs fs;
   if((statfs(((std::string)status.mountPoint).c_str(), &fs)) < 0) {
-    (*logStream) << getTime(this) << "Failed to stat " << (std::string)status.mountPoint << ": " << errno << std::endl;
-#ifdef ENABLE_LOGGING
-    sendMessage(logging::LogLevel::ERROR);
-#endif
+    logger->sendMessage(std::string("Failed to stat ") + (std::string)status.mountPoint + ": " + std::to_string(errno),
+        logging::LogLevel::ERROR);
     return false;
   }
   else {
@@ -322,29 +260,22 @@ void FileSystemModule::mainLoop() {
     if(read()) {
       status.disk_usage = (status.disk_size - status.disk_user) / status.disk_size * 100.;
       if(status.disk_usage > config.errorLevel) {
-        (*logStream) << getTime(this) << "More than " << config.errorLevel << "% (" << status.disk_usage << "%) of "
-                     << (std::string)deviceName << " mounted at " << (std::string)status.mountPoint << " are used!"
-                     << std::endl;
+        logger->sendMessage(std::string("More than ") + std::to_string(config.errorLevel) + "% (" +
+                std::to_string(status.disk_usage) + "%) of " + (std::string)deviceName + " mounted at " +
+                (std::string)status.mountPoint + " are used!",
+            logging::LogLevel::WARNING);
         status.disk_status = 2;
-#ifdef ENABLE_LOGGING
-        sendMessage(logging::LogLevel::WARNING);
-#endif
       }
       else if(status.disk_usage > config.warningLevel) {
-        (*logStream) << getTime(this) << "More than " << config.warningLevel << "% (" << status.disk_usage << "%) of "
-                     << (std::string)deviceName << " mounted at " << (std::string)status.mountPoint << " are used!"
-                     << std::endl;
+        logger->sendMessage(std::string("More than ") + std::to_string(config.warningLevel) + "% (" +
+                std::to_string(status.disk_usage) + "%) of " + (std::string)deviceName + " mounted at " +
+                (std::string)status.mountPoint + " are used!",
+            logging::LogLevel::INFO);
         status.disk_status = 1;
-#ifdef ENABLE_LOGGING
-        sendMessage(logging::LogLevel::INFO);
-#endif
       }
       else {
         status.disk_status = 0;
-#ifdef ENABLE_LOGGING
-        (*logStream) << getTime(this) << "Disk usage: " << status.disk_usage << std::endl;
-        sendMessage(logging::LogLevel::DEBUG);
-#endif
+        logger->sendMessage(std::string("Disc usage: ") + std::to_string(status.disk_usage), logging::LogLevel::DEBUG);
       }
       toWrite.writeAll();
     }
@@ -352,37 +283,11 @@ void FileSystemModule::mainLoop() {
   }
 }
 
-#ifdef ENABLE_LOGGING
-void FileSystemModule::sendMessage(const logging::LogLevel& level) {
-  auto logging_ss = dynamic_cast<std::stringstream*>(logStream);
-  if(logging_ss) {
-    logging.message = logging_ss->str();
-    logging.messageLevel = level;
-    logging.writeAll();
-    logging_ss->clear();
-    logging_ss->str("");
-  }
-}
-#endif
-
-void FileSystemModule::terminate() {
-  ApplicationModule::terminate();
-#ifdef ENABLE_LOGGING
-  delete logStream;
-  logStream = 0;
-#endif
-}
-
 NetworkModule::NetworkModule(const std::string& device, EntityOwner* owner, const std::string& name,
     const std::string& description, ctk::HierarchyModifier hierarchyModifier,
     const std::unordered_set<std::string>& tags, const std::string& pathToTrigger)
 : ctk::ApplicationModule(owner, name, description, hierarchyModifier, tags), triggerGroup(this, pathToTrigger, {"CS"}) {
   networkDeviceName = device;
-#ifdef ENABLE_LOGGING
-  logStream = new std::stringstream();
-#else
-  logStream = &std::cerr;
-#endif
   status.data.emplace_back(
       ctk::ScalarOutput<double>{&status, "rx_packates", "1/s", "Received packates.", {"CS", "SYS", "DAQ"}});
   status.data.emplace_back(
@@ -404,10 +309,7 @@ bool NetworkModule::read() {
   for(size_t i = 0; i < tmp.files.size(); i++) {
     std::ifstream in(tmp.files.at(i));
     if(!in.is_open()) {
-      (*logStream) << getTime(this) << "Failed to open: " << tmp.files.at(i) << std::endl;
-#ifdef ENABLE_LOGGING
-      sendMessage(logging::LogLevel::ERROR);
-#endif
+      logger->sendMessage(std::string("Failed to open: ") + tmp.files.at(i), logging::LogLevel::ERROR);
       return false;
     }
     tmp.time.at(i) = boost::posix_time::microsec_clock::local_time();
@@ -439,25 +341,4 @@ void NetworkModule::mainLoop() {
     }
     triggerGroup.trigger.read();
   }
-}
-
-#ifdef ENABLE_LOGGING
-void NetworkModule::sendMessage(const logging::LogLevel& level) {
-  auto logging_ss = dynamic_cast<std::stringstream*>(logStream);
-  if(logging_ss) {
-    logging.message = logging_ss->str();
-    logging.messageLevel = level;
-    logging.writeAll();
-    logging_ss->clear();
-    logging_ss->str("");
-  }
-}
-#endif
-
-void NetworkModule::terminate() {
-  ApplicationModule::terminate();
-#ifdef ENABLE_LOGGING
-  delete logStream;
-  logStream = 0;
-#endif
 }
