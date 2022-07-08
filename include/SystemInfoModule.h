@@ -13,10 +13,6 @@
 #include <ChimeraTK/ApplicationCore/HierarchyModifyingGroup.h>
 #include <ChimeraTK/ApplicationCore/Logging.h>
 
-#ifdef ENABLE_LOGGING
-#  include "LoggingModule.h"
-#endif
-
 #include "sys_stat.h"
 #include <unordered_set>
 
@@ -245,8 +241,6 @@ struct FileSystemGroup : public ctk::ModuleGroup {
    * Modules monitoring disks usage of system drives.
    */
   std::vector<FileSystemModule> fsMonitors;
-
-  logging::LoggingModule logging;
 };
 
 /**
@@ -349,8 +343,6 @@ struct NetworkGroup : public ctk::ModuleGroup {
    * Modules monitoring disks usage of system drives.
    */
   std::vector<NetworkModule> networkMonitors;
-
-  logging::LoggingModule logging;
 };
 
 #endif /* INCLUDE_SYSTEMINFOMODULE_H_ */

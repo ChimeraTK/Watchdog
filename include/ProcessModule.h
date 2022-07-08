@@ -19,12 +19,7 @@ namespace ctk = ChimeraTK;
 
 #include "sys_stat.h"
 #include "ProcessHandler.h"
-
-#ifdef ENABLE_LOGGING
-#  include "LoggingModule.h"
-#else
-#  include "Logging.h"
-#endif
+#include "LoggingModule.h"
 
 /**
  * \brief
@@ -218,15 +213,11 @@ struct ProcessControlModule : public ProcessInfoModule {
         "Number of time the process was automatically "
         "restarted by the watchdog since server start.",
         {"CS", "PROCESS", getName(), "DAQ"}};
-#ifdef ENABLE_LOGGING
     /** Log file name. It will be created in the given processPath */
     ctk::ScalarOutput<std::string> externalLogfile{this, "externalLogfile", "",
         "Name of the logfile created in the given path (the process controlled by the module will "
         "put its output here. Module messages go to cout/cerr",
-        { "CS",
-          "PROCESS",
-          getName() }};
-#endif
+        {"CS", "PROCESS", getName()}};
   } status{this, "status", "Status parameter of the process"};
 
   struct Config : public ctk::VariableGroup {
@@ -249,15 +240,11 @@ struct ProcessControlModule : public ProcessInfoModule {
         this, "maxFails", "", "Set the maximum number of allowed fails.", {"CS", "PROCESS", getName()}};
     ctk::ScalarPollInput<uint> maxRestarts{
         this, "maxRestarts", "", "Set the maximum number of allowed restarts.", {"CS", "PROCESS", getName()}};
-#ifdef ENABLE_LOGGING
     /** Log file name. It will be created in the given processPath */
     ctk::ScalarPollInput<std::string> externalLogfile{this, "logfileExternal", "",
         "Set the name of the logfile"
         " used by the process to be started. It is created in the given path.",
-        { "CS",
-          "PROCESS",
-          getName() }};
-#endif
+        {"CS", "PROCESS", getName()}};
     /** Signal used to kill the process (2: SIGINT, 9: SIGKILL) */
     ctk::ScalarPollInput<uint> killSig{
         this, "killSig", "", "Signal used to kill the process (2: SIGINT, 9: SIGKILL)", {"CS", "PROCESS", getName()}};
@@ -345,10 +332,6 @@ struct ProcessControlModule : public ProcessInfoModule {
 struct ProcessGroup : public ctk::ModuleGroup {
   using ctk::ModuleGroup::ModuleGroup;
 
-  ProcessInfoModule process{this, "watchdog", "Module monitoring the watchdog process"};
-
-  LogFileModule logFile{this, "watchdog", "Logging module reading the watchdog logfile", "/Trigger/tick",
-      "/processes/watchdog/config/logFile"};
   /**
    * \brief This module is used to start and stop subprocess controlled by the watchdog.
    */
@@ -359,7 +342,6 @@ struct ProcessGroup : public ctk::ModuleGroup {
    * watchdog_server_processes.xml
    */
   std::vector<ProcessControlModule> processes;
-  logging::LoggingModule logging;
   std::vector<LogFileModule> processesLogExternal;
 };
 #endif /* INCLUDE_PROCESSMODULE_H_ */

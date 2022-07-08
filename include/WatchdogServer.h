@@ -20,15 +20,14 @@
 #include "SystemInfoModule.h"
 #include "ProcessModule.h"
 
-#ifdef ENABLE_LOGGING
-#  include "LoggingModule.h"
-#endif
+#include "LoggingModule.h"
 
 namespace ctk = ChimeraTK;
 
 struct WatchdogModuleGroup : ctk::ModuleGroup {
   using ctk::ModuleGroup::ModuleGroup;
-#ifdef ENABLE_LOGGING
+  ProcessInfoModule process{
+      this, "watchdog", "Module monitoring the watchdog process", ctk::HierarchyModifier::hideThis};
   /**
    * This module is used to read the watchdog log file, which includes messages from the
    * watchdog process and all other processes controlled by the watchdog.
@@ -43,17 +42,14 @@ struct WatchdogModuleGroup : ctk::ModuleGroup {
    * AND the watchdog LoggingModule. But this is not possible, since it is not possible to connect multiple
    * outputs to a single push input variable.
    */
-  //  LogFileModule logFile{this, "watchdogLogFile", "Logging module reading the watchdog logfile", "/Trigger/tick",
-  //      "/watchdog/config/logFile", ctk::HierarchyModifier::hideThis};
-
-#endif
+  LogFileModule logFile{this, "watchdogLogFile", "Logging module reading the watchdog logfile", "/Trigger/tick",
+      "/watchdog/config/logFile", ctk::HierarchyModifier::hideThis};
 };
 
 struct SystemInfoGroup : ctk::ModuleGroup {
   using ctk::ModuleGroup::ModuleGroup;
 
   SystemInfoModule info{this, "system", "Module reading system information", ctk::HierarchyModifier::hideThis};
-  logging::LoggingModule logging{this, "logging", "LoggingModule logging system related messages"};
 };
 
 /**
@@ -87,6 +83,8 @@ struct WatchdogServer : public ctk::Application {
 
   ctk::DataLossCounter<uint64_t> dataLossCounter{
       this, "DataLossCounter", "Statistics on lost data within this watchdog server", ctk::HierarchyModifier::none};
+
+  logging::LoggingModule logging;
 
   ctk::MicroDAQ<uint64_t> daq;
   /*

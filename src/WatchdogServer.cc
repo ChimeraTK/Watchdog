@@ -87,8 +87,6 @@ WatchdogServer::WatchdogServer() : Application("WatchdogServer") {
         &processGroup, "0", "Process external log", "/Trigger/tick", "/processes/0/config/logfileExternal");
   }
 
-  processGroup.logging =
-      logging::LoggingModule{&processGroup, "processLogging", "LoggingModule logging process related messages"};
   ProcessHandler::setupHandler();
   size_t i = 0;
   auto fs = findMountPoints();
@@ -100,8 +98,6 @@ WatchdogServer::WatchdogServer() : Application("WatchdogServer") {
         mountPoint.first, mountPoint.second, &filesystemGroup, name, "Filesystem monitor");
     i++;
   }
-  filesystemGroup.logging = logging::LoggingModule{
-      &filesystemGroup, "filesystemLogging", "LoggingModule logging file system related messages"};
   i = 0;
   auto net = findNetworkDevices();
   for(auto& dev : net) {
@@ -110,8 +106,8 @@ WatchdogServer::WatchdogServer() : Application("WatchdogServer") {
     networkGroup.networkMonitors.emplace_back(dev, &networkGroup, name, "Network monitor");
     i++;
   }
-  networkGroup.logging =
-      logging::LoggingModule{&networkGroup, "networkLogging", "LoggingModule logging network related messages"};
+
+  logging = logging::LoggingModule{this, "logging", "LoggingModule logging watchdog internal messages"};
 
   /*
    *  Server DAQ
