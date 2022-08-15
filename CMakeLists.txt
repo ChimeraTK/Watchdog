@@ -5,7 +5,7 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/Modules)
 
 set(${PROJECT_NAME}_MAJOR_VERSION 01)
 set(${PROJECT_NAME}_MINOR_VERSION 04)
-set(${PROJECT_NAME}_PATCH_VERSION 06)
+set(${PROJECT_NAME}_PATCH_VERSION 07)
 include(cmake/set_version_numbers.cmake)
 
 # Options
@@ -175,16 +175,23 @@ else()
   install(TARGETS ${PROJECT_NAME}-xmlGenerator RUNTIME DESTINATION bin)
 endif()
 
-# install config files to /etc/... This allows the user to change config files and keeping these changes even if a new version of the
+# Use GNUInstallDirs to resolve /etc/ and /usr/ correctly
+# When CMAKE_INSTALL_PREFIX is set config files end up in ${CMAKE_INSTALL_PREFIX}/etc/chimeratk/watchdog-server/
+# If not set they are installed to /usr/local/etc/chimeratk/watchdog-server/
+# If set to "/usr" (i.e. when building a debian package) or "/" they are installed to /etc/chimeratk/watchdog-server/
+include(GNUInstallDirs)
+
+# Install config files to the system config location (e.g. /etc/ on unix). 
+# This allows the user to change config files and keeping these changes even if a new version of the
 # package is installed.
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/configs/chimeratk-watchdog.service.in ${CMAKE_CURRENT_BINARY_DIR}/chimeratk-watchdog.service @ONLY)
 install(FILES ${CMAKE_SOURCE_DIR}/configs/WatchdogServerConfig.xml
-        DESTINATION /etc/chimeratk/${PROJECT_NAME})
-# most systemd service files are stored in /var, but here we want to allow the user to change it -> install to /etc/... like other conf files
+        DESTINATION ${CMAKE_INSTALL_FULL_SYSCONFDIR}/chimeratk/${PROJECT_NAME})
+# most systemd service files are stored in /var, but here we want to allow the user to change it -> install to /etc/... like other config files
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/chimeratk-watchdog.service
-        DESTINATION /etc/chimeratk/${PROJECT_NAME})
+        DESTINATION ${CMAKE_INSTALL_FULL_SYSCONFDIR}/chimeratk/${PROJECT_NAME})
 IF(ADAPTER STREQUAL "OPCUA")
-  install( FILES ${CMAKE_SOURCE_DIR}/configs/WatchdogServer_mapping.xml DESTINATION /etc/chimeratk/${PROJECT_NAME})
+  install( FILES ${CMAKE_SOURCE_DIR}/configs/WatchdogServer_mapping.xml DESTINATION ${CMAKE_INSTALL_FULL_SYSCONFDIR}/chimeratk/${PROJECT_NAME})
 ELSEIF(ADAPTER STREQUAL "DOOCS")
   install( FILES ${CMAKE_SOURCE_DIR}/configs/${PROJECT_NAME}.conf DESTINATION ${PROJECT_BINARY_DIR})
 ENDIF()
