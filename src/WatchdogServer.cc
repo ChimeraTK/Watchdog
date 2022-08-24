@@ -128,7 +128,7 @@ WatchdogServer::WatchdogServer() : Application("WatchdogServer") {
       history = ctk::history::ServerHistory{this, "History", "History", serverHistroyLength, false, true};
     else
       history = ctk::history::ServerHistory{this, "History", "History", 100, false, true};
-    history.addSource(systemInfo.findTag("History"), "history/" + systemInfo.getName());
+    history.addSource(info.findTag("History"), "history/" + info.getName());
     history.addSource(watchdog.findTag("History"), "history/" + watchdog.getName());
     for(auto& item : processGroup.processes) {
       history.addSource(item.findTag("History"), "history/processes/" + item.getName());
@@ -142,51 +142,14 @@ WatchdogServer::WatchdogServer() : Application("WatchdogServer") {
   }
 }
 
-void WatchdogServer::defineConnections() {
-  ctk::ControlSystemModule cs;
-  //  trigger.connectTo(cs["configuration"]);
-
-  //#ifdef ENABLE_LOGGING
-  //  watchdog.process.logging.connectTo(watchdog.logging.input);
-  //  systemInfo.info.logging.connectTo(systemInfo.logging.input);
-  //  auto log = processGroup.processesLog.begin();
-  //#endif
-  //  config.connectTo(cs);
-  //  systemInfo.findTag("ProcessModuleInput").flatten().connectTo(watchdog.process.input);
-
-  //  for(auto& item : processGroup.processes) {
-  //    systemInfo.findTag("ProcessModuleInput").flatten().connectTo(item.input);
-  //#ifdef ENABLE_LOGGING
-  //    item.logging.connectTo((*log).input);
-  //    log++;
-  //#endif
-  //  }
-  //#ifdef ENABLE_LOGGING
-  //  log = filesystemGroup.loggingModules.begin();
-  //#endif
-  //  for(auto& item : filesystemGroup.fsMonitors) {
-  //#ifdef ENABLE_LOGGING
-  //    item.logging.connectTo((*log).input);
-  //    log++;
-  //#endif
-  //  }
-  //#ifdef ENABLE_LOGGING
-  //  log = networkGroup.loggingModules.begin();
-  //#endif
-  //  for(auto& item : networkGroup.networkMonitors) {
-  //#ifdef ENABLE_LOGGING
-  //    item.logging.connectTo((*log).input);
-  //    log++;
-  //#endif
-  //  }
-
+void WatchdogServer::initialise() {
+  Application::initialise();
   /**
    * Server information
    */
-  ctk::VariableNetworkNode::makeConstant(true, AppVersion::major, 1) >> cs["server"]["version"]("major");
-  ctk::VariableNetworkNode::makeConstant(true, AppVersion::minor, 1) >> cs["server"]["version"]("minor");
-  ctk::VariableNetworkNode::makeConstant(true, AppVersion::patch, 1) >> cs["server"]["version"]("patch");
-  findTag(".*").connectTo(cs);
+  std::cout << "****************************************************************" << std::endl;
+  std::cout << "*** Watchdog server version " << AppVersion::major << "." << AppVersion::minor << "."
+            << AppVersion::patch << std::endl;
   warnUnconnectedVariables();
-  //  dumpConnections();
+  dumpConnections();
 }

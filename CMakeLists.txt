@@ -10,7 +10,6 @@ include(cmake/set_version_numbers.cmake)
 
 # Options
 option(ENABLE_TESTING      "Build unit tests"      ON)
-option(ENABLE_LOGGING      "Enable logging for the watchdog server"      ON)
 option(ENABLE_DOCUMENTAION "Enable create of doxygen documentation"      ON)
 
 if( ENABLE_DOCUMENTAION )
@@ -58,15 +57,6 @@ set(server_sources ${CMAKE_SOURCE_DIR}/src/applicationInstance.cc)
 configure_file(include/version.h.in ${PROJECT_BINARY_DIR}/version/version.h)
 include_directories(${PROJECT_BINARY_DIR}/version)
 
-
-if(ENABLE_LOGGING)
-  MESSAGE(STATUS "Logging modules are enabled.")
-  add_definitions(-DENABLE_LOGGING)
-else()
-  MESSAGE(STATUS "Logging modules are disabled.")
-  list(REMOVE_ITEM library_sources ${CMAKE_CURRENT_SOURCE_DIR}/src/Logging.cc
-                                   ${CMAKE_CURRENT_SOURCE_DIR}/src/LoggingModule.cc)
-endif(ENABLE_LOGGING)
 
 if(CMAKE_BUILD_TYPE MATCHES Debug)
   add_library(${PROJECT_NAME}lib SHARED ${library_sources} )

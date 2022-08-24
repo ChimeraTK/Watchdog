@@ -20,8 +20,6 @@
 #include "SystemInfoModule.h"
 #include "ProcessModule.h"
 
-#include "LoggingModule.h"
-
 namespace ctk = ChimeraTK;
 
 struct WatchdogModuleGroup : ctk::ModuleGroup {
@@ -46,12 +44,6 @@ struct WatchdogModuleGroup : ctk::ModuleGroup {
       "/watchdog/config/logFile", ctk::HierarchyModifier::hideThis};
 };
 
-struct SystemInfoGroup : ctk::ModuleGroup {
-  using ctk::ModuleGroup::ModuleGroup;
-
-  SystemInfoModule info{this, "system", "Module reading system information", ctk::HierarchyModifier::hideThis};
-};
-
 /**
  * \brief The watchdog application
  *
@@ -71,7 +63,7 @@ struct WatchdogServer : public ctk::Application {
 
   ctk::ConfigReader config{this, "Configuration", "WatchdogServerConfig.xml", ctk::HierarchyModifier::hideThis};
 
-  SystemInfoGroup systemInfo{this, "system", "Module reading system information"};
+  SystemInfoModule info{this, "system", "Module reading system information"};
 
   ProcessGroup processGroup{this, "processes", "Process module group"};
 
@@ -81,8 +73,8 @@ struct WatchdogServer : public ctk::Application {
 
   WatchdogModuleGroup watchdog{this, "watchdog", "Module monitoring the watchdog process"};
 
-  ctk::DataLossCounter<uint64_t> dataLossCounter{
-      this, "DataLossCounter", "Statistics on lost data within this watchdog server", ctk::HierarchyModifier::none};
+  ctk::DataLossCounter<uint64_t> dataLossCounter{this, "DataLossCounter",
+      "Statistics on lost data within this watchdog server", "Trigger/tick", ctk::HierarchyModifier::none};
 
   logging::LoggingModule logging;
 
@@ -95,7 +87,7 @@ struct WatchdogServer : public ctk::Application {
    */
   ctk::history::ServerHistory history;
 
-  void defineConnections() override;
+  void initialise() override;
 };
 
 #endif /* INCLUDE_WATCHDOGSERVER_H_ */

@@ -265,10 +265,8 @@ void ProcessControlModule::mainLoop() {
 
 void ProcessControlModule::SetOnline(const int& pid) {
   usleep(100000);
-#ifdef ENABLE_LOGGING
   // set external log file in order to read the log file even if starting the process failed
   status.externalLogfile = (std::string)config.externalLogfile;
-#endif
   CheckIsOnline(pid);
   if(status.isRunning == 1) {
     info.processPID = pid;
@@ -337,9 +335,7 @@ void ProcessControlModule::resetProcessHandler(std::stringstream* handlerMessage
     process->setSigNum(config.killSig);
   process->setKillTimeout(config.killTimeout);
   process.reset(nullptr);
-#ifdef ENABLE_LOGGING
   evaluateMessage(*handlerMessage);
-#endif
 }
 
 void ProcessControlModule::terminate() {
@@ -353,27 +349,6 @@ void ProcessControlModule::terminate() {
   }
   process.reset(nullptr);
   ProcessInfoModule::terminate();
-}
-
-std::string ProcessInfoModule::getTime() {
-  std::string str{"WATCHDOG_SERVER: "};
-  str.append(logging::getTime());
-  str.append(this->getName());
-  str.append(" -> ");
-  return str;
-}
-
-std::string ProcessControlModule::getTime() {
-  std::string str{"WATCHDOG_SERVER: "};
-  str.append(logging::getTime());
-  str.append(this->getOwner()->getName());
-  str.append("/");
-  str.append(this->getName());
-  if(!((std::string)(config.alias)).empty()) {
-    str.append(" (alias: " + (std::string)config.alias + ")");
-  }
-  str.append(" -> ");
-  return str;
 }
 
 void ProcessControlModule::evaluateMessage(std::stringstream& msg) {

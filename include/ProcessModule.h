@@ -19,7 +19,7 @@ namespace ctk = ChimeraTK;
 
 #include "sys_stat.h"
 #include "ProcessHandler.h"
-#include "LoggingModule.h"
+#include "LogFileReader.h"
 
 /**
  * \brief
@@ -51,7 +51,7 @@ struct ProcessInfoModule : public ctk::ApplicationModule {
     ctk::ScalarOutput<int> processPID{this, "PID", "", "PID of the process", {"CS", "PROCESS", getName(), "DAQ"}};
   } info{this, "status", "Status parameter of the process"};
 
-  boost::shared_ptr<logging::Logger> logger{new logging::Logger(this)};
+  boost::shared_ptr<logging::Logger> logger{new logging::Logger(this, "logging")};
 
   boost::posix_time::ptime time_stamp;
   /**
@@ -149,15 +149,6 @@ struct ProcessInfoModule : public ctk::ApplicationModule {
    * cpu usage value will be wrong for the first reading!
    */
   void FillProcInfo(const std::shared_ptr<proc_t>& info);
-
-  /* Don't overload the stream operator of ProcessInfoModule -> will cause Segfaults. Use getTime() instead. */
-  //  friend std::stringstream& operator<<(std::stringstream &ss, const ProcessInfoModule* module);
-
-  /**
-   * Print the watchdog server name, a time stamp and the module name:
-   * Result is: 'WATCHDOG_SERVER: "day of week"  "month" "day" hh:mm:ss yyyy "module_name" -> '
-   */
-  virtual std::string getTime();
 };
 
 /**
@@ -222,9 +213,6 @@ struct ProcessControlModule : public ProcessInfoModule {
 
   struct Config : public ctk::VariableGroup {
     using ctk::VariableGroup::VariableGroup;
-    /** Environment variable set for the process */
-    ctk::ScalarPollInput<std::string> alias{
-        this, "alias", "", "Alias name of the process", {"CS", "PROCESS", getName()}};
     /** Path where to execute the command used to start the process */
     ctk::ScalarPollInput<std::string> path{this, "path", "",
         "Set the path where to execute the command used to start the process", {"CS", "PROCESS", getName()}};
@@ -320,13 +308,6 @@ struct ProcessControlModule : public ProcessInfoModule {
    * This is needed to end up with a meaningful history buffer in case server based history is enabled.
    */
   bool _historyOn;
-
-  /**
-   * Print the watchdog server name, a time stamp and the module name:
-   * Result is: 'WATCHDOG_SERVER: "day of week"  "month" "day" hh:mm:ss yyyy "module_name" (alias: config.alias) -> '
-   * Alias is only added if it is not empty.
-   */
-  std::string getTime() override;
 };
 
 struct ProcessGroup : public ctk::ModuleGroup {

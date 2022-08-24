@@ -8,23 +8,13 @@ target_link_libraries(test_procReader ${ChimeraTK-ApplicationCore_LIBRARIES}
                                           ${Boost_LIBRARIES}
                                           ${PROJECT_NAME}lib)
 add_test(test_procReader test_procReader)
-if( ENABLE_LOGGING )
-  add_executable(test_processModule ${CMAKE_SOURCE_DIR}/test/test_processModule.cc)
-  target_link_libraries(test_processModule ${ChimeraTK-ApplicationCore_LIBRARIES} 
-                                           ${LibXML++_LIBRARIES} 
-                                           procps 
-                                           ${Boost_LIBRARIES}
-                                           ${PROJECT_NAME}lib)
-  add_test(test_processModule test_processModule)
-    
-#  add_executable(test_loggingModule ${CMAKE_SOURCE_DIR}/test/test_loggingModule.cc)
-#  target_link_libraries(test_loggingModule ${ChimeraTK-ApplicationCore_LIBRARIES} 
-#                                           ${LibXML++_LIBRARIES} 
-#                                           procps 
-#                                           ${Boost_LIBRARIES}
-#                                           ${PROJECT_NAME}lib)
-#  add_test(test_loggingModule test_loggingModule)
-endif( ENABLE_LOGGING )
+add_executable(test_processModule ${CMAKE_SOURCE_DIR}/test/test_processModule.cc)
+target_link_libraries(test_processModule ${ChimeraTK-ApplicationCore_LIBRARIES} 
+                                         ${LibXML++_LIBRARIES} 
+                                         procps 
+                                         ${Boost_LIBRARIES}
+                                         ${PROJECT_NAME}lib)
+add_test(test_processModule test_processModule)
     
 add_executable(test_watchdog ${CMAKE_SOURCE_DIR}/test/test_watchdog.cc)
 target_link_libraries(test_watchdog ${ChimeraTK-ApplicationCore_LIBRARIES} 

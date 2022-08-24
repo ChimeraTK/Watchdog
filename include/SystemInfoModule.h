@@ -133,7 +133,7 @@ class SystemInfoModule : public ctk::ApplicationModule {
    * \name Logging
    * @{
    */
-  boost::shared_ptr<logging::Logger> logger{new logging::Logger(this)};
+  boost::shared_ptr<logging::Logger> logger{new logging::Logger(this, "logging")};
   /** @} */
 
   /**
@@ -216,7 +216,7 @@ struct FileSystemModule : public ctk::ApplicationModule {
    * \name Logging
    * @{
    */
-  boost::shared_ptr<logging::Logger> logger{new logging::Logger(this)};
+  boost::shared_ptr<logging::Logger> logger{new logging::Logger(this, "logging")};
   /** @} */
 
   /**
@@ -318,7 +318,7 @@ struct NetworkModule : public ctk::ApplicationModule {
    * \name Logging
    * @{
    */
-  boost::shared_ptr<logging::Logger> logger{new logging::Logger(this)};
+  boost::shared_ptr<logging::Logger> logger{new logging::Logger(this, "logging")};
   /** @} */
 
   /**
