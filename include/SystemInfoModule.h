@@ -178,9 +178,11 @@ struct FileSystemModule : public ctk::ApplicationModule {
     using ctk::VariableGroup::VariableGroup;
 
     ctk::ScalarPollInput<double> warningLevel{this, "warningLevel", "%",
-        "Set the level when disc usage state is set to warning", {"CS", "PROCESS", getName()}};
-    ctk::ScalarPollInput<double> errorLevel{
-        this, "errorLevel", "%", "Set the level when disc usage state is set to error", {"CS", "PROCESS", getName()}};
+        "Set the level when disc usage state is set to warning. If set to 0 90% is used instead.",
+        {"CS", "PROCESS", getName()}};
+    ctk::ScalarPollInput<double> errorLevel{this, "errorLevel", "%",
+        "Set the level when disc usage state is set to error. If set to 0 95% is used instead.",
+        {"CS", "PROCESS", getName()}};
   } config{this, "config", "File system module configuration"};
 
   struct Status : public ctk::VariableGroup {

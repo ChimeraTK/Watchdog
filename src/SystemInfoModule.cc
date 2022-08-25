@@ -259,14 +259,16 @@ void FileSystemModule::mainLoop() {
   while(1) {
     if(read()) {
       status.disk_usage = (status.disk_size - status.disk_user) / status.disk_size * 100.;
-      if(status.disk_usage > config.errorLevel) {
+      if((config.errorLevel > 0 && status.disk_usage > config.errorLevel) ||
+          (config.errorLevel == 0 && status.disk_usage > 95)) {
         logger->sendMessage(std::string("More than ") + std::to_string(config.errorLevel) + "% (" +
                 std::to_string(status.disk_usage) + "%) of " + (std::string)deviceName + " mounted at " +
                 (std::string)status.mountPoint + " are used!",
             logging::LogLevel::WARNING);
         status.disk_status = 2;
       }
-      else if(status.disk_usage > config.warningLevel) {
+      else if((config.warningLevel > 0 && status.disk_usage > config.warningLevel) ||
+          (config.warningLevel == 0 && status.disk_usage > 90)) {
         logger->sendMessage(std::string("More than ") + std::to_string(config.warningLevel) + "% (" +
                 std::to_string(status.disk_usage) + "%) of " + (std::string)deviceName + " mounted at " +
                 (std::string)status.mountPoint + " are used!",
