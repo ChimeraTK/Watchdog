@@ -89,8 +89,8 @@ class SystemInfoModule : public ctk::ApplicationModule {
     using ctk::VariableGroup::VariableGroup;
     std::map<std::string, ctk::ScalarOutput<std::string>> strInfos;
     ctk::ScalarOutput<uint> ticksPerSecond{this, "ticksPerSecond", "Hz", "Number of clock ticks per second",
-        {"CS", "ProcessModuleInput"}}; ///< Number of clock ticks per second
-    ctk::ScalarOutput<uint> nCPU{this, "nCPU", "", "Number of CPUs", {"CS"}};
+        {"ProcessModuleInput"}}; ///< Number of clock ticks per second
+    ctk::ScalarOutput<uint> nCPU{this, "nCPU", "", "Number of CPUs"};
   } info{this, "info", "Static system information"};
   /** @} */
   /**
@@ -101,31 +101,28 @@ class SystemInfoModule : public ctk::ApplicationModule {
     using ctk::VariableGroup::VariableGroup;
 
     //\todo: Implement the following as unsigned long!
-    ctk::ScalarOutput<uint> maxMem{
-        this, "maxMem", "kB", "Maximum available memory", {"CS", "SYS", "ProcessModuleInput"}};
-    ctk::ScalarOutput<uint> freeMem{this, "freeMem", "kB", "Free memory", {"CS", "SYS", "DAQ", "History"}};
-    ctk::ScalarOutput<uint> cachedMem{this, "cachedMem", "kB", "Cached memory", {"CS", "SYS"}};
-    ctk::ScalarOutput<uint> usedMem{this, "usedMem", "kB", "Used memory", {"CS", "SYS", "DAQ", "History"}};
-    ctk::ScalarOutput<uint> maxSwap{this, "maxSwap", "kB", "Swap size", {"CS", "SYS"}};
-    ctk::ScalarOutput<uint> freeSwap{this, "freeSwap", "kB", "Free swap", {"CS", "SYS", "DAQ"}};
-    ctk::ScalarOutput<uint> usedSwap{this, "usedSwap", "kB", "Used swap", {"CS", "SYS", "DAQ", "History"}};
-    ctk::ScalarOutput<double> memoryUsage{
-        this, "memoryUsage", "%", "Relative memory usage", {"CS", "SYS", "DAQ", "History"}};
-    ctk::ScalarOutput<double> swapUsage{this, "swapUsage", "%", "Relative swap usage", {"CS", "SYS", "DAQ", "History"}};
+    ctk::ScalarOutput<uint> maxMem{this, "maxMem", "kB", "Maximum available memory", {"ProcessModuleInput"}};
+    ctk::ScalarOutput<uint> freeMem{this, "freeMem", "kB", "Free memory", {"DAQ", "History"}};
+    ctk::ScalarOutput<uint> cachedMem{this, "cachedMem", "kB", "Cached memory"};
+    ctk::ScalarOutput<uint> usedMem{this, "usedMem", "kB", "Used memory", {"DAQ", "History"}};
+    ctk::ScalarOutput<uint> maxSwap{this, "maxSwap", "kB", "Swap size"};
+    ctk::ScalarOutput<uint> freeSwap{this, "freeSwap", "kB", "Free swap", {"DAQ"}};
+    ctk::ScalarOutput<uint> usedSwap{this, "usedSwap", "kB", "Used swap", {"DAQ", "History"}};
+    ctk::ScalarOutput<double> memoryUsage{this, "memoryUsage", "%", "Relative memory usage", {"DAQ", "History"}};
+    ctk::ScalarOutput<double> swapUsage{this, "swapUsage", "%", "Relative swap usage", {"DAQ", "History"}};
     //\todo: Implement the following as long!
     ctk::ScalarOutput<uint> startTime{
-        this, "startTime", "s", "start time of system with respect to EPOCH", {"CS", "ProcessModuleInput"}};
-    ctk::ScalarOutput<std::string> startTimeStr{this, "startTimeStr", "", "startTimeStr", {"CS", "SYS"}};
-    ctk::ScalarOutput<uint> uptime_secTotal{
-        this, "uptimeSecTotal", "s", "Total uptime", {"CS", "SYS", "DAQ", "ProcessModuleInput"}};
-    ctk::ScalarOutput<uint> uptime_day{this, "uptimeDays", "day", "Days up", {"CS", "SYS"}};
-    ctk::ScalarOutput<uint> uptime_hour{this, "uptimeHours", "h", "Hours up", {"CS", "SYS"}};
-    ctk::ScalarOutput<uint> uptime_min{this, "uptimeMin", "min", "Minutes up", {"CS", "SYS"}};
-    ctk::ScalarOutput<uint> uptime_sec{this, "uptimeSec", "s", "Seconds up", {"CS", "SYS"}};
+        this, "startTime", "s", "start time of system with respect to EPOCH", {"ProcessModuleInput"}};
+    ctk::ScalarOutput<std::string> startTimeStr{this, "startTimeStr", "", "startTimeStr"};
+    ctk::ScalarOutput<uint> uptime_secTotal{this, "uptimeSecTotal", "s", "Total uptime", {"DAQ", "ProcessModuleInput"}};
+    ctk::ScalarOutput<uint> uptime_day{this, "uptimeDays", "day", "Days up"};
+    ctk::ScalarOutput<uint> uptime_hour{this, "uptimeHours", "h", "Hours up"};
+    ctk::ScalarOutput<uint> uptime_min{this, "uptimeMin", "min", "Minutes up"};
+    ctk::ScalarOutput<uint> uptime_sec{this, "uptimeSec", "s", "Seconds up"};
     std::unique_ptr<ctk::ArrayOutput<double>> cpu_use;
-    ctk::ScalarOutput<double> cpu_useTotal{this, "cpuTotal", "%", "Total CPU usage", {"CS", "SYS", "DAQ", "History"}};
+    ctk::ScalarOutput<double> cpu_useTotal{this, "cpuTotal", "%", "Total CPU usage", {"DAQ", "History"}};
     ctk::ArrayOutput<double> loadAvg{
-        this, "loadAvg", "", 3, "Average load within last min, 5min, 15min", {"CS", "SYS", "DAQ", "History"}};
+        this, "loadAvg", "", 3, "Average load within last min, 5min, 15min", {"DAQ", "History"}};
   } status{this, "status", "status of the system"};
   /** @} */
 
@@ -172,33 +169,32 @@ struct FileSystemModule : public ctk::ApplicationModule {
       const std::string& description, ctk::HierarchyModifier hierarchyModifier = ctk::HierarchyModifier::none,
       const std::unordered_set<std::string>& tags = {}, const std::string& pathToTrigger = "/Trigger/tick");
 
-  ctk::ScalarOutput<std::string> deviceName{this, "deviceName", "", "Name of the device", {"CS"}};
+  ctk::ScalarOutput<std::string> deviceName{this, "deviceName", "", "Name of the device"};
 
   struct Config : public ctk::VariableGroup {
     using ctk::VariableGroup::VariableGroup;
 
     ctk::ScalarPollInput<double> warningLevel{this, "warningLevel", "%",
         "Set the level when disc usage state is set to warning. If set to 0 90% is used instead.",
-        {"CS", "PROCESS", getName()}};
+        {"PROCESS", getName()}};
     ctk::ScalarPollInput<double> errorLevel{this, "errorLevel", "%",
         "Set the level when disc usage state is set to error. If set to 0 95% is used instead.",
-        {"CS", "PROCESS", getName()}};
+        {"PROCESS", getName()}};
   } config{this, "config", "File system module configuration"};
 
   struct Status : public ctk::VariableGroup {
     using ctk::VariableGroup::VariableGroup;
 
-    ctk::ScalarOutput<std::string> mountPoint{this, "mountPoint", "", "Mount point of the device", {"CS"}};
-    ctk::ScalarOutput<double> disk_size{this, "size", "GiB", "Mount point of the device", {"CS", "SYS", "DAQ"}};
-    ctk::ScalarOutput<double> disk_free{this, "free", "GiB", "Free disk space", {"CS", "SYS", "DAQ"}};
-    ctk::ScalarOutput<double> disk_user{
-        this, "freeUser", "GiB", "Free disk space available for the user", {"CS", "SYS", "DAQ"}};
-    ctk::ScalarOutput<double> disk_usage{this, "usage", "%",
-        "Disk usage with respect to the space available to the user", {"CS", "SYS", "DAQ", "History"}};
+    ctk::ScalarOutput<std::string> mountPoint{this, "mountPoint", "", "Mount point of the device"};
+    ctk::ScalarOutput<double> disk_size{this, "size", "GiB", "Mount point of the device", {"DAQ"}};
+    ctk::ScalarOutput<double> disk_free{this, "free", "GiB", "Free disk space", {"DAQ"}};
+    ctk::ScalarOutput<double> disk_user{this, "freeUser", "GiB", "Free disk space available for the user", {"DAQ"}};
+    ctk::ScalarOutput<double> disk_usage{
+        this, "usage", "%", "Disk usage with respect to the space available to the user", {"DAQ", "History"}};
     ctk::ScalarOutput<uint> disk_status{this, "usageStatus", "",
         "Status of the disk usage-> 0:ok, 1:warning, 2:error. "
         "Levels can be set in the config section.",
-        {"CS", "SYS", "DAQ", "History"}};
+        {"DAQ", "History"}};
   } status{this, "status", "Information about the mounted device"};
 
   struct TriggerGroup : ctk::HierarchyModifyingGroup {
@@ -273,7 +269,7 @@ struct NetworkModule : public ctk::ApplicationModule {
    * Publish the device name although it is also encoded in the path by
    * the watchdog  sever.
    */
-  ctk::ScalarOutput<std::string> deviceName{this, "deviceName", "", "Name of the device", {"CS"}};
+  ctk::ScalarOutput<std::string> deviceName{this, "deviceName", "", "Name of the device"};
   struct Status : public ctk::VariableGroup {
     using ctk::VariableGroup::VariableGroup;
     /*
@@ -329,10 +325,9 @@ struct NetworkModule : public ctk::ApplicationModule {
   void mainLoop() override;
 
   /**
-   * Use statfs to read information about the device.
-   * Since this might not be thread safe a mutex is used here.
+   * Read network statistics.
    */
-  bool read();
+  void read();
 };
 
 /**

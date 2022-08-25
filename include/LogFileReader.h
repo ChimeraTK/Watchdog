@@ -30,8 +30,8 @@ struct LogFileModule : public ctk::ApplicationModule {
       const std::string& pathToTrigger, const std::string& pathToLogFile,
       ctk::HierarchyModifier hierarchyModifier = ctk::HierarchyModifier::none,
       const std::unordered_set<std::string>& tags = {})
-  : ctk::ApplicationModule(owner, name, description, hierarchyModifier, tags),
-    triggerGroup(this, pathToTrigger, {"CS"}), logFileGroup(this, pathToLogFile, {"CS"}) {}
+  : ctk::ApplicationModule(owner, name, description, hierarchyModifier, tags), triggerGroup(this, pathToTrigger),
+    logFileGroup(this, pathToLogFile) {}
 
   struct TriggerGroup : ctk::HierarchyModifyingGroup {
     TriggerGroup(EntityOwner* owner, const std::string& pathToTrigger, const std::unordered_set<std::string>& tags = {})
@@ -46,14 +46,13 @@ struct LogFileModule : public ctk::ApplicationModule {
   struct Config : ctk::VariableGroup {
     using ctk::VariableGroup::VariableGroup;
     ctk::ScalarPollInput<uint> tailLength{
-        this, "logTailLengthExternal", "", "Maximum number of messages to be shown in the lofgile tail.", {"CS"}};
+        this, "logTailLengthExternal", "", "Maximum number of messages to be shown in the lofgile tail."};
   } config{this, "config", "Configuration parameters of the process"};
 
   struct Status : ctk::VariableGroup {
     using ctk::VariableGroup::VariableGroup;
     ctk::ScalarOutput<std::string> logTailExtern{this, "logTailExternal", "",
-        "Tail of an external log file, e.g. produced by a program started by the watchdog.",
-        {"CS", "PROCESS", getName()}};
+        "Tail of an external log file, e.g. produced by a program started by the watchdog.", {getName()}};
   } status{this, "status", "Status parameter of the process"};
 
   struct LogFileGroup : ctk::HierarchyModifyingGroup {

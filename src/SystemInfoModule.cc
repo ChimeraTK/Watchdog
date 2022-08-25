@@ -28,13 +28,13 @@
 SystemInfoModule::SystemInfoModule(EntityOwner* owner, const std::string& name, const std::string& description,
     ctk::HierarchyModifier hierarchyModifier, const std::unordered_set<std::string>& tags,
     const std::string& pathToTrigger)
-: ctk::ApplicationModule(owner, name, description, hierarchyModifier, tags), triggerGroup(this, pathToTrigger, {"CS"}) {
+: ctk::ApplicationModule(owner, name, description, hierarchyModifier, tags), triggerGroup(this, pathToTrigger) {
   for(auto it = sysInfo.ibegin(); it != sysInfo.iend(); it++) {
-    info.strInfos.emplace(it->first,
-        ctk::ScalarOutput<std::string>{&info, space2underscore(it->first), "", space2underscore(it->first), {"CS"}});
+    info.strInfos.emplace(
+        it->first, ctk::ScalarOutput<std::string>{&info, space2underscore(it->first), "", space2underscore(it->first)});
   }
   status.cpu_use = std::make_unique<ctk::ArrayOutput<double>>(&status, "cpuUsage", "%", sysInfo.getNCpu(),
-      "CPU usage for each processor", std::unordered_set<std::string>{"CS", "SYS", "History"});
+      "CPU usage for each processor", std::unordered_set<std::string>{"History"});
   //  // add 1 since cpuTotal should be added too
   lastInfo = std::vector<cpu>(sysInfo.getNCpu() + 1);
 }
@@ -63,7 +63,6 @@ void SystemInfoModule::mainLoop() {
   }
 
   info.ticksPerSecond = sysconf(_SC_CLK_TCK);
-  info.ticksPerSecond.write();
   for(auto it = sysInfo.ibegin(); it != sysInfo.iend(); it++) {
     info.strInfos.at(it->first) = it->second;
   }
@@ -85,11 +84,6 @@ void SystemInfoModule::mainLoop() {
   }
 
   readCPUInfo(lastInfo);
-
-  // findTag takes some time and should not be called with every loop
-  auto toWrite = findTag("SYS");
-  // ToDo: Remove once the bug in the VitualModule is fixed (issue #30)
-  toWrite.setOwner(this);
 
   while(true) {
     meminfo();
@@ -131,7 +125,7 @@ void SystemInfoModule::mainLoop() {
 
     calculatePCPU();
 
-    toWrite.writeAll();
+    status.writeAll();
     logger->sendMessage("System data updated", logging::LogLevel::DEBUG);
 
     triggerGroup.trigger.read();
@@ -223,7 +217,7 @@ std::string getTime(ctk::ApplicationModule* mod) {
 FileSystemModule::FileSystemModule(const std::string& devName, const std::string& mntPoint, EntityOwner* owner,
     const std::string& name, const std::string& description, ctk::HierarchyModifier hierarchyModifier,
     const std::unordered_set<std::string>& tags, const std::string& pathToTrigger)
-: ctk::ApplicationModule(owner, name, description, hierarchyModifier, tags), triggerGroup(this, pathToTrigger, {"CS"}) {
+: ctk::ApplicationModule(owner, name, description, hierarchyModifier, tags), triggerGroup(this, pathToTrigger) {
   tmp[0] = devName;
   tmp[1] = mntPoint;
 }
@@ -251,10 +245,6 @@ void FileSystemModule::mainLoop() {
   deviceName.write();
   status.mountPoint.write();
 
-  // findTag takes some time and should not be called with every loop
-  auto toWrite = findTag("SYS");
-  // ToDo: Remove once the bug in the VitualModule is fixed (issue #30)
-  toWrite.setOwner(this);
   auto group = readAnyGroup();
   while(1) {
     if(read()) {
@@ -279,7 +269,7 @@ void FileSystemModule::mainLoop() {
         status.disk_status = 0;
         logger->sendMessage(std::string("Disc usage: ") + std::to_string(status.disk_usage), logging::LogLevel::DEBUG);
       }
-      toWrite.writeAll();
+      status.writeAll();
     }
     group.readUntil(triggerGroup.trigger.getId());
   }
@@ -288,31 +278,27 @@ void FileSystemModule::mainLoop() {
 NetworkModule::NetworkModule(const std::string& device, EntityOwner* owner, const std::string& name,
     const std::string& description, ctk::HierarchyModifier hierarchyModifier,
     const std::unordered_set<std::string>& tags, const std::string& pathToTrigger)
-: ctk::ApplicationModule(owner, name, description, hierarchyModifier, tags), triggerGroup(this, pathToTrigger, {"CS"}) {
+: ctk::ApplicationModule(owner, name, description, hierarchyModifier, tags), triggerGroup(this, pathToTrigger) {
   networkDeviceName = device;
+  status.data.emplace_back(ctk::ScalarOutput<double>{&status, "rx_packates", "1/s", "Received packates.", {"DAQ"}});
+  status.data.emplace_back(ctk::ScalarOutput<double>{&status, "tx_packates", "1/s", "Transmitted packates.", {"DAQ"}});
+  status.data.emplace_back(ctk::ScalarOutput<double>{&status, "rx", "MiB/s", "Data rate receive.", {"DAQ", "History"}});
   status.data.emplace_back(
-      ctk::ScalarOutput<double>{&status, "rx_packates", "1/s", "Received packates.", {"CS", "SYS", "DAQ"}});
+      ctk::ScalarOutput<double>{&status, "tx", "MiB/s", "Data rate transmit.", {"DAQ", "History"}});
   status.data.emplace_back(
-      ctk::ScalarOutput<double>{&status, "tx_packates", "1/s", "Transmitted packates.", {"CS", "SYS", "DAQ"}});
+      ctk::ScalarOutput<double>{&status, "rx_dropped", "1/s", "Dropped received packates.", {"DAQ", "History"}});
   status.data.emplace_back(
-      ctk::ScalarOutput<double>{&status, "rx", "MiB/s", "Data rate receive.", {"CS", "SYS", "DAQ", "History"}});
-  status.data.emplace_back(
-      ctk::ScalarOutput<double>{&status, "tx", "MiB/s", "Data rate transmit.", {"CS", "SYS", "DAQ", "History"}});
-  status.data.emplace_back(ctk::ScalarOutput<double>{
-      &status, "rx_dropped", "1/s", "Dropped received packates.", {"CS", "SYS", "DAQ", "History"}});
-  status.data.emplace_back(ctk::ScalarOutput<double>{
-      &status, "tx_dropped", "1/s", "Dropped transmitted packates.", {"CS", "SYS", "DAQ", "History"}});
-  status.data.emplace_back(
-      ctk::ScalarOutput<double>{&status, "collisions", "1/s", "Number of collisions.", {"CS", "SYS", "DAQ"}});
+      ctk::ScalarOutput<double>{&status, "tx_dropped", "1/s", "Dropped transmitted packates.", {"DAQ", "History"}});
+  status.data.emplace_back(ctk::ScalarOutput<double>{&status, "collisions", "1/s", "Number of collisions.", {"DAQ"}});
 }
 
-bool NetworkModule::read() {
+void NetworkModule::read() {
   raw tmp((std::string)deviceName);
   for(size_t i = 0; i < tmp.files.size(); i++) {
     std::ifstream in(tmp.files.at(i));
     if(!in.is_open()) {
       logger->sendMessage(std::string("Failed to open: ") + tmp.files.at(i), logging::LogLevel::ERROR);
-      return false;
+      return;
     }
     tmp.time.at(i) = boost::posix_time::microsec_clock::local_time();
     in >> tmp.data.at(i);
@@ -325,22 +311,15 @@ bool NetworkModule::read() {
     in.close();
   }
   previousData = raw(tmp);
-  return true;
+  status.writeAll();
 }
 
 void NetworkModule::mainLoop() {
   deviceName = networkDeviceName;
   deviceName.write();
 
-  // findTag takes some time and should not be called with every loop
-  auto toWrite = findTag("SYS");
-  // ToDo: Remove once the bug in the VitualModule is fixed (issue #30)
-  toWrite.setOwner(this);
-
   while(1) {
-    if(read()) {
-      toWrite.writeAll();
-    }
+    read();
     triggerGroup.trigger.read();
   }
 }

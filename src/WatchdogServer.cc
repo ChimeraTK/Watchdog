@@ -115,7 +115,7 @@ WatchdogServer::WatchdogServer() : Application("WatchdogServer") {
 
   if(config.get<ChimeraTK::Boolean>("Configuration/MicroDAQ/enable") == true) {
     daq = ctk::MicroDAQ<uint64_t>{
-        this, "microDAQ", "DAQ module", "DAQ", "/Trigger/tick", ctk::HierarchyModifier::none, {"CS", "MicroDAQ"}};
+        this, "microDAQ", "DAQ module", "DAQ", "/Trigger/tick", ctk::HierarchyModifier::none, {"MicroDAQ"}};
   }
 
   /*
