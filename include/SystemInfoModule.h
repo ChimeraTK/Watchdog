@@ -102,14 +102,14 @@ class SystemInfoModule : public ctk::ApplicationModule {
 
     //\todo: Implement the following as unsigned long!
     ctk::ScalarOutput<uint> maxMem{this, "maxMem", "kB", "Maximum available memory", {"ProcessModuleInput"}};
-    ctk::ScalarOutput<uint> freeMem{this, "freeMem", "kB", "Free memory", {"DAQ", "History"}};
+    ctk::ScalarOutput<uint> freeMem{this, "freeMem", "kB", "Free memory", {"DAQ", "history"}};
     ctk::ScalarOutput<uint> cachedMem{this, "cachedMem", "kB", "Cached memory"};
-    ctk::ScalarOutput<uint> usedMem{this, "usedMem", "kB", "Used memory", {"DAQ", "History"}};
+    ctk::ScalarOutput<uint> usedMem{this, "usedMem", "kB", "Used memory", {"DAQ", "history"}};
     ctk::ScalarOutput<uint> maxSwap{this, "maxSwap", "kB", "Swap size"};
     ctk::ScalarOutput<uint> freeSwap{this, "freeSwap", "kB", "Free swap", {"DAQ"}};
-    ctk::ScalarOutput<uint> usedSwap{this, "usedSwap", "kB", "Used swap", {"DAQ", "History"}};
-    ctk::ScalarOutput<double> memoryUsage{this, "memoryUsage", "%", "Relative memory usage", {"DAQ", "History"}};
-    ctk::ScalarOutput<double> swapUsage{this, "swapUsage", "%", "Relative swap usage", {"DAQ", "History"}};
+    ctk::ScalarOutput<uint> usedSwap{this, "usedSwap", "kB", "Used swap", {"DAQ", "history"}};
+    ctk::ScalarOutput<double> memoryUsage{this, "memoryUsage", "%", "Relative memory usage", {"DAQ", "history"}};
+    ctk::ScalarOutput<double> swapUsage{this, "swapUsage", "%", "Relative swap usage", {"DAQ", "history"}};
     //\todo: Implement the following as long!
     ctk::ScalarOutput<uint> startTime{
         this, "startTime", "s", "start time of system with respect to EPOCH", {"ProcessModuleInput"}};
@@ -120,9 +120,9 @@ class SystemInfoModule : public ctk::ApplicationModule {
     ctk::ScalarOutput<uint> uptime_min{this, "uptimeMin", "min", "Minutes up"};
     ctk::ScalarOutput<uint> uptime_sec{this, "uptimeSec", "s", "Seconds up"};
     std::unique_ptr<ctk::ArrayOutput<double>> cpu_use;
-    ctk::ScalarOutput<double> cpu_useTotal{this, "cpuTotal", "%", "Total CPU usage", {"DAQ", "History"}};
+    ctk::ScalarOutput<double> cpu_useTotal{this, "cpuTotal", "%", "Total CPU usage", {"DAQ", "history"}};
     ctk::ArrayOutput<double> loadAvg{
-        this, "loadAvg", "", 3, "Average load within last min, 5min, 15min", {"DAQ", "History"}};
+        this, "loadAvg", "", 3, "Average load within last min, 5min, 15min", {"DAQ", "history"}};
   } status{this, "status", "status of the system"};
   /** @} */
 
@@ -190,11 +190,11 @@ struct FileSystemModule : public ctk::ApplicationModule {
     ctk::ScalarOutput<double> disk_free{this, "free", "GiB", "Free disk space", {"DAQ"}};
     ctk::ScalarOutput<double> disk_user{this, "freeUser", "GiB", "Free disk space available for the user", {"DAQ"}};
     ctk::ScalarOutput<double> disk_usage{
-        this, "usage", "%", "Disk usage with respect to the space available to the user", {"DAQ", "History"}};
+        this, "usage", "%", "Disk usage with respect to the space available to the user", {"DAQ", "history"}};
     ctk::ScalarOutput<uint> disk_status{this, "usageStatus", "",
         "Status of the disk usage-> 0:ok, 1:warning, 2:error. "
         "Levels can be set in the config section.",
-        {"DAQ", "History"}};
+        {"DAQ", "history"}};
   } status{this, "status", "Information about the mounted device"};
 
   struct TriggerGroup : ctk::HierarchyModifyingGroup {

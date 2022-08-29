@@ -123,22 +123,8 @@ WatchdogServer::WatchdogServer() : Application("WatchdogServer") {
    */
 
   if(config.get<uint>("Configuration/enableServerHistory") != 0) {
-    uint serverHistroyLength = config.get<uint>("Configuration/serverHistoryLength");
-    if(serverHistroyLength != 0)
-      history = ctk::history::ServerHistory{this, "History", "History", serverHistroyLength, false, true};
-    else
-      history = ctk::history::ServerHistory{this, "History", "History", 100, false, true};
-    history.addSource(info.findTag("History"), "history/" + info.getName());
-    history.addSource(watchdog.findTag("History"), "history/" + watchdog.getName());
-    for(auto& item : processGroup.processes) {
-      history.addSource(item.findTag("History"), "history/processes/" + item.getName());
-    }
-    for(auto& item : filesystemGroup.fsMonitors) {
-      history.addSource(item.findTag("History"), "history/filesystem/" + item.getName());
-    }
-    for(auto& item : networkGroup.networkMonitors) {
-      history.addSource(item.findTag("History"), "history/network/" + item.getName());
-    }
+    uint serverHistroyLength = config.get<uint>("Configuration/serverHistoryLength", (uint)100);
+    history = ctk::history::ServerHistory{this, "history", "History", serverHistroyLength, false};
   }
 }
 

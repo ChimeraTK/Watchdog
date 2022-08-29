@@ -34,7 +34,7 @@ SystemInfoModule::SystemInfoModule(EntityOwner* owner, const std::string& name, 
         it->first, ctk::ScalarOutput<std::string>{&info, space2underscore(it->first), "", space2underscore(it->first)});
   }
   status.cpu_use = std::make_unique<ctk::ArrayOutput<double>>(&status, "cpuUsage", "%", sysInfo.getNCpu(),
-      "CPU usage for each processor", std::unordered_set<std::string>{"History"});
+      "CPU usage for each processor", std::unordered_set<std::string>{"history"});
   //  // add 1 since cpuTotal should be added too
   lastInfo = std::vector<cpu>(sysInfo.getNCpu() + 1);
 }
@@ -282,13 +282,13 @@ NetworkModule::NetworkModule(const std::string& device, EntityOwner* owner, cons
   networkDeviceName = device;
   status.data.emplace_back(ctk::ScalarOutput<double>{&status, "rx_packates", "1/s", "Received packates.", {"DAQ"}});
   status.data.emplace_back(ctk::ScalarOutput<double>{&status, "tx_packates", "1/s", "Transmitted packates.", {"DAQ"}});
-  status.data.emplace_back(ctk::ScalarOutput<double>{&status, "rx", "MiB/s", "Data rate receive.", {"DAQ", "History"}});
+  status.data.emplace_back(ctk::ScalarOutput<double>{&status, "rx", "MiB/s", "Data rate receive.", {"DAQ", "history"}});
   status.data.emplace_back(
-      ctk::ScalarOutput<double>{&status, "tx", "MiB/s", "Data rate transmit.", {"DAQ", "History"}});
+      ctk::ScalarOutput<double>{&status, "tx", "MiB/s", "Data rate transmit.", {"DAQ", "history"}});
   status.data.emplace_back(
-      ctk::ScalarOutput<double>{&status, "rx_dropped", "1/s", "Dropped received packates.", {"DAQ", "History"}});
+      ctk::ScalarOutput<double>{&status, "rx_dropped", "1/s", "Dropped received packates.", {"DAQ", "history"}});
   status.data.emplace_back(
-      ctk::ScalarOutput<double>{&status, "tx_dropped", "1/s", "Dropped transmitted packates.", {"DAQ", "History"}});
+      ctk::ScalarOutput<double>{&status, "tx_dropped", "1/s", "Dropped transmitted packates.", {"DAQ", "history"}});
   status.data.emplace_back(ctk::ScalarOutput<double>{&status, "collisions", "1/s", "Number of collisions.", {"DAQ"}});
 }
 

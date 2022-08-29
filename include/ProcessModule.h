@@ -32,8 +32,7 @@ struct ProcessInfoModule : public ctk::ApplicationModule {
   ProcessInfoModule(EntityOwner* owner, const std::string& name, const std::string& description,
       ctk::HierarchyModifier hierarchyModifier = ctk::HierarchyModifier::none,
       const std::unordered_set<std::string>& tags = {}, const std::string& pathToTrigger = "/Trigger/tick")
-  : ctk::ApplicationModule(owner, name, description, hierarchyModifier, tags),
-    triggerGroup(this, pathToTrigger){};
+  : ctk::ApplicationModule(owner, name, description, hierarchyModifier, tags), triggerGroup(this, pathToTrigger){};
 
   struct TriggerGroup : ctk::HierarchyModifyingGroup {
     TriggerGroup(EntityOwner* owner, const std::string& pathToTrigger, const std::unordered_set<std::string>& tags = {})
@@ -108,9 +107,9 @@ struct ProcessInfoModule : public ctk::ApplicationModule {
 
     //\ToDo Use unsigned long
     ctk::ScalarOutput<uint> mem{
-        this, "mem", "kB", "Memory used by the process", {"PROCESS", getName(), "DAQ", "History"}};
+        this, "mem", "kB", "Memory used by the process", {"PROCESS", getName(), "DAQ", "history"}};
 
-    ctk::ScalarOutput<double> memoryUsage{this, "memoryUsage", "%", "Relative memory usage", {"DAQ", "History"}};
+    ctk::ScalarOutput<double> memoryUsage{this, "memoryUsage", "%", "Relative memory usage", {"DAQ", "history"}};
 
     //\todo Use long
     /** kernel scheduling priority */
@@ -124,13 +123,13 @@ struct ProcessInfoModule : public ctk::ApplicationModule {
      * CPU usage for measured between two control system loops.
      * The process time includes utime, stime, sutime, sctime.
      */
-    ctk::ScalarOutput<double> pcpu{this, "pcpu", "%", "Actual CPU usage", {"PROCESS", getName(), "DAQ", "History"}};
+    ctk::ScalarOutput<double> pcpu{this, "pcpu", "%", "Actual CPU usage", {"PROCESS", getName(), "DAQ", "history"}};
     /**
      * CPU usage averaged over the whole runtime of the process.
      * The process time includes utime, stime, sutime, sctime.
      */
     ctk::ScalarOutput<double> avgcpu{
-        this, "avgcpu", "%", "Average CPU usage", {"PROCESS", getName(), "DAQ", "History"}};
+        this, "avgcpu", "%", "Average CPU usage", {"PROCESS", getName(), "DAQ", "history"}};
     /** @} */
   } statistics{this, "statistics", "Process statistics read from the operating system"};
 
