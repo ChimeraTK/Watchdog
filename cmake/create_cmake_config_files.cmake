@@ -27,7 +27,7 @@
 #
 #######################################################################################################################
 
-# create variables for standard makefiles
+# create variables for standard makefiles and pkgconfig
 set(${PROJECT_NAME}_CXX_FLAGS_MAKEFILE "${${PROJECT_NAME}_CXX_FLAGS}")
 
 string(REPLACE " " ";" LIST "${${PROJECT_NAME}_INCLUDE_DIRS}")
@@ -61,6 +61,12 @@ foreach(DEPENDENCY ${${PROJECT_NAME}_PUBLIC_DEPENDENCIES})
     string(APPEND ${PROJECT_NAME}_PUBLIC_DEPENDENCIES_L "find_package(${DEPENDENCY} REQUIRED)\n")
 endforeach()
 
+if(TARGET ${PROJECT_NAME})
+  set(${PROJECT_NAME}_HAS_LIBRARY 1)
+else()
+  set(${PROJECT_NAME}_HAS_LIBRARY 0)
+endif()
+
 # we have nested @-statements, so we have to parse twice:
 
 # create the cmake find_package configuration file
@@ -72,6 +78,11 @@ configure_file(${PROJECT_BINARY_DIR}/cmake/${PROJECT_NAME}ConfigVersion.cmake.in
 # create the shell script for standard make files
 configure_file(cmake/PROJECT_NAME-config.in.in "${PROJECT_BINARY_DIR}/cmake/${PROJECT_NAME}-config.in" @ONLY)
 configure_file(${PROJECT_BINARY_DIR}/cmake/${PROJECT_NAME}-config.in "${PROJECT_BINARY_DIR}/${PROJECT_NAME}-config" @ONLY)
+
+# create the pkgconfig file
+configure_file(cmake/PROJECT_NAME.pc.in.in "${PROJECT_BINARY_DIR}/cmake/${PROJECT_NAME}.pc.in" @ONLY)
+configure_file(${PROJECT_BINARY_DIR}/cmake/${PROJECT_NAME}.pc.in "${PROJECT_BINARY_DIR}/${PROJECT_NAME}.pc" @ONLY)
+
 
 # install cmake find_package configuration file
 install(FILES "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
@@ -86,3 +97,5 @@ install(FILES "${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
 # install script for Makefiles
 install(PROGRAMS ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config DESTINATION bin COMPONENT dev)
 
+# install configuration file for pkgconfig
+install(FILES "${PROJECT_BINARY_DIR}/${PROJECT_NAME}.pc" DESTINATION share/pkgconfig COMPONENT dev)
