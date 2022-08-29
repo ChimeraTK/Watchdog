@@ -41,10 +41,10 @@ struct testApp : public ChimeraTK::Application {
 };
 
 void prepareTest(
-    ChimeraTK::TestFacility* tf, int maxFails, int maxRestarts, std::string cmd, std::string path, uint enable = 1) {
+    ChimeraTK::TestFacility* tf, int maxFails, int maxRestarts, std::string cmd, std::string path, bool enable = 1) {
   tf->setScalarDefault<std::string>("Process/config/command", cmd);
   tf->setScalarDefault<std::string>("Process/config/path", path);
-  tf->setScalarDefault<uint>("Process/enableProcess", enable);
+  tf->setScalarDefault<ChimeraTK::Boolean>("Process/enableProcess", enable);
   tf->setScalarDefault<uint>("Process/config/maxRestarts", maxRestarts);
   tf->setScalarDefault<uint>("Process/config/maxFails", maxFails);
   tf->runApplication();
@@ -59,8 +59,8 @@ BOOST_AUTO_TEST_CASE(testStart) {
   tf.writeScalar("Trigger/tick", (uint64_t)0);
   tf.stepApplication();
   usleep(200000);
-  BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/status/isRunning"), 1);
-  tf.writeScalar("Process/enableProcess", (uint)0);
+  BOOST_CHECK_EQUAL(tf.readScalar<ChimeraTK::Boolean>("Process/status/isRunning"), true);
+  tf.writeScalar("Process/enableProcess", (ChimeraTK::Boolean)0);
   tf.writeScalar("Trigger/tick", (uint64_t)0);
   tf.stepApplication();
   usleep(200000);
@@ -70,12 +70,12 @@ BOOST_AUTO_TEST_CASE(testProcessFailLimit) {
   BOOST_TEST_MESSAGE("Test maxrestarts==2, maxfails==2 with failing process.");
   testApp app;
   ChimeraTK::TestFacility tf;
-  prepareTest(&tf, 2, 2, std::string("sleep 1"), std::string("/etc/bin"), 0);
+  prepareTest(&tf, 2, 2, std::string("sleep 1"), std::string("/etc/bin"), false);
   BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/status/nFailed"), 0);
   BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/status/nRestarts"), 0);
   for(size_t i = 1; i < 5; i++) {
     tf.writeScalar("Trigger/tick", (uint64_t)0);
-    tf.writeScalar("Process/enableProcess", (uint)1);
+    tf.writeScalar("Process/enableProcess", (ChimeraTK::Boolean) true);
     tf.stepApplication();
     if(i > 2)
       BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/status/nFailed"), 2);
@@ -123,9 +123,9 @@ BOOST_AUTO_TEST_CASE(testProcess) {
     tf.writeScalar("Trigger/tick", (uint64_t)0);
     tf.stepApplication();
     if(i == 0)
-      BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/status/isRunning"), 1);
+      BOOST_CHECK_EQUAL(tf.readScalar<ChimeraTK::Boolean>("Process/status/isRunning"), true);
     else
-      BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/status/isRunning"), 0);
+      BOOST_CHECK_EQUAL(tf.readScalar<ChimeraTK::Boolean>("Process/status/isRunning"), false);
     BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/status/nFailed"), 0);
     BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/status/nRestarts"), 0);
     sleep(2);
@@ -145,13 +145,13 @@ BOOST_AUTO_TEST_CASE(testProcessRestartCounter1) {
     tf.stepApplication();
     BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/status/nFailed"), 0);
     BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/status/nRestarts"), i);
-    BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/status/isRunning"), 1);
+    BOOST_CHECK_EQUAL(tf.readScalar<ChimeraTK::Boolean>("Process/status/isRunning"), true);
     sleep(2);
   }
   // after max restarts is reached the process terminates and after the next trigger is fired
   tf.writeScalar("Trigger/tick", (uint64_t)0);
   tf.stepApplication();
-  BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/status/isRunning"), 0);
+  BOOST_CHECK_EQUAL(tf.readScalar<ChimeraTK::Boolean>("Process/status/isRunning"), false);
 }
 
 BOOST_AUTO_TEST_CASE(testProcessRestartCounter2) {
@@ -167,19 +167,19 @@ BOOST_AUTO_TEST_CASE(testProcessRestartCounter2) {
     tf.stepApplication();
     BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/status/nFailed"), 0);
     BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/status/nRestarts"), i);
-    BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/status/isRunning"), 1);
+    BOOST_CHECK_EQUAL(tf.readScalar<ChimeraTK::Boolean>("Process/status/isRunning"), true);
     if(i < 2) sleep(2);
   }
   // after max restarts is reached process is running
   tf.writeScalar("Trigger/tick", (uint64_t)0);
   tf.stepApplication();
-  BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/status/isRunning"), 1);
+  BOOST_CHECK_EQUAL(tf.readScalar<ChimeraTK::Boolean>("Process/status/isRunning"), true);
   sleep(2);
   // now after some time it is not running any more
   tf.writeScalar("Trigger/tick", (uint64_t)0);
   tf.stepApplication();
-  BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/status/isRunning"), 0);
+  BOOST_CHECK_EQUAL(tf.readScalar<ChimeraTK::Boolean>("Process/status/isRunning"), false);
   tf.writeScalar("Trigger/tick", (uint64_t)0);
   tf.stepApplication();
-  BOOST_CHECK_EQUAL(tf.readScalar<uint>("Process/status/isRunning"), 0);
+  BOOST_CHECK_EQUAL(tf.readScalar<ChimeraTK::Boolean>("Process/status/isRunning"), false);
 }

@@ -185,8 +185,8 @@ struct ProcessControlModule : public ProcessInfoModule {
     /** Environment variable set for the process */
     ctk::ScalarOutput<std::string> env{
         this, "environment", "", "Environment variables of the process", {"PROCESS", getName()}};
-    /** Process status 0: not running, 1: running */
-    ctk::ScalarOutput<uint> isRunning{
+    /** Process status */
+    ctk::ScalarOutput<ctk::Boolean> isRunning{
         this, "isRunning", "", "Process status 0: not running, 1: running", {"PROCESS", getName(), "DAQ"}};
     /** Number of failed restarts */
     ctk::ScalarOutput<uint> nFailed{
@@ -244,7 +244,8 @@ struct ProcessControlModule : public ProcessInfoModule {
   } config{this, "config", "Configuration parameters of the process"};
 
   /** Start the process */
-  ctk::ScalarPollInput<uint> enableProcess{this, "enableProcess", "", "Start the process", {"PROCESS", getName()}};
+  ctk::ScalarPollInput<ctk::Boolean> enableProcess{
+      this, "enableProcess", "", "Start the process", {"PROCESS", getName()}};
 
   /**
    * Set the PID and set status to running.
