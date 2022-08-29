@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <configuration>
-  <module name="Configuration">
+  <variable name="enableServerHistory" type="uint32" value="1" />
+  <variable name="serverHistoryLength" type="uint32" value="1200" />
+  <variable name="numberOfProcesses" type="uint32" value="8" />
+  <module name="Configuration"> 
     <module name="MicroDAQ">
-      <variable name="enable" type="boolean" value="true"/>
+      <variable name="enable" type="boolean" value="True"/>
       <variable name="outputFormat" type="string" value="hdf5"/>
       <variable name="decimationFactor" type="uint32" value="1000"/>
       <variable name="decimationThreshold" type="uint32" value="100"/>
     </module>
-    <variable name="enableServerHistory" type="uint32" value="0" />
-    <variable name="serverHistoryLength" type="uint32" value="1200" />
-    <variable name="numberOfProcesses" type="uint32" value="8" />
   </module>
 </configuration>
