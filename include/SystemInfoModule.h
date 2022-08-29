@@ -11,10 +11,7 @@
 #undef GENERATE_XML
 #include <ChimeraTK/ApplicationCore/ApplicationCore.h>
 #include <ChimeraTK/ApplicationCore/HierarchyModifyingGroup.h>
-
-#ifdef ENABLE_LOGGING
-#  include "LoggingModule.h"
-#endif
+#include <ChimeraTK/ApplicationCore/Logging.h>
 
 #include "sys_stat.h"
 #include <unordered_set>
@@ -72,7 +69,7 @@ class SystemInfoModule : public ctk::ApplicationModule {
  public:
   SystemInfoModule(EntityOwner* owner, const std::string& name, const std::string& description,
       ctk::HierarchyModifier hierarchyModifier = ctk::HierarchyModifier::none,
-      const std::unordered_set<std::string>& tags = {}, const std::string& pathToTrigger = "/configuration/tick");
+      const std::unordered_set<std::string>& tags = {}, const std::string& pathToTrigger = "/Trigger/tick");
 
   struct TriggerGroup : ctk::HierarchyModifyingGroup {
     TriggerGroup(EntityOwner* owner, const std::string& pathToTrigger, const std::unordered_set<std::string>& tags = {})
@@ -92,8 +89,8 @@ class SystemInfoModule : public ctk::ApplicationModule {
     using ctk::VariableGroup::VariableGroup;
     std::map<std::string, ctk::ScalarOutput<std::string>> strInfos;
     ctk::ScalarOutput<uint> ticksPerSecond{this, "ticksPerSecond", "Hz", "Number of clock ticks per second",
-        {"CS", "ProcessModuleInput"}}; ///< Number of clock ticks per second
-    ctk::ScalarOutput<uint> nCPU{this, "nCPU", "", "Number of CPUs", {"CS"}};
+        {"ProcessModuleInput"}}; ///< Number of clock ticks per second
+    ctk::ScalarOutput<uint> nCPU{this, "nCPU", "", "Number of CPUs"};
   } info{this, "info", "Static system information"};
   /** @} */
   /**
@@ -104,31 +101,28 @@ class SystemInfoModule : public ctk::ApplicationModule {
     using ctk::VariableGroup::VariableGroup;
 
     //\todo: Implement the following as unsigned long!
-    ctk::ScalarOutput<uint> maxMem{
-        this, "maxMem", "kB", "Maximum available memory", {"CS", "SYS", "ProcessModuleInput"}};
-    ctk::ScalarOutput<uint> freeMem{this, "freeMem", "kB", "Free memory", {"CS", "SYS", "DAQ", "History"}};
-    ctk::ScalarOutput<uint> cachedMem{this, "cachedMem", "kB", "Cached memory", {"CS", "SYS"}};
-    ctk::ScalarOutput<uint> usedMem{this, "usedMem", "kB", "Used memory", {"CS", "SYS", "DAQ", "History"}};
-    ctk::ScalarOutput<uint> maxSwap{this, "maxSwap", "kB", "Swap size", {"CS", "SYS"}};
-    ctk::ScalarOutput<uint> freeSwap{this, "freeSwap", "kB", "Free swap", {"CS", "SYS", "DAQ"}};
-    ctk::ScalarOutput<uint> usedSwap{this, "usedSwap", "kB", "Used swap", {"CS", "SYS", "DAQ", "History"}};
-    ctk::ScalarOutput<double> memoryUsage{
-        this, "memoryUsage", "%", "Relative memory usage", {"CS", "SYS", "DAQ", "History"}};
-    ctk::ScalarOutput<double> swapUsage{this, "swapUsage", "%", "Relative swap usage", {"CS", "SYS", "DAQ", "History"}};
+    ctk::ScalarOutput<uint> maxMem{this, "maxMem", "kB", "Maximum available memory", {"ProcessModuleInput"}};
+    ctk::ScalarOutput<uint> freeMem{this, "freeMem", "kB", "Free memory", {"DAQ", "history"}};
+    ctk::ScalarOutput<uint> cachedMem{this, "cachedMem", "kB", "Cached memory"};
+    ctk::ScalarOutput<uint> usedMem{this, "usedMem", "kB", "Used memory", {"DAQ", "history"}};
+    ctk::ScalarOutput<uint> maxSwap{this, "maxSwap", "kB", "Swap size"};
+    ctk::ScalarOutput<uint> freeSwap{this, "freeSwap", "kB", "Free swap", {"DAQ"}};
+    ctk::ScalarOutput<uint> usedSwap{this, "usedSwap", "kB", "Used swap", {"DAQ", "history"}};
+    ctk::ScalarOutput<double> memoryUsage{this, "memoryUsage", "%", "Relative memory usage", {"DAQ", "history"}};
+    ctk::ScalarOutput<double> swapUsage{this, "swapUsage", "%", "Relative swap usage", {"DAQ", "history"}};
     //\todo: Implement the following as long!
     ctk::ScalarOutput<uint> startTime{
-        this, "startTime", "s", "start time of system with respect to EPOCH", {"CS", "ProcessModuleInput"}};
-    ctk::ScalarOutput<std::string> startTimeStr{this, "startTimeStr", "", "startTimeStr", {"CS", "SYS"}};
-    ctk::ScalarOutput<uint> uptime_secTotal{
-        this, "uptimeSecTotal", "s", "Total uptime", {"CS", "SYS", "DAQ", "ProcessModuleInput"}};
-    ctk::ScalarOutput<uint> uptime_day{this, "uptimeDays", "day", "Days up", {"CS", "SYS"}};
-    ctk::ScalarOutput<uint> uptime_hour{this, "uptimeHours", "h", "Hours up", {"CS", "SYS"}};
-    ctk::ScalarOutput<uint> uptime_min{this, "uptimeMin", "min", "Minutes up", {"CS", "SYS"}};
-    ctk::ScalarOutput<uint> uptime_sec{this, "uptimeSec", "s", "Seconds up", {"CS", "SYS"}};
+        this, "startTime", "s", "start time of system with respect to EPOCH", {"ProcessModuleInput"}};
+    ctk::ScalarOutput<std::string> startTimeStr{this, "startTimeStr", "", "startTimeStr"};
+    ctk::ScalarOutput<uint> uptime_secTotal{this, "uptimeSecTotal", "s", "Total uptime", {"DAQ", "ProcessModuleInput"}};
+    ctk::ScalarOutput<uint> uptime_day{this, "uptimeDays", "day", "Days up"};
+    ctk::ScalarOutput<uint> uptime_hour{this, "uptimeHours", "h", "Hours up"};
+    ctk::ScalarOutput<uint> uptime_min{this, "uptimeMin", "min", "Minutes up"};
+    ctk::ScalarOutput<uint> uptime_sec{this, "uptimeSec", "s", "Seconds up"};
     std::unique_ptr<ctk::ArrayOutput<double>> cpu_use;
-    ctk::ScalarOutput<double> cpu_useTotal{this, "cpuTotal", "%", "Total CPU usage", {"CS", "SYS", "DAQ", "History"}};
+    ctk::ScalarOutput<double> cpu_useTotal{this, "cpuTotal", "%", "Total CPU usage", {"DAQ", "history"}};
     ctk::ArrayOutput<double> loadAvg{
-        this, "loadAvg", "", 3, "Average load within last min, 5min, 15min", {"CS", "SYS", "DAQ", "History"}};
+        this, "loadAvg", "", 3, "Average load within last min, 5min, 15min", {"DAQ", "history"}};
   } status{this, "status", "status of the system"};
   /** @} */
 
@@ -136,21 +130,7 @@ class SystemInfoModule : public ctk::ApplicationModule {
    * \name Logging
    * @{
    */
-  std::ostream* logStream;
-#ifdef ENABLE_LOGGING
-  struct Logging : ctk::VariableGroup {
-    using ctk::VariableGroup::VariableGroup;
-    /** Message to be send to the logging module */
-    ctk::ScalarOutput<std::string> message{
-        this, "message", "", "Message of the module to the logging System", {"Logging", getName()}};
-
-    /** Message to be send to the logging module */
-    ctk::ScalarOutput<uint> messageLevel{
-        this, "messageLevel", "", "Logging level of the message", {"Logging", getName()}};
-  } logging{this, "logging", "Logging messages"};
-  void sendMessage(const logging::LogLevel& level = logging::LogLevel::INFO);
-
-#endif
+  boost::shared_ptr<logging::Logger> logger{new logging::Logger(this, "logging")};
   /** @} */
 
   /**
@@ -158,11 +138,6 @@ class SystemInfoModule : public ctk::ApplicationModule {
    * Reads number of cores and system clock ticks and other static parameter only once before the loop.
    */
   void mainLoop() override;
-
-  /**
-   * Clean up ostream pointer and terminate the application module.
-   */
-  void terminate() override;
 };
 
 /*
@@ -192,33 +167,34 @@ struct FileSystemModule : public ctk::ApplicationModule {
    */
   FileSystemModule(const std::string& devName, const std::string& mntPoint, EntityOwner* owner, const std::string& name,
       const std::string& description, ctk::HierarchyModifier hierarchyModifier = ctk::HierarchyModifier::none,
-      const std::unordered_set<std::string>& tags = {}, const std::string& pathToTrigger = "/configuration/tick");
+      const std::unordered_set<std::string>& tags = {}, const std::string& pathToTrigger = "/Trigger/tick");
 
-  ctk::ScalarOutput<std::string> deviceName{this, "deviceName", "", "Name of the device", {"CS"}};
+  ctk::ScalarOutput<std::string> deviceName{this, "deviceName", "", "Name of the device"};
 
   struct Config : public ctk::VariableGroup {
     using ctk::VariableGroup::VariableGroup;
 
     ctk::ScalarPollInput<double> warningLevel{this, "warningLevel", "%",
-        "Set the level when disc usage state is set to warning", {"CS", "PROCESS", getName()}};
-    ctk::ScalarPollInput<double> errorLevel{
-        this, "errorLevel", "%", "Set the level when disc usage state is set to error", {"CS", "PROCESS", getName()}};
+        "Set the level when disc usage state is set to warning. If set to 0 90% is used instead.",
+        {"PROCESS", getName()}};
+    ctk::ScalarPollInput<double> errorLevel{this, "errorLevel", "%",
+        "Set the level when disc usage state is set to error. If set to 0 95% is used instead.",
+        {"PROCESS", getName()}};
   } config{this, "config", "File system module configuration"};
 
   struct Status : public ctk::VariableGroup {
     using ctk::VariableGroup::VariableGroup;
 
-    ctk::ScalarOutput<std::string> mountPoint{this, "mountPoint", "", "Mount point of the device", {"CS"}};
-    ctk::ScalarOutput<double> disk_size{this, "size", "GiB", "Mount point of the device", {"CS", "SYS", "DAQ"}};
-    ctk::ScalarOutput<double> disk_free{this, "free", "GiB", "Free disk space", {"CS", "SYS", "DAQ"}};
-    ctk::ScalarOutput<double> disk_user{
-        this, "freeUser", "GiB", "Free disk space available for the user", {"CS", "SYS", "DAQ"}};
-    ctk::ScalarOutput<double> disk_usage{this, "usage", "%",
-        "Disk usage with respect to the space available to the user", {"CS", "SYS", "DAQ", "History"}};
+    ctk::ScalarOutput<std::string> mountPoint{this, "mountPoint", "", "Mount point of the device"};
+    ctk::ScalarOutput<double> disk_size{this, "size", "GiB", "Mount point of the device", {"DAQ"}};
+    ctk::ScalarOutput<double> disk_free{this, "free", "GiB", "Free disk space", {"DAQ"}};
+    ctk::ScalarOutput<double> disk_user{this, "freeUser", "GiB", "Free disk space available for the user", {"DAQ"}};
+    ctk::ScalarOutput<double> disk_usage{
+        this, "usage", "%", "Disk usage with respect to the space available to the user", {"DAQ", "history"}};
     ctk::ScalarOutput<uint> disk_status{this, "usageStatus", "",
         "Status of the disk usage-> 0:ok, 1:warning, 2:error. "
         "Levels can be set in the config section.",
-        {"CS", "SYS", "DAQ", "History"}};
+        {"DAQ", "history"}};
   } status{this, "status", "Information about the mounted device"};
 
   struct TriggerGroup : ctk::HierarchyModifyingGroup {
@@ -238,33 +214,13 @@ struct FileSystemModule : public ctk::ApplicationModule {
    * \name Logging
    * @{
    */
-  std::ostream* logStream;
-#ifdef ENABLE_LOGGING
-  struct Logging : ctk::VariableGroup {
-    using ctk::VariableGroup::VariableGroup;
-    /** Message to be send to the logging module */
-    ctk::ScalarOutput<std::string> message{
-        this, "message", "", "Message of the module to the logging System", {"Logging", getName()}};
-
-    /** Message to be send to the logging module */
-    ctk::ScalarOutput<uint> messageLevel{
-        this, "messageLevel", "", "Logging level of the message", {"Logging", getName()}};
-  } logging{this, "logging", "Logging messages"};
-
-  void sendMessage(const logging::LogLevel& level = logging::LogLevel::INFO);
-
-#endif
+  boost::shared_ptr<logging::Logger> logger{new logging::Logger(this, "logging")};
   /** @} */
 
   /**
    * Main loop function.
    */
   void mainLoop() override;
-
-  /**
-   * Clean up ostream pointer and terminate the application module.
-   */
-  void terminate() override;
 
   /**
    * Use statfs to read information about the device.
@@ -283,10 +239,6 @@ struct FileSystemGroup : public ctk::ModuleGroup {
    * Modules monitoring disks usage of system drives.
    */
   std::vector<FileSystemModule> fsMonitors;
-
-#ifdef ENABLE_LOGGING
-  std::vector<LoggingModule> loggingModules;
-#endif
 };
 
 /**
@@ -309,7 +261,7 @@ struct FileSystemGroup : public ctk::ModuleGroup {
 struct NetworkModule : public ctk::ApplicationModule {
   NetworkModule(const std::string& device, EntityOwner* owner, const std::string& name, const std::string& description,
       ctk::HierarchyModifier hierarchyModifier = ctk::HierarchyModifier::none,
-      const std::unordered_set<std::string>& tags = {}, const std::string& pathToTrigger = "/configuration/tick");
+      const std::unordered_set<std::string>& tags = {}, const std::string& pathToTrigger = "/Trigger/tick");
 
   std::string networkDeviceName;
 
@@ -317,7 +269,7 @@ struct NetworkModule : public ctk::ApplicationModule {
    * Publish the device name although it is also encoded in the path by
    * the watchdog  sever.
    */
-  ctk::ScalarOutput<std::string> deviceName{this, "deviceName", "", "Name of the device", {"CS"}};
+  ctk::ScalarOutput<std::string> deviceName{this, "deviceName", "", "Name of the device"};
   struct Status : public ctk::VariableGroup {
     using ctk::VariableGroup::VariableGroup;
     /*
@@ -364,22 +316,7 @@ struct NetworkModule : public ctk::ApplicationModule {
    * \name Logging
    * @{
    */
-  std::ostream* logStream;
-#ifdef ENABLE_LOGGING
-  struct Logging : ctk::VariableGroup {
-    using ctk::VariableGroup::VariableGroup;
-    /** Message to be send to the logging module */
-    ctk::ScalarOutput<std::string> message{
-        this, "message", "", "Message of the module to the logging System", {"Logging", getName()}};
-
-    /** Message to be send to the logging module */
-    ctk::ScalarOutput<uint> messageLevel{
-        this, "messageLevel", "", "Logging level of the message", {"Logging", getName()}};
-  } logging{this, "logging", "Logging messages"};
-
-  void sendMessage(const logging::LogLevel& level = logging::LogLevel::INFO);
-
-#endif
+  boost::shared_ptr<logging::Logger> logger{new logging::Logger(this, "logging")};
   /** @} */
 
   /**
@@ -388,15 +325,9 @@ struct NetworkModule : public ctk::ApplicationModule {
   void mainLoop() override;
 
   /**
-   * Clean up ostream pointer and terminate the application module.
+   * Read network statistics.
    */
-  void terminate() override;
-
-  /**
-   * Use statfs to read information about the device.
-   * Since this might not be thread safe a mutex is used here.
-   */
-  bool read();
+  void read();
 };
 
 /**
@@ -409,10 +340,6 @@ struct NetworkGroup : public ctk::ModuleGroup {
    * Modules monitoring disks usage of system drives.
    */
   std::vector<NetworkModule> networkMonitors;
-
-#ifdef ENABLE_LOGGING
-  std::vector<LoggingModule> loggingModules;
-#endif
 };
 
 #endif /* INCLUDE_SYSTEMINFOMODULE_H_ */

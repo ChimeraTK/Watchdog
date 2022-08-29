@@ -15,26 +15,18 @@
 void ProcessInfoModule::mainLoop() {
   info.processPID = getpid();
   info.processPID.write();
-#ifdef ENABLE_LOGGING
-  logStream = new std::stringstream();
-#else
-  logStream = &std::cerr;
-#endif
 
   auto group = readAnyGroup();
   while(true) {
     try {
       FillProcInfo(proc_util::getInfo(info.processPID));
-#ifdef ENABLE_LOGGING
-      (*logStream) << getTime() << "Process is running (PID: " << info.processPID << ")" << std::endl;
-      sendMessage(logging::LogLevel::DEBUG);
-#endif
+      logger->sendMessage(
+          std::string("Process is running (PID: ") + std::to_string(info.processPID) + ")", logging::LogLevel::DEBUG);
     }
     catch(std::runtime_error& e) {
-      (*logStream) << getTime() << "Failed to read process information for process " << info.processPID << std::endl;
-#ifdef ENABLE_LOGGING
-      sendMessage(logging::LogLevel::ERROR);
-#endif
+      logger->sendMessage(
+          std::string("Failed to read process information for process with PID: ") + std::to_string(info.processPID),
+          logging::LogLevel::ERROR);
     }
     writeAll();
     group.readUntil(triggerGroup.trigger.getId());
@@ -54,8 +46,8 @@ void ProcessInfoModule::FillProcInfo(const std::shared_ptr<proc_t>& infoPtr) {
       statistics.cstime = std::stoi(std::to_string(infoPtr->cstime));
 
       // info->start_time reads s since system was started
-      int relativeStartTime = 1. * std::stoi(std::to_string(infoPtr->start_time)) / input.ticksPerSecond;
-      statistics.startTime = input.sysStartTime + relativeStartTime;
+      int relativeStartTime = 1. * std::stoi(std::to_string(infoPtr->start_time)) / system.info.ticksPerSecond;
+      statistics.startTime = system.status.sysStartTime + relativeStartTime;
       statistics.startTimeStr =
           boost::posix_time::to_simple_string(boost::posix_time::from_time_t(statistics.startTime));
       statistics.priority = std::stoi(std::to_string(infoPtr->priority));
@@ -63,24 +55,21 @@ void ProcessInfoModule::FillProcInfo(const std::shared_ptr<proc_t>& infoPtr) {
       statistics.rss = std::stoi(std::to_string(infoPtr->rss));
       statistics.mem = std::stoi(std::to_string(infoPtr->vm_rss));
 
-      statistics.memoryUsage = 1. * statistics.mem / input.maxMem * 100.;
+      statistics.memoryUsage = 1. * statistics.mem / system.status.maxMem * 100.;
 
-      statistics.runtime = std::stoi(
-          std::to_string(input.sysUpTime - std::stoi(std::to_string(infoPtr->start_time)) * 1. / input.ticksPerSecond));
+      statistics.runtime = std::stoi(std::to_string(
+          system.status.sysUpTime - std::stoi(std::to_string(infoPtr->start_time)) * 1. / system.info.ticksPerSecond));
     }
     catch(std::exception& e) {
-      (*logStream) << getTime() << "FillProcInfo::Conversion failed: " << e.what() << std::endl;
-#ifdef ENABLE_LOGGING
-      sendMessage(logging::LogLevel::ERROR);
-#endif
+      logger->sendMessage(std::string("FillProcInfo::Conversion failed: ") + e.what(), logging::LogLevel::ERROR);
     }
     // check if it is the first call after process is started (time_stamp  == not_a_date_time)
     if(!time_stamp.is_special()) {
       boost::posix_time::time_duration diff = now - time_stamp;
       statistics.pcpu = 1. * (statistics.utime + statistics.stime + statistics.cutime + statistics.cstime - old_time) /
-          input.ticksPerSecond / (1. * diff.total_milliseconds() / 1000) * 100;
+          system.info.ticksPerSecond / (1. * diff.total_milliseconds() / 1000) * 100;
       statistics.avgcpu = 1. * (statistics.utime + statistics.stime + statistics.cutime + statistics.cstime) /
-          input.ticksPerSecond / statistics.runtime * 100;
+          system.info.ticksPerSecond / statistics.runtime * 100;
     }
     time_stamp = now;
   }
@@ -103,60 +92,33 @@ void ProcessInfoModule::FillProcInfo(const std::shared_ptr<proc_t>& infoPtr) {
   }
 }
 
-void ProcessInfoModule::terminate() {
-  ApplicationModule::terminate();
-#ifdef ENABLE_LOGGING
-  if(logStream != nullptr) {
-    delete logStream;
-  }
-  logStream = 0;
-#endif
-}
-
 void ProcessControlModule::mainLoop() {
-#ifdef ENABLE_LOGGING
-  logStream = new std::stringstream();
   std::stringstream handlerMessage;
-#else
-  logStream = &std::cerr;
-#endif
-  (*logStream) << getTime() << "New ProcessModule started!" << std::endl;
-#ifdef ENABLE_LOGGING
-  sendMessage(logging::LogLevel::INFO);
-#endif
+  logger->sendMessage(std::string("New ProcessModule started!"), logging::LogLevel::INFO);
   SetOffline();
   status.nRestarts = 0;
 
   try {
-#ifdef ENABLE_LOGGING
     process.reset(new ProcessHandler(getName(), false, info.processPID, handlerMessage));
     evaluateMessage(handlerMessage);
-#else
-    process.reset(new ProcessHandler(getName(), false, info.processPID, std::cout));
-#endif
     if(info.processPID > 0) {
-      (*logStream) << getTime() << "Found process that is still running. PID is: " << info.processPID << std::endl;
-#ifdef ENABLE_LOGGING
-      sendMessage(logging::LogLevel::INFO);
-#endif
+      logger->sendMessage(
+          std::string("Found process that is still running. PID is: ") + std::to_string(info.processPID),
+          logging::LogLevel::INFO);
       SetOnline(info.processPID);
     }
     else {
       if(config.bootDelay > 0) {
-        (*logStream) << getTime() << "Process sleeping before starting main loop. Delay: " << config.bootDelay << "s."
-                     << std::endl;
-#ifdef ENABLE_LOGGING
-        sendMessage(logging::LogLevel::INFO);
-#endif
+        logger->sendMessage(std::string("Process sleeping before starting main loop. Delay: ") +
+                std::to_string(config.bootDelay) + "s.",
+            logging::LogLevel::INFO);
         sleep(config.bootDelay);
       }
     }
   }
   catch(std::runtime_error& e) {
-    (*logStream) << getTime() << " Failed to check for existing processes. Message:\n" << e.what() << std::endl;
-#ifdef ENABLE_LOGGING
-    sendMessage(logging::LogLevel::ERROR);
-#endif
+    logger->sendMessage(
+        std::string("Failed to check for existing processes. Message:\n") + e.what(), logging::LogLevel::ERROR);
   }
   auto group = readAnyGroup();
   status.nFailed = 0;
@@ -176,11 +138,10 @@ void ProcessControlModule::mainLoop() {
      * -> to reset turn off/on the process
      */
     if(_stop) {
-      (*logStream) << getTime() << "Process sleeping. Fails: " << status.nFailed << "/" << config.maxFails
-                   << ", Restarts: " << status.nRestarts << "/" << config.maxRestarts << std::endl;
-#ifdef ENABLE_LOGGING
-      sendMessage(logging::LogLevel::DEBUG);
-#endif
+      logger->sendMessage(std::string("Process sleeping. Fails: ") + std::to_string(status.nFailed) + "/" +
+              std::to_string(config.maxFails) + ", Restarts: " + std::to_string(status.nRestarts) + "/" +
+              std::to_string(config.maxRestarts),
+          logging::LogLevel::DEBUG);
       if(_historyOn) FillProcInfo(nullptr);
       writeAll();
       group.readUntil(triggerGroup.trigger.getId());
@@ -195,11 +156,8 @@ void ProcessControlModule::mainLoop() {
       if(!status.isRunning) {
         if(config.maxRestarts == 0) {
           _stop = true;
-          (*logStream) << getTime() << "Maximum number of restarts is 0. Process will not be started again."
-                       << std::endl;
-#ifdef ENABLE_LOGGING
-          sendMessage(logging::LogLevel::WARNING);
-#endif
+          logger->sendMessage(std::string("Maximum number of restarts is 0. Process will not be started again."),
+              logging::LogLevel::ERROR);
           _restartRequired = false;
         }
         else {
@@ -220,23 +178,16 @@ void ProcessControlModule::mainLoop() {
      * Check number of restarts in case it is set
      */
     if(config.maxRestarts != 0 && status.nRestarts == config.maxRestarts) {
-      (*logStream) << getTime() << "Maximum number of restarts reached. Restarts: " << status.nRestarts << "/"
-                   << config.maxRestarts << std::endl;
-#ifdef ENABLE_LOGGING
-      sendMessage(logging::LogLevel::DEBUG);
-#endif
+      logger->sendMessage(std::string("Maximum number of restarts reached. Restarts: ") +
+              std::to_string(status.nRestarts) + "/" + std::to_string(config.maxRestarts),
+          logging::LogLevel::DEBUG);
       // Only stop if the process terminated. This ensures that the process status is updated.
       if(status.isRunning == 0) {
         _stop = true;
-        (*logStream) << getTime()
-                     << "Process terminated after maximum number of restarts reached. Restarts: " << status.nRestarts
-                     << "/" << config.maxRestarts << std::endl;
-#ifdef ENABLE_LOGGING
-        sendMessage(logging::LogLevel::ERROR);
+        logger->sendMessage(std::string("Process terminated after maximum number of restarts reached. Restarts: ") +
+                std::to_string(status.nRestarts) + "/" + std::to_string(config.maxRestarts),
+            logging::LogLevel::ERROR);
         resetProcessHandler(&handlerMessage);
-#else
-        resetProcessHandler(nullptr);
-#endif
       }
       else {
         _restartRequired = false;
@@ -254,53 +205,35 @@ void ProcessControlModule::mainLoop() {
         // fill 0 since the process is started here and not running yet
         if(_historyOn) FillProcInfo(nullptr);
         try {
-#ifdef ENABLE_LOGGING
-          (*logStream) << getTime() << "Trying to start a new process: " << (std::string)config.path << "/"
-                       << (std::string)config.cmd << std::endl;
-          sendMessage(logging::LogLevel::INFO);
+          logger->sendMessage(
+              std::string("Trying to start a new process: ") + config.path + "/" + config.cmd, logging::LogLevel::INFO);
           // log level of the process handler is DEBUG per default. So all messages will end up here
           process.reset(new ProcessHandler(getName(), false, handlerMessage, this->getName()));
-#else
-          process.reset(new ProcessHandler(getName(), false, std::cout, this->getName()));
-#endif
 
-#ifdef ENABLE_LOGGING
           SetOnline(process->startProcess((std::string)config.path, (std::string)config.cmd,
               (std::string)config.externalLogfile, (std::string)config.env, config.overwriteEnv));
           evaluateMessage(handlerMessage);
           status.nChilds = proc_util::getNChilds(info.processPID, handlerMessage);
-          sendMessage(logging::LogLevel::DEBUG);
-#else
-          SetOnline(process->startProcess((std::string)config.path, (std::string)config.cmd, std::string(""),
-              (std::string)config.env, config.overwriteEnv));
-          status.nChilds = proc_util::getNChilds(info.processPID);
-#endif
+          logger->sendMessage(handlerMessage.str(), logging::LogLevel::DEBUG);
         }
         catch(std::runtime_error& e) {
-          (*logStream) << getTime() << e.what() << std::endl;
-#ifdef ENABLE_LOGGING
-          sendMessage(logging::LogLevel::ERROR);
-#endif
+          logger->sendMessage(e.what(), logging::LogLevel::ERROR);
           Failed();
           SetOffline();
         }
       }
       else if(info.processPID > 0) {
         // process should run and is running
-#ifdef ENABLE_LOGGING
-        (*logStream) << getTime() << "Process is running..." << status.isRunning << " PID: " << info.processPID
-                     << std::endl;
-        sendMessage(logging::LogLevel::DEBUG);
-#endif
+        logger->sendMessage(std::string("Process is running...") + std::to_string(status.isRunning) +
+                " PID: " + std::to_string(info.processPID),
+            logging::LogLevel::DEBUG);
         try {
           FillProcInfo(proc_util::getInfo(info.processPID + config.pidOffset));
         }
         catch(std::runtime_error& e) {
-          (*logStream) << getTime() << "Failed to read information for process " << (info.processPID + config.pidOffset)
-                       << ". Check if pidOffset is set correctly!" << std::endl;
-#ifdef ENABLE_LOGGING
-          sendMessage(logging::LogLevel::ERROR);
-#endif
+          logger->sendMessage(std::string("Failed to read information for process ") +
+                  std::to_string(info.processPID + config.pidOffset) + ". Check if pidOffset is set correctly!",
+              logging::LogLevel::ERROR);
         }
       }
     }
@@ -309,27 +242,18 @@ void ProcessControlModule::mainLoop() {
       if(info.processPID < 0) {
         // process should not run and is not running
         status.isRunning = 0;
-#ifdef ENABLE_LOGGING
-        (*logStream) << getTime() << "Process Running: " << status.isRunning << ". Process is not running...OK"
-                     << std::endl;
-        sendMessage(logging::LogLevel::DEBUG);
-#endif
+        logger->sendMessage(
+            std::string("Process Running: ") + std::to_string(status.isRunning) + ". Process is not running...OK",
+            logging::LogLevel::DEBUG);
         if(_historyOn) FillProcInfo(nullptr);
       }
       else {
         // process should not run and is running
-#ifdef ENABLE_LOGGING
-        (*logStream) << getTime() << "Trying to kill the process..."
-                     << " PID: " << info.processPID << std::endl;
-        sendMessage(logging::LogLevel::INFO);
-#endif
+        logger->sendMessage(std::string("Trying to kill the process... PID: ") + std::to_string(info.processPID),
+            logging::LogLevel::INFO);
         // Here the process is stopped in case enableProcess is set to 0. If it is already reset due to restart stop don't do anything here
         if(process.get() != nullptr) {
-#ifdef ENABLE_LOGGING
           resetProcessHandler(&handlerMessage);
-#else
-          resetProcessHandler(nullptr);
-#endif
         }
         SetOffline();
       }
@@ -341,28 +265,21 @@ void ProcessControlModule::mainLoop() {
 
 void ProcessControlModule::SetOnline(const int& pid) {
   usleep(100000);
-#ifdef ENABLE_LOGGING
   // set external log file in order to read the log file even if starting the process failed
   status.externalLogfile = (std::string)config.externalLogfile;
-#endif
   CheckIsOnline(pid);
   if(status.isRunning == 1) {
     info.processPID = pid;
     status.path = (std::string)config.path;
     status.cmd = (std::string)config.cmd;
     status.env = (std::string)config.env;
-#ifdef ENABLE_LOGGING
-    (*logStream) << getTime() << "Ok process is started successfully with PID: " << info.processPID << std::endl;
-    sendMessage(logging::LogLevel::INFO);
-#endif
+    logger->sendMessage(std::string("Ok process is started successfully with PID: ") + std::to_string(info.processPID),
+        logging::LogLevel::INFO);
   }
   else {
     SetOffline();
-    (*logStream) << getTime() << "Failed to start process " << (std::string)config.path << "/"
-                 << (std::string)config.cmd << std::endl;
-#ifdef ENABLE_LOGGING
-    sendMessage(logging::LogLevel::ERROR);
-#endif
+    logger->sendMessage(
+        std::string("Failed to start process ") + config.path + "/" + config.cmd, logging::LogLevel::ERROR);
     Failed();
   }
 }
@@ -386,13 +303,10 @@ void ProcessControlModule::Failed() {
   if(!_stop && status.nFailed == config.maxFails) {
     _stop = true;
     _restartRequired = false;
-    (*logStream) << getTime() << "Failed to start the process " << (std::string)config.path << "/"
-                 << (std::string)config.cmd << " " << config.maxFails << " times."
-                 << " It will not be started again until you reset the process by switching it off and on again."
-                 << std::endl;
-#ifdef ENABLE_LOGGING
-    sendMessage(logging::LogLevel::ERROR);
-#endif
+    logger->sendMessage(std::string("Failed to start the process ") + config.path + "/" + (std::string)config.cmd +
+            " " + std::to_string(config.maxFails) +
+            " times. It will not be started again until you reset the process by switching it off and on again.",
+        logging::LogLevel::ERROR);
   }
   else {
     _restartRequired = true;
@@ -400,17 +314,13 @@ void ProcessControlModule::Failed() {
 }
 
 void ProcessControlModule::CheckIsOnline(const int pid) {
-#ifdef ENABLE_LOGGING
-  (*logStream) << getTime() << "Checking process status for process: " << pid << std::endl;
-  sendMessage(logging::LogLevel::DEBUG);
-#endif
+  logger->sendMessage(
+      std::string("Checking process status for process: ") + std::to_string(pid), logging::LogLevel::DEBUG);
   if(!proc_util::isProcessRunning(pid)) {
-    (*logStream) << getTime() << "Child process with PID " << info.processPID << " is not running, but it should run!"
-                 << std::endl;
+    logger->sendMessage(std::string("Child process with PID  ") + std::to_string(info.processPID) +
+            " is not running, but it should run!",
+        logging::LogLevel::ERROR);
     SetOffline();
-#ifdef ENABLE_LOGGING
-    sendMessage(logging::LogLevel::ERROR);
-#endif
   }
   else {
     status.isRunning = 1;
@@ -425,68 +335,27 @@ void ProcessControlModule::resetProcessHandler(std::stringstream* handlerMessage
     process->setSigNum(config.killSig);
   process->setKillTimeout(config.killTimeout);
   process.reset(nullptr);
-#ifdef ENABLE_LOGGING
   evaluateMessage(*handlerMessage);
-#endif
 }
 
 void ProcessControlModule::terminate() {
   if(process != nullptr) {
-#ifdef ENABLE_LOGGING
-    if(info.processPID > 0) {
-      (*logStream) << getTime() << "Process " << getName()
-                   << " is disconnected. It is no longer controlled by the ProcessHandler!"
-                      " You have to take care of it on your own. PID is: "
-                   << info.processPID << std::endl;
-      sendMessage(logging::LogLevel::INFO);
-    }
-#endif
+    logger->sendMessage(std::string("Process ") + getName() +
+            " is disconnected. It is no longer controlled by the ProcessHandler! You have to take care of it on your "
+            "own. PID is: " +
+            std::to_string(info.processPID),
+        logging::LogLevel::INFO);
     process->Disconnect();
   }
   process.reset(nullptr);
   ProcessInfoModule::terminate();
 }
 
-#ifdef ENABLE_LOGGING
-void ProcessInfoModule::sendMessage(const logging::LogLevel& level) {
-  auto logging_ss = dynamic_cast<std::stringstream*>(logStream);
-  if(logging_ss) {
-    logging.message = logging_ss->str();
-    logging.messageLevel = level;
-    logging.writeAll();
-    logging_ss->clear();
-    logging_ss->str("");
-  }
-}
-
-void ProcessInfoModule::evaluateMessage(std::stringstream& msg) {
+void ProcessControlModule::evaluateMessage(std::stringstream& msg) {
   auto list = logging::stripMessages(msg);
   for(auto& message : list) {
-    (*logStream) << message.message.str() << std::endl;
-    sendMessage(message.logLevel);
+    logger->sendMessage(message.message.str(), message.logLevel);
   }
   msg.clear();
   msg.str("");
-}
-#endif
-
-std::string ProcessInfoModule::getTime() {
-  std::string str{"WATCHDOG_SERVER: "};
-  str.append(logging::getTime());
-  str.append(this->getName());
-  str.append(" -> ");
-  return str;
-}
-
-std::string ProcessControlModule::getTime() {
-  std::string str{"WATCHDOG_SERVER: "};
-  str.append(logging::getTime());
-  str.append(this->getOwner()->getName());
-  str.append("/");
-  str.append(this->getName());
-  if(!((std::string)(config.alias)).empty()) {
-    str.append(" (alias: " + (std::string)config.alias + ")");
-  }
-  str.append(" -> ");
-  return str;
 }

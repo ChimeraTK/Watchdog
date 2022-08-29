@@ -12,18 +12,18 @@
 
 namespace logging {
 
-  std::ostream& operator<<(std::ostream& os, const LogLevel& level) {
+  std::ostream& operator<<(std::ostream& os, const logging::LogLevel& level) {
     switch(level) {
-      case DEBUG:
+      case logging::LogLevel::DEBUG:
         os << "DEBUG::";
         break;
-      case INFO:
+      case logging::LogLevel::INFO:
         os << "INFO::";
         break;
-      case WARNING:
+      case logging::LogLevel::WARNING:
         os << "WARNING::";
         break;
-      case ERROR:
+      case logging::LogLevel::ERROR:
         os << "ERROR::";
         break;
       default:
@@ -32,7 +32,6 @@ namespace logging {
     return os;
   }
 
-#ifdef ENABLE_LOGGING
   void formatLogTail(std::istream& data, std::ostream& os, size_t numberOfLines) {
     // move to the end
     data.seekg(-1, std::ios_base::end);
@@ -112,7 +111,6 @@ namespace logging {
     logLevel = level;
     return *this;
   }
-#endif
 
   std::string getTime() {
     return boost::posix_time::to_simple_string(boost::posix_time::microsec_clock::local_time()) + " ";

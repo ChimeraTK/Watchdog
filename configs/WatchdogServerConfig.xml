@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <configuration>
-  <variable name="enableServerHistory" type="uint32" value="0" />
+  <variable name="enableServerHistory" type="uint32" value="1" />
   <variable name="serverHistoryLength" type="uint32" value="1200" />
   <variable name="numberOfProcesses" type="uint32" value="8" />
   <module name="Configuration"> 

@@ -11,18 +11,18 @@
 #include <sstream>
 #include <ostream>
 #include <vector>
+#include <ChimeraTK/ApplicationCore/Logging.h>
 
 namespace logging {
 
-  enum LogLevel { DEBUG, INFO, WARNING, ERROR, SILENT };
+  //  enum class Level { DEBUG, INFO, WARNING, ERROR, SILENT };
   std::string getTime();
 
   std::ostream& operator<<(std::ostream& os, const logging::LogLevel& level);
 
-#ifdef ENABLE_LOGGING
   struct Message {
     std::stringstream message;
-    LogLevel logLevel;
+    logging::LogLevel logLevel;
     Message(const std::string& msg, const LogLevel& level);
     Message();
     Message(Message&& msg);
@@ -33,7 +33,7 @@ namespace logging {
       return *this;
     }
 
-    Message& operator<<(LogLevel level);
+    Message& operator<<(logging::LogLevel level);
   };
 
   /**
@@ -45,8 +45,6 @@ namespace logging {
   void formatLogTail(std::istream& data, std::ostream& os, size_t numberOfLines = 10);
 
   std::vector<Message> stripMessages(std::stringstream& msg, const size_t maxCharacters = 256);
-
-#endif
 } // namespace logging
 
 #endif /* INCLUDE_LOGGING_H_ */

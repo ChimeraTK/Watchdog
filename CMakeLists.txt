@@ -3,14 +3,13 @@ cmake_minimum_required(VERSION 2.8.12)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/Modules)
 
-set(${PROJECT_NAME}_MAJOR_VERSION 01)
-set(${PROJECT_NAME}_MINOR_VERSION 04)
-set(${PROJECT_NAME}_PATCH_VERSION 07)
+set(${PROJECT_NAME}_MAJOR_VERSION 02)
+set(${PROJECT_NAME}_MINOR_VERSION 00)
+set(${PROJECT_NAME}_PATCH_VERSION 00)
 include(cmake/set_version_numbers.cmake)
 
 # Options
 option(ENABLE_TESTING      "Build unit tests"      ON)
-option(ENABLE_LOGGING      "Enable logging for the watchdog server"      ON)
 option(ENABLE_DOCUMENTAION "Enable create of doxygen documentation"      ON)
 
 if( ENABLE_DOCUMENTAION )
@@ -21,12 +20,10 @@ endif( ENABLE_DOCUMENTAION )
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/set_default_flags.cmake)
 include(cmake/add_dependency.cmake)
-add_dependency(ChimeraTK-ApplicationCore 02.02 REQUIRED)
 
-add_dependency(ChimeraTK-ApplicationCore-MicroDAQ 01.01)
-if(NOT ChimeraTK-ApplicationCore-MicroDAQ_FOUND)
-  message(STATUS "ChimeraTK-ApplicationCore-MicroDAQ not found. ChimeraTK based DAQ will not be available.")
-endif(NOT ChimeraTK-ApplicationCore-MicroDAQ_FOUND)
+add_dependency(ChimeraTK-ApplicationCore 02.11 REQUIRED)
+add_dependency(ChimeraTK-ApplicationCore-MicroDAQ 02.00)
+
 find_package(Boost COMPONENTS date_time REQUIRED)
 
 find_library(procps NAMES procps REQUIRED)
@@ -61,15 +58,6 @@ configure_file(include/version.h.in ${PROJECT_BINARY_DIR}/version/version.h)
 include_directories(${PROJECT_BINARY_DIR}/version)
 
 
-if(ENABLE_LOGGING)
-  MESSAGE(STATUS "Logging modules are enabled.")
-  add_definitions(-DENABLE_LOGGING)
-else()
-  MESSAGE(STATUS "Logging modules are disabled.")
-  list(REMOVE_ITEM library_sources ${CMAKE_CURRENT_SOURCE_DIR}/src/Logging.cc
-                                   ${CMAKE_CURRENT_SOURCE_DIR}/src/LoggingModule.cc)
-endif(ENABLE_LOGGING)
-
 if(CMAKE_BUILD_TYPE MATCHES Debug)
   add_library(${PROJECT_NAME}lib SHARED ${library_sources} )
   set_target_properties(${PROJECT_NAME}lib PROPERTIES VERSION ${${PROJECT_NAME}_FULL_LIBRARY_VERSION}
@@ -96,14 +84,7 @@ if(CMAKE_BUILD_TYPE MATCHES Debug)
                                                      ${LibXML++_LIBRARIES}
                                                      procps
                                                      ${PROJECT_NAME}lib)
-
-  if(ChimeraTK-ApplicationCore-MicroDAQ_FOUND)
-    set_target_properties(${PROJECT_NAME}lib PROPERTIES COMPILE_FLAGS "-DWITHDAQ")
-    set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS "-DWITHDAQ")
-    set_target_properties(${PROJECT_NAME}-xmlGenerator PROPERTIES COMPILE_FLAGS "-DWITHDAQ -DGENERATE_XML")
-  else()
-    set_target_properties(${PROJECT_NAME}-xmlGenerator PROPERTIES COMPILE_FLAGS "-DGENERATE_XML")
-  endif(ChimeraTK-ApplicationCore-MicroDAQ_FOUND)
+  set_target_properties(${PROJECT_NAME}-xmlGenerator PROPERTIES COMPILE_FLAGS "-DGENERATE_XML")
 
   if( ENABLE_TESTING )
     ENABLE_TESTING()
@@ -131,13 +112,7 @@ else()
                                                      procps
                                                      ${ChimeraTK-ApplicationCore-MicroDAQ_LIBRARIES})
 
-  if(ChimeraTK-ApplicationCore-MicroDAQ_FOUND)
-    set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS "-DWITHDAQ")
-    set_target_properties(${PROJECT_NAME}-xmlGenerator PROPERTIES COMPILE_FLAGS "-DWITHDAQ -DGENERATE_XML")
-  else()
-    set_target_properties(${PROJECT_NAME}-xmlGenerator PROPERTIES COMPILE_FLAGS "-DGENERATE_XML")
-  endif(ChimeraTK-ApplicationCore-MicroDAQ_FOUND)
-
+  set_target_properties(${PROJECT_NAME}-xmlGenerator PROPERTIES COMPILE_FLAGS "-DGENERATE_XML")
 endif(CMAKE_BUILD_TYPE MATCHES Debug)
 
 # Set RPATH to find root dependencies automatically
