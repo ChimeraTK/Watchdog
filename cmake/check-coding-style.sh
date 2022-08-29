@@ -11,8 +11,8 @@ exclude_path=${1:-justignoreme}
 exclude_pattern="$exclude_path/*"
 
 # check clang-format formatting
-if which clang-format-14 > /dev/null; then
-  find $mypath \( -name *.cc -o -name *.cpp -o -name *.h \) -not -path "$exclude_pattern" -exec clang-format-14 --output-replacements-xml \{\} \; | grep "^<replacement " > /dev/null
+if which clang-format > /dev/null; then
+  find $mypath \( -name *.cc -o -name *.cpp -o -name *.h \) -not -path "$exclude_pattern" -exec clang-format --output-replacements-xml \{\} \; | grep "^<replacement " > /dev/null
   if [ $? -ne 1 ]; then
     echo 1 > "${ERRFILE}"
     echo "Code formatting incorrect!"
