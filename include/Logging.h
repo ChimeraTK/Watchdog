@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: Helmholtz-Zentrum Dresden-Rossendorf, FWKE, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
+
 /*
  * Logging.h
  *
@@ -5,13 +9,12 @@
  *      Author: zenker
  */
 
-#ifndef INCLUDE_LOGGING_H_
-#define INCLUDE_LOGGING_H_
-#include <string>
-#include <sstream>
-#include <ostream>
-#include <vector>
 #include <ChimeraTK/ApplicationCore/Logging.h>
+
+#include <ostream>
+#include <sstream>
+#include <string>
+#include <vector>
 
 namespace logging {
 
@@ -37,14 +40,12 @@ namespace logging {
   };
 
   /**
- * Get data from an istream (e.g. filebuf or stringstream) and put a certain number of lines to the ostream (e.g. cout).
- * \param data The input data stream to be formated (select the requested number of lines + cut long lines).
- * \param os The ostream used to put the selected messages to.
- * \param numberOfLines The number of lines from the input \c data to be put to the output \c os.
- */
+   * Get data from an istream (e.g. filebuf or stringstream) and put a certain number of lines to the ostream (e.g. cout).
+   * \param data The input data stream to be formated (select the requested number of lines + cut long lines).
+   * \param os The ostream used to put the selected messages to.
+   * \param numberOfLines The number of lines from the input \c data to be put to the output \c os.
+   */
   void formatLogTail(std::istream& data, std::ostream& os, size_t numberOfLines = 10);
 
   std::vector<Message> stripMessages(std::stringstream& msg, const size_t maxCharacters = 256);
 } // namespace logging
-
-#endif /* INCLUDE_LOGGING_H_ */

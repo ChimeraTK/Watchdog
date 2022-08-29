@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: Helmholtz-Zentrum Dresden-Rossendorf, FWKE, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
+
 /*
  * ProcessHandler.h
  *
@@ -5,13 +9,10 @@
  *      Author: zenker
  */
 
-#ifndef INCLUDE_PROCESSHANDLER_H_
-#define INCLUDE_PROCESSHANDLER_H_
-
-#undef GENERATE_XML
-#include <string>
-#include <iostream>
 #include "Logging.h"
+
+#include <iostream>
+#include <string>
 
 /**
  * \brief Handler used to start and stop processes.
@@ -94,16 +95,16 @@ struct ProcessHandler {
       const std::string& name = "");
 
   /**
-     * Constructor.
-     * \param PIDFileName the name of the PID file -> will result in: PIDFileName.PID
-     * \param os The ostream used to send status messages and errors.
-     * \param deletePIDFile If true the PID file deleted directly after reading the PID.
-     * \param name Give a name to the ProcessHandler to distinguish between multiple handlers.
-     * It is used in the messages send by the handler.
-     * This avoids overwriting the PID in case a second ProcessHandler starts a process
-     * with the same PID file settings. But you can not check for a running process if the
-     * ProcessHandler is not terminated correctly and started again.
-     */
+   * Constructor.
+   * \param PIDFileName the name of the PID file -> will result in: PIDFileName.PID
+   * \param os The ostream used to send status messages and errors.
+   * \param deletePIDFile If true the PID file deleted directly after reading the PID.
+   * \param name Give a name to the ProcessHandler to distinguish between multiple handlers.
+   * It is used in the messages send by the handler.
+   * This avoids overwriting the PID in case a second ProcessHandler starts a process
+   * with the same PID file settings. But you can not check for a running process if the
+   * ProcessHandler is not terminated correctly and started again.
+   */
   ProcessHandler(const std::string& PIDFileName, const bool deletePIDFile = false, std::ostream& os = std::cout,
       const std::string& name = "");
   ~ProcessHandler();
@@ -182,5 +183,3 @@ struct ProcessHandler {
 
   void Disconnect();
 };
-
-#endif /* INCLUDE_PROCESSHANDLER_H_ */

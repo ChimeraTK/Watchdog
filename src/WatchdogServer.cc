@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Helmholtz-Zentrum Dresden-Rossendorf, FWKE, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+
 /*
  * WatchdogServer.cc
  *
@@ -6,9 +9,9 @@
  */
 
 #include "WatchdogServer.h"
-#include "version.h"
 
 #include "boost/filesystem.hpp"
+#include "version.h"
 
 #include <fstream>
 namespace bfs = boost::filesystem;

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Helmholtz-Zentrum Dresden-Rossendorf, FWKE, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+
 /*
  * test_procReader.cc
  *
@@ -8,12 +11,13 @@
 #define BOOST_TEST_MODULE sysTest
 
 #include "ProcessHandler.h"
-#include <iostream>
 #include "sys_stat.h"
-#include <signal.h>
-#include <vector>
 
 #include <boost/test/unit_test.hpp>
+
+#include <iostream>
+#include <signal.h>
+#include <vector>
 using namespace boost::unit_test_framework;
 
 using namespace std;

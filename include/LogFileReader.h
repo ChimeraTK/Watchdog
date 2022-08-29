@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: Helmholtz-Zentrum Dresden-Rossendorf, FWKE, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
+
 /*
  * LoggingModule.h
  *
@@ -5,15 +9,12 @@
  *      Author: zenker
  */
 
-#ifndef INCLUDE_LOGFILEREADER_H_
-#define INCLUDE_LOGFILEREADER_H_
+#include "Logging.h"
 
-#undef GENERATE_XML
-
-#include <fstream>
 #include <ChimeraTK/ApplicationCore/ApplicationCore.h>
 #include <ChimeraTK/ApplicationCore/HierarchyModifyingGroup.h>
-#include "Logging.h"
+
+#include <fstream>
 
 namespace ctk = ChimeraTK;
 
@@ -74,5 +75,3 @@ struct LogFileModule : public ctk::ApplicationModule {
 
   void terminate();
 };
-
-#endif /* INCLUDE_LOGFILEREADER_H_ */

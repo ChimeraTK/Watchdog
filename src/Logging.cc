@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Helmholtz-Zentrum Dresden-Rossendorf, FWKE, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+
 /*
  * Logging.cc
  *
@@ -5,10 +8,11 @@
  *      Author: zenker
  */
 #include "Logging.h"
-#include <iostream>
-#include <algorithm>
 
 #include "boost/date_time/posix_time/posix_time.hpp"
+
+#include <algorithm>
+#include <iostream>
 
 namespace logging {
 
@@ -99,7 +103,9 @@ namespace logging {
     message << level << msg << std::endl;
   }
 
-  Message::Message() : logLevel(LogLevel::INFO) { message.str(""); }
+  Message::Message() : logLevel(LogLevel::INFO) {
+    message.str("");
+  }
 
   Message::Message(Message&& msg) {
     message << msg.message.str();

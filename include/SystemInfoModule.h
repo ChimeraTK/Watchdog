@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: Helmholtz-Zentrum Dresden-Rossendorf, FWKE, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
+
 /*
  * SystemInfo.h
  *
@@ -5,16 +9,12 @@
  *      Author: zenker
  */
 
-#ifndef INCLUDE_SYSTEMINFOMODULE_H_
-#define INCLUDE_SYSTEMINFOMODULE_H_
+#include "sys_stat.h"
+#include <unordered_set>
 
-#undef GENERATE_XML
 #include <ChimeraTK/ApplicationCore/ApplicationCore.h>
 #include <ChimeraTK/ApplicationCore/HierarchyModifyingGroup.h>
 #include <ChimeraTK/ApplicationCore/Logging.h>
-
-#include "sys_stat.h"
-#include <unordered_set>
 
 namespace ctk = ChimeraTK;
 
@@ -209,7 +209,7 @@ struct FileSystemModule : public ctk::ApplicationModule {
 
   const double GiB = 1. / 1024 / 1024 / 1024; ///< Conversion to GiB (not to be mixed up with GB!)
 
-  std::string tmp[2]; ///<Temporary store device name and mount point
+  std::string tmp[2]; ///< Temporary store device name and mount point
   /**
    * \name Logging
    * @{
@@ -341,5 +341,3 @@ struct NetworkGroup : public ctk::ModuleGroup {
    */
   std::vector<NetworkModule> networkMonitors;
 };
-
-#endif /* INCLUDE_SYSTEMINFOMODULE_H_ */

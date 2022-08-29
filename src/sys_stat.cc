@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Helmholtz-Zentrum Dresden-Rossendorf, FWKE, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+
 /*
  * sys_stat.cc
  *
@@ -5,23 +8,21 @@
  *      Author: zenker
  */
 
-#include <fstream>
-#include <string>
-#include <stdlib.h>
+#include "sys_stat.h"
 
 #include <proc/readproc.h>
 #include <proc/sysinfo.h>
 
-#include "sys_stat.h"
-
-#include <stdlib.h>
-#include <sstream>
-#include <iostream>
-#include <fstream>
-#include <algorithm>
-#include <signal.h>
-#include <iterator>
 #include <boost/algorithm/string.hpp>
+
+#include <algorithm>
+#include <fstream>
+#include <iostream>
+#include <iterator>
+#include <signal.h>
+#include <sstream>
+#include <stdlib.h>
+#include <string>
 
 namespace proc_util {
   std::mutex proc_mutex;

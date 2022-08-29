@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: Helmholtz-Zentrum Dresden-Rossendorf, FWKE, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
+
 /*
  * WatchdogServer.h
  *
@@ -5,20 +9,16 @@
  *      Author: zenker
  */
 
-#ifndef INCLUDE_WATCHDOGSERVER_H_
-#define INCLUDE_WATCHDOGSERVER_H_
+#include "ProcessModule.h"
+#include "SystemInfoModule.h"
 
-#undef GENERATE_XML
 #include <ChimeraTK/ApplicationCore/ApplicationCore.h>
 #include <ChimeraTK/ApplicationCore/ConfigReader.h>
+#include <ChimeraTK/ApplicationCore/DataLossCounter.h>
+#include <ChimeraTK/ApplicationCore/Logging.h>
+#include <ChimeraTK/ApplicationCore/MicroDAQ.h>
 #include <ChimeraTK/ApplicationCore/PeriodicTrigger.h>
 #include <ChimeraTK/ApplicationCore/ServerHistory.h>
-#include <ChimeraTK/ApplicationCore/DataLossCounter.h>
-#include <ChimeraTK/ApplicationCore/MicroDAQ.h>
-#include <ChimeraTK/ApplicationCore/Logging.h>
-
-#include "SystemInfoModule.h"
-#include "ProcessModule.h"
 
 namespace ctk = ChimeraTK;
 
@@ -89,5 +89,3 @@ struct WatchdogServer : public ctk::Application {
 
   void initialise() override;
 };
-
-#endif /* INCLUDE_WATCHDOGSERVER_H_ */

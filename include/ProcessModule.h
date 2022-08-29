@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: Helmholtz-Zentrum Dresden-Rossendorf, FWKE, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
+
 /**
  * ProcessModule.h
  *
@@ -5,10 +9,6 @@
  *      Author: zenker
  */
 
-#ifndef INCLUDE_PROCESSMODULE_H_
-#define INCLUDE_PROCESSMODULE_H_
-
-#undef GENERATE_XML
 #include <ChimeraTK/ApplicationCore/ApplicationCore.h>
 #include <ChimeraTK/ApplicationCore/HierarchyModifyingGroup.h>
 #include <ChimeraTK/ApplicationCore/Logging.h>
@@ -17,9 +17,9 @@
 
 namespace ctk = ChimeraTK;
 
-#include "sys_stat.h"
-#include "ProcessHandler.h"
 #include "LogFileReader.h"
+#include "ProcessHandler.h"
+#include "sys_stat.h"
 
 /**
  * \brief
@@ -169,8 +169,8 @@ struct ProcessControlModule : public ProcessInfoModule {
    */
   void evaluateMessage(std::stringstream& msg);
 
-  /* Use terminate function to delete the ProcessHandler, since it is using a local stringstream constructed in the main loop
-   * which is not existing at the time the ProcessHandler destructor is called!
+  /* Use terminate function to delete the ProcessHandler, since it is using a local stringstream constructed in the main
+   * loop which is not existing at the time the ProcessHandler destructor is called!
    */
   void terminate() override;
 
@@ -319,4 +319,3 @@ struct ProcessGroup : public ctk::ModuleGroup {
   std::vector<ProcessControlModule> processes;
   std::vector<LogFileModule> processesLogExternal;
 };
-#endif /* INCLUDE_PROCESSMODULE_H_ */

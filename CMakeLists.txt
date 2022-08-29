@@ -44,6 +44,11 @@ PKG_CHECK_MODULES(glib REQUIRED glib-2.0)
 include_directories(SYSTEM "${LibXML++_INCLUDEDIR}/${LIBXML++_VERSION}")
 include_directories(${LibXML++_INCLUDE_DIRS})
 
+
+include(cmake/enable_code_coverage_report.cmake)
+# enable coding style test
+include(cmake/enable_code_style_check.cmake)
+
 # set include directories
 include_directories(${CMAKE_SOURCE_DIR}/include)
 set(${PROJECT_NAME}_INCLUDE_DIRS ${${PROJECT_NAME}_INCLUDE_DIRS} ${CMAKE_SOURCE_DIR}/include/)
@@ -118,16 +123,6 @@ endif(CMAKE_BUILD_TYPE MATCHES Debug)
 # Set RPATH to find root dependencies automatically
 set_target_properties( ${PROJECT_NAME} PROPERTIES INSTALL_RPATH_USE_LINK_PATH TRUE)
 set_target_properties( ${PROJECT_NAME}-xmlGenerator PROPERTIES INSTALL_RPATH_USE_LINK_PATH TRUE)
-
-# The make coverage command is only available in debug mode
-if(CMAKE_BUILD_TYPE MATCHES Debug)
-  configure_file(cmake/Makefile.coverage.in ${PROJECT_BINARY_DIR}/Makefile.coverage @ONLY)
-  add_custom_target(coverage
-    make -f Makefile.coverage
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    COMMENT "Generating test coverage documentation" VERBATIM
-  )
-endif(CMAKE_BUILD_TYPE MATCHES Debug)
 
 FILE( COPY ${CMAKE_SOURCE_DIR}/configs/WatchdogServerConfig.xml DESTINATION ${PROJECT_BINARY_DIR})
 if(ADAPTER STREQUAL "OPCUA")

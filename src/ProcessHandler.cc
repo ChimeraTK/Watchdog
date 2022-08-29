@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Helmholtz-Zentrum Dresden-Rossendorf, FWKE, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+
 /*
  * ProcessHandler.cc
  *
@@ -6,19 +9,22 @@
  */
 
 #include "ProcessHandler.h"
-#include <signal.h>
+
 #include "sys_stat.h"
-#include <sstream>
-#include <iostream>
-#include <fstream>
-#include <fcntl.h> // open
-#include <unistd.h>
 #include <sys/wait.h>
 
-//includes for set_all_close_on_exec
+#include <fcntl.h> // open
+#include <fstream>
+#include <iostream>
+#include <signal.h>
+#include <sstream>
+#include <unistd.h>
+
+// includes for set_all_close_on_exec
 #define _POSIX_C_SOURCE 200809L
-#include <fcntl.h>
 #include <sys/resource.h>
+
+#include <fcntl.h>
 
 void handle_sigchld(int /*sig*/) {
   int saved_errno = errno;
@@ -238,7 +244,7 @@ size_t ProcessHandler::startProcess(const std::string& path, const std::string& 
                   << "Failed to interpret environment string: " << env_arg << std::endl;
       }
     }
-    //environ is a variable declared in unistd.h
+    // environ is a variable declared in unistd.h
     extern char** environ;
 
     // close file handles when calling execv -> release the OPC UA port

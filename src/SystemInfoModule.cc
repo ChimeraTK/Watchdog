@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Helmholtz-Zentrum Dresden-Rossendorf, FWKE, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+
 /*
  * SystemInfo.cc
  *
@@ -7,19 +10,18 @@
 
 #include "SystemInfoModule.h"
 
-#include <sstream>
-#include <fstream>
-#include <vector>
-#include <sys/vfs.h>
-#include <thread>
-#include <chrono>
-#include <cerrno>
-#include <string>
-
+#include "sys_stat.h"
 #include <proc/readproc.h>
 #include <proc/sysinfo.h>
+#include <sys/vfs.h>
 
-#include "sys_stat.h"
+#include <cerrno>
+#include <chrono>
+#include <fstream>
+#include <sstream>
+#include <string>
+#include <thread>
+#include <vector>
 
 // This symbol is introduced by procps and in boost 1.71 a function likely is used!
 #undef likely
@@ -144,7 +146,7 @@ void SystemInfoModule::calculatePCPU() {
   for(size_t iCPU = 0; iCPU < (info.nCPU + 1); iCPU++) {
     if(newcpu->totalUser < lastcpu->totalUser || newcpu->totalUserLow < lastcpu->totalUserLow ||
         newcpu->totalSys < lastcpu->totalSys || newcpu->totalIdle < lastcpu->totalIdle) {
-      //Overflow detection. Just skip this value.
+      // Overflow detection. Just skip this value.
       usage_tmp.at(iCPU) = (-1.0);
     }
     else {

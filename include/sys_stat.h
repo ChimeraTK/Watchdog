@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: Helmholtz-Zentrum Dresden-Rossendorf, FWKE, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+#pragma once
+
 /*
  * sys_stst.h
  *
@@ -5,16 +9,14 @@
  *      Author: zenker
  */
 
-#ifndef INCLUDE_SYS_STAT_H_
-#define INCLUDE_SYS_STAT_H_
+#include <proc/readproc.h>
 
+#include <iostream>
 #include <map>
-#include <string.h>
 #include <memory>
 #include <mutex>
+#include <string.h>
 #include <vector>
-#include <iostream>
-#include <proc/readproc.h>
 
 /**
  * \brief This namespace contains functions is used to read /proc information via libproc.
@@ -116,5 +118,3 @@ class SysInfo {
    */
   unsigned int getNCpu() { return CPUcount; }
 };
-
-#endif /* INCLUDE_SYS_STAT_H_ */

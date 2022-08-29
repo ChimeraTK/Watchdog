@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Helmholtz-Zentrum Dresden-Rossendorf, FWKE, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+
 /*
  * test_processModule.cc
  *
@@ -7,19 +10,20 @@
 #define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MODULE ProcessModuleTest
 
-#include <iostream>
-#include <string>
-
-#include "ProcessModule.h"
 #include "ChimeraTK/ApplicationCore/Logging.h"
-#include "WatchdogServer.h"
 #include "ChimeraTK/ApplicationCore/TestFacility.h"
+#include "ProcessModule.h"
+#include "WatchdogServer.h"
+#include <libxml++/libxml++.h>
+
 #include <ChimeraTK/ApplicationCore/ConfigReader.h>
 #include <ChimeraTK/ApplicationCore/PeriodicTrigger.h>
 #include <ChimeraTK/RegisterPath.h>
-#include <libxml++/libxml++.h>
 
 #include <boost/test/unit_test.hpp>
+
+#include <iostream>
+#include <string>
 using namespace boost::unit_test_framework;
 
 struct testWD : public ctk::Application {

@@ -1,3 +1,6 @@
+// SPDX-FileCopyrightText: Helmholtz-Zentrum Dresden-Rossendorf, FWKE, ChimeraTK Project <chimeratk-support@desy.de>
+// SPDX-License-Identifier: LGPL-3.0-or-later
+
 /*
  * ProcessModule.cc
  *
@@ -6,6 +9,7 @@
  */
 
 #include "ProcessModule.h"
+
 #include <signal.h>
 
 // This symbol is introduced by procps and in boost 1.71 a function likely is used!
@@ -251,7 +255,8 @@ void ProcessControlModule::mainLoop() {
         // process should not run and is running
         logger->sendMessage(std::string("Trying to kill the process... PID: ") + std::to_string(info.processPID),
             logging::LogLevel::INFO);
-        // Here the process is stopped in case enableProcess is set to 0. If it is already reset due to restart stop don't do anything here
+        // Here the process is stopped in case enableProcess is set to 0. If it is already reset due to restart stop
+        // don't do anything here
         if(process.get() != nullptr) {
           resetProcessHandler(&handlerMessage);
         }
@@ -328,7 +333,7 @@ void ProcessControlModule::CheckIsOnline(const int pid) {
 }
 
 void ProcessControlModule::resetProcessHandler(std::stringstream* handlerMessage) {
-  //ToDo: Set default to 2!
+  // ToDo: Set default to 2!
   if(config.killSig < 1)
     process->setSigNum(2);
   else
