@@ -27,22 +27,11 @@ namespace ctk = ChimeraTK;
  * via \c logFileExternal it is parsed and the tail is published to \c LogFileTailExternal.
  */
 struct LogFileModule : public ctk::ApplicationModule {
-  LogFileModule(EntityOwner* owner, const std::string& name, const std::string& description,
+  LogFileModule(ctk::ModuleGroup* owner, const std::string& name, const std::string& description,
       const std::string& pathToTrigger, const std::string& pathToLogFile,
-      ctk::HierarchyModifier hierarchyModifier = ctk::HierarchyModifier::none,
       const std::unordered_set<std::string>& tags = {})
-  : ctk::ApplicationModule(owner, name, description, hierarchyModifier, tags), triggerGroup(this, pathToTrigger),
-    logFileGroup(this, pathToLogFile) {}
-
-  struct TriggerGroup : ctk::HierarchyModifyingGroup {
-    TriggerGroup(EntityOwner* owner, const std::string& pathToTrigger, const std::unordered_set<std::string>& tags = {})
-    : ctk::HierarchyModifyingGroup(owner, ctk::HierarchyModifyingGroup::getPathName(pathToTrigger), "", tags),
-      trigger{this, HierarchyModifyingGroup::getUnqualifiedName(pathToTrigger), "", "Trigger input"} {}
-
-    TriggerGroup() {}
-
-    ctk::ScalarPushInput<uint64_t> trigger;
-  } triggerGroup;
+  : ctk::ApplicationModule(owner, name, description, tags), trigger(this, pathToTrigger, "", "Trigger input"),
+    logFile(this, pathToLogFile, "", "Logfile name") {}
 
   struct Config : ctk::VariableGroup {
     using ctk::VariableGroup::VariableGroup;
@@ -56,15 +45,8 @@ struct LogFileModule : public ctk::ApplicationModule {
         "Tail of an external log file, e.g. produced by a program started by the watchdog.", {getName()}};
   } status{this, "status", "Status parameter of the process"};
 
-  struct LogFileGroup : ctk::HierarchyModifyingGroup {
-    LogFileGroup(EntityOwner* owner, const std::string& pathToLogFile, const std::unordered_set<std::string>& tags = {})
-    : ctk::HierarchyModifyingGroup(owner, ctk::HierarchyModifyingGroup::getPathName(pathToLogFile), "", tags),
-      logFile{this, HierarchyModifyingGroup::getUnqualifiedName(pathToLogFile), "", "Trigger input"} {}
-
-    LogFileGroup() {}
-
-    ctk::ScalarPollInput<std::string> logFile;
-  } logFileGroup;
+  ctk::ScalarPushInput<uint64_t> trigger;
+  ctk::ScalarPollInput<std::string> logFile;
 
   std::unique_ptr<std::filebuf> logFileBuffer;
 

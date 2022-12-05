@@ -33,7 +33,7 @@ void ProcessInfoModule::mainLoop() {
           logging::LogLevel::ERROR);
     }
     writeAll();
-    group.readUntil(triggerGroup.trigger.getId());
+    group.readUntil(trigger.getId());
   }
 }
 
@@ -148,7 +148,7 @@ void ProcessControlModule::mainLoop() {
           logging::LogLevel::DEBUG);
       if(_historyOn) FillProcInfo(nullptr);
       writeAll();
-      group.readUntil(triggerGroup.trigger.getId());
+      group.readUntil(trigger.getId());
       continue;
     }
 
@@ -210,7 +210,8 @@ void ProcessControlModule::mainLoop() {
         if(_historyOn) FillProcInfo(nullptr);
         try {
           logger->sendMessage(
-              std::string("Trying to start a new process: ") + config.path + "/" + config.cmd, logging::LogLevel::INFO);
+              std::string("Trying to start a new process: ") + (std::string)config.path + "/" + (std::string)config.cmd,
+              logging::LogLevel::INFO);
           // log level of the process handler is DEBUG per default. So all messages will end up here
           process.reset(new ProcessHandler(getName(), false, handlerMessage, this->getName()));
 
@@ -264,7 +265,7 @@ void ProcessControlModule::mainLoop() {
       }
     }
     writeAll();
-    group.readUntil(triggerGroup.trigger.getId());
+    group.readUntil(trigger.getId());
   }
 }
 

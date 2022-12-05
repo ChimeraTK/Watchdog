@@ -24,24 +24,21 @@ namespace ctk = ChimeraTK;
 
 struct WatchdogModuleGroup : ctk::ModuleGroup {
   using ctk::ModuleGroup::ModuleGroup;
-  ProcessInfoModule process{
-      this, "watchdog", "Module monitoring the watchdog process", ctk::HierarchyModifier::hideThis};
+  ProcessInfoModule process{this, ".", "Module monitoring the watchdog process"};
   /**
    * This module is used to read the watchdog log file, which includes messages from the
    * watchdog process and all other processes controlled by the watchdog.
    * This allows to show all watchdog related messages via the tail (\c status/logTailExternal).
    * The LogFileModule is used differently for all the processes, since in case of the processes
-   * the  massages produced by the started processes are read and shown in the corresponding
+   * the  messages produced by the started processes are read and shown in the corresponding
    * tail (\c status/logTailExternal). Thus in that case the postfix 'External' makes more sense. Here
    * the postfix 'External' can be a bit misleading, because the tail (\c status/logTailExternal) includes
    * only messages produced by the watchdog itself.
    *
-   * \remark It would be nice to connect the message output variable of each process to its LoggingModule
-   * AND the watchdog LoggingModule. But this is not possible, since it is not possible to connect multiple
-   * outputs to a single push input variable.
+   * \remark Here the log file setting from the logging module is used directly by moving the logFile PV to the logging
+   * module location.
    */
-  LogFileModule logFile{this, "watchdogLogFile", "Logging module reading the watchdog logfile", "/Trigger/tick",
-      "/watchdog/config/logFile", ctk::HierarchyModifier::hideThis};
+  LogFileModule logFile{this, ".", "Logging module reading the watchdog logfile", "/Trigger/tick", "/logging/logFile"};
 };
 
 /**
@@ -61,7 +58,7 @@ struct WatchdogServer : public ctk::Application {
 
   ctk::PeriodicTrigger trigger{this, "Trigger", "Trigger used for other modules"};
 
-  ctk::ConfigReader config{this, "Configuration", "WatchdogServerConfig.xml", ctk::HierarchyModifier::hideThis};
+  ctk::ConfigReader config{this, "Configuration", "WatchdogServerConfig.xml"};
 
   SystemInfoModule info{this, "system", "Module reading system information"};
 

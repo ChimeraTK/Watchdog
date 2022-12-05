@@ -11,10 +11,10 @@
 #include "LogFileReader.h"
 
 void LogFileModule::mainLoop() {
-  logFileGroup.logFile.read();
+  logFile.read();
   //  std::string currentFile = (std::string)logFile;
   logFileBuffer.reset(new std::filebuf);
-  logFileBuffer->open((std::string)logFileGroup.logFile, std::ios::in);
+  logFileBuffer->open((std::string)logFile, std::ios::in);
   std::stringstream messageTail;
   while(1) {
     readAll();
@@ -24,7 +24,7 @@ void LogFileModule::mainLoop() {
       messageTail << "Tail length is <1. No messages from the log file read." << std::endl;
     }
     else {
-      if(((std::string)logFileGroup.logFile).empty()) {
+      if(((std::string)logFile).empty()) {
         messageTail << "No log file is set. Try starting the process and setting a LogFile." << std::endl;
       }
       else {
@@ -36,13 +36,13 @@ void LogFileModule::mainLoop() {
          * show the last update (of the log file that was deleted). Updates of the new log file would not be
          * updated here.
          */
-        logFileBuffer->open((std::string)logFileGroup.logFile, std::ios::in);
+        logFileBuffer->open((std::string)logFile, std::ios::in);
         if(logFileBuffer->is_open()) {
           std::istream i(&(*logFileBuffer));
           logging::formatLogTail(i, messageTail, config.tailLength);
         }
         else {
-          messageTail << "Can not open file: " << (std::string)logFileGroup.logFile << std::endl;
+          messageTail << "Can not open file: " << (std::string)logFile << std::endl;
         }
         logFileBuffer->close();
       }

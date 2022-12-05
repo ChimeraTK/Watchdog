@@ -50,18 +50,13 @@ struct testWD : public ctk::Application {
   }
 
   ~testWD() { shutdown(); }
-
-  void initialise() override {
-    Application::initialise();
-    dumpConnections();
-  }
 };
 
 BOOST_AUTO_TEST_CASE(testPerformance) {
   BOOST_TEST_MESSAGE("Start test used for performance profiling.");
   // test used to profile the performance of the watchdog.
   testWD app;
-  ChimeraTK::TestFacility tf;
+  ChimeraTK::TestFacility tf(app);
 
   tf.setScalarDefault("logging/logFile", (std::string) "test_watchdog.log");
   tf.setScalarDefault("logging/targetStream", (uint)1);

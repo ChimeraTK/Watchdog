@@ -67,19 +67,10 @@ class SystemInfoModule : public ctk::ApplicationModule {
   void readCPUInfo(std::vector<cpu>& vcpu);
 
  public:
-  SystemInfoModule(EntityOwner* owner, const std::string& name, const std::string& description,
-      ctk::HierarchyModifier hierarchyModifier = ctk::HierarchyModifier::none,
+  SystemInfoModule(ctk::ModuleGroup* owner, const std::string& name, const std::string& description,
       const std::unordered_set<std::string>& tags = {}, const std::string& pathToTrigger = "/Trigger/tick");
 
-  struct TriggerGroup : ctk::HierarchyModifyingGroup {
-    TriggerGroup(EntityOwner* owner, const std::string& pathToTrigger, const std::unordered_set<std::string>& tags = {})
-    : ctk::HierarchyModifyingGroup(owner, ctk::HierarchyModifyingGroup::getPathName(pathToTrigger), "", tags),
-      trigger{this, HierarchyModifyingGroup::getUnqualifiedName(pathToTrigger), "", "Trigger input"} {}
-
-    TriggerGroup() {}
-
-    ctk::ScalarPushInput<uint64_t> trigger;
-  } triggerGroup;
+  ctk::ScalarPushInput<uint64_t> trigger;
 
   /**
    * \name Static system information (read only once)
@@ -165,9 +156,9 @@ struct FileSystemModule : public ctk::ApplicationModule {
    * \param devName The name of the device (e.g. /dev/sdb1 -> sdb1)
    * \param mntPoint The mount point of the device (e.g. / for the root directory)
    */
-  FileSystemModule(const std::string& devName, const std::string& mntPoint, EntityOwner* owner, const std::string& name,
-      const std::string& description, ctk::HierarchyModifier hierarchyModifier = ctk::HierarchyModifier::none,
-      const std::unordered_set<std::string>& tags = {}, const std::string& pathToTrigger = "/Trigger/tick");
+  FileSystemModule(const std::string& devName, const std::string& mntPoint, ctk::ModuleGroup* owner,
+      const std::string& name, const std::string& description, const std::unordered_set<std::string>& tags = {},
+      const std::string& pathToTrigger = "/Trigger/tick");
 
   ctk::ScalarOutput<std::string> deviceName{this, "deviceName", "", "Name of the device"};
 
@@ -197,15 +188,7 @@ struct FileSystemModule : public ctk::ApplicationModule {
         {"DAQ", "history"}};
   } status{this, "status", "Information about the mounted device"};
 
-  struct TriggerGroup : ctk::HierarchyModifyingGroup {
-    TriggerGroup(EntityOwner* owner, const std::string& pathToTrigger, const std::unordered_set<std::string>& tags = {})
-    : ctk::HierarchyModifyingGroup(owner, ctk::HierarchyModifyingGroup::getPathName(pathToTrigger), "", tags),
-      trigger{this, HierarchyModifyingGroup::getUnqualifiedName(pathToTrigger), "", "Trigger input"} {}
-
-    TriggerGroup() {}
-
-    ctk::ScalarPushInput<uint64_t> trigger;
-  } triggerGroup;
+  ctk::ScalarPushInput<uint64_t> trigger;
 
   const double GiB = 1. / 1024 / 1024 / 1024; ///< Conversion to GiB (not to be mixed up with GB!)
 
@@ -259,9 +242,9 @@ struct FileSystemGroup : public ctk::ModuleGroup {
  * The "SYS" tag is used for all variables that are updated in the main loop.
  */
 struct NetworkModule : public ctk::ApplicationModule {
-  NetworkModule(const std::string& device, EntityOwner* owner, const std::string& name, const std::string& description,
-      ctk::HierarchyModifier hierarchyModifier = ctk::HierarchyModifier::none,
-      const std::unordered_set<std::string>& tags = {}, const std::string& pathToTrigger = "/Trigger/tick");
+  NetworkModule(const std::string& device, ctk::ModuleGroup* owner, const std::string& name,
+      const std::string& description, const std::unordered_set<std::string>& tags = {},
+      const std::string& pathToTrigger = "/Trigger/tick");
 
   std::string networkDeviceName;
 
@@ -279,15 +262,7 @@ struct NetworkModule : public ctk::ApplicationModule {
     std::vector<ctk::ScalarOutput<double>> data;
   } status{this, "status", "Status of the network device"};
 
-  struct TriggerGroup : ctk::HierarchyModifyingGroup {
-    TriggerGroup(EntityOwner* owner, const std::string& pathToTrigger, const std::unordered_set<std::string>& tags = {})
-    : ctk::HierarchyModifyingGroup(owner, ctk::HierarchyModifyingGroup::getPathName(pathToTrigger), "", tags),
-      trigger{this, HierarchyModifyingGroup::getUnqualifiedName(pathToTrigger), "", "Trigger input"} {}
-
-    TriggerGroup() {}
-
-    ctk::ScalarPushInput<uint64_t> trigger;
-  } triggerGroup;
+  ctk::ScalarPushInput<uint64_t> trigger;
 
   const double MiB = 1. / 1024 / 1024; ///< Conversion to MiB (not to be mixed up with MB!)
 

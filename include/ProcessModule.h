@@ -29,20 +29,11 @@ namespace ctk = ChimeraTK;
  * \todo Implement proper data types instead of using int for all of them!
  */
 struct ProcessInfoModule : public ctk::ApplicationModule {
-  ProcessInfoModule(EntityOwner* owner, const std::string& name, const std::string& description,
-      ctk::HierarchyModifier hierarchyModifier = ctk::HierarchyModifier::none,
+  ProcessInfoModule(ctk::ModuleGroup* owner, const std::string& name, const std::string& description,
       const std::unordered_set<std::string>& tags = {}, const std::string& pathToTrigger = "/Trigger/tick")
-  : ctk::ApplicationModule(owner, name, description, hierarchyModifier, tags), triggerGroup(this, pathToTrigger){};
+  : ctk::ApplicationModule(owner, name, description, tags), trigger(this, pathToTrigger, "", "Trigger input"){};
 
-  struct TriggerGroup : ctk::HierarchyModifyingGroup {
-    TriggerGroup(EntityOwner* owner, const std::string& pathToTrigger, const std::unordered_set<std::string>& tags = {})
-    : ctk::HierarchyModifyingGroup(owner, ctk::HierarchyModifyingGroup::getPathName(pathToTrigger), "", tags),
-      trigger{this, HierarchyModifyingGroup::getUnqualifiedName(pathToTrigger), "", "Trigger input"} {}
-
-    TriggerGroup() {}
-
-    ctk::ScalarPushInput<uint64_t> trigger;
-  } triggerGroup;
+  ctk::ScalarPushInput<uint64_t> trigger;
 
   struct Status : public ctk::VariableGroup {
     using ctk::VariableGroup::VariableGroup;
@@ -73,7 +64,7 @@ struct ProcessInfoModule : public ctk::ApplicationModule {
       ctk::ScalarPollInput<uint> ticksPerSecond{this, "ticksPerSecond", "Hz", "Number of clock ticks per second"};
     } info{this, "info", ""};
 
-  } system{this, "system", "", ctk::HierarchyModifier::moveToRoot};
+  } system{this, "/system", ""};
   /** @} */
 
   struct Statistics : public ctk::VariableGroup {
@@ -157,10 +148,10 @@ struct ProcessControlModule : public ProcessInfoModule {
    * \param historyOn If true process parameters are filled with 0 periodically in case the process is off.
    * This is needed in order to have constant filling of the history buffer written by the History module of the watchdog.
    */
-  ProcessControlModule(EntityOwner* owner, const std::string& name, const std::string& description,
-      bool historyOn = false, ctk::HierarchyModifier hierarchyModifier = ctk::HierarchyModifier::none,
-      const std::unordered_set<std::string>& tags = {}, const std::string& pathToTrigger = "/Trigger/tick")
-  : ProcessInfoModule(owner, name, description, hierarchyModifier, tags, pathToTrigger), _historyOn(historyOn){};
+  ProcessControlModule(ctk::ModuleGroup* owner, const std::string& name, const std::string& description,
+      bool historyOn = false, const std::unordered_set<std::string>& tags = {},
+      const std::string& pathToTrigger = "/Trigger/tick")
+  : ProcessInfoModule(owner, name, description, tags, pathToTrigger), _historyOn(historyOn){};
 
   /**
    * Search for key words in the given stream (LogLevels like DEBUG, INFO...).

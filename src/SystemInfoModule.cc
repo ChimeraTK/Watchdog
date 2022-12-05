@@ -27,10 +27,9 @@
 #undef likely
 #include "boost/date_time/posix_time/posix_time.hpp"
 
-SystemInfoModule::SystemInfoModule(EntityOwner* owner, const std::string& name, const std::string& description,
-    ctk::HierarchyModifier hierarchyModifier, const std::unordered_set<std::string>& tags,
-    const std::string& pathToTrigger)
-: ctk::ApplicationModule(owner, name, description, hierarchyModifier, tags), triggerGroup(this, pathToTrigger) {
+SystemInfoModule::SystemInfoModule(ctk::ModuleGroup* owner, const std::string& name, const std::string& description,
+    const std::unordered_set<std::string>& tags, const std::string& pathToTrigger)
+: ctk::ApplicationModule(owner, name, description, tags), trigger(this, pathToTrigger, "", "Trigger input") {
   for(auto it = sysInfo.ibegin(); it != sysInfo.iend(); it++) {
     info.strInfos.emplace(
         it->first, ctk::ScalarOutput<std::string>{&info, space2underscore(it->first), "", space2underscore(it->first)});
@@ -130,7 +129,7 @@ void SystemInfoModule::mainLoop() {
     status.writeAll();
     logger->sendMessage("System data updated", logging::LogLevel::DEBUG);
 
-    triggerGroup.trigger.read();
+    trigger.read();
   }
 }
 
@@ -216,10 +215,10 @@ std::string getTime(ctk::ApplicationModule* mod) {
   return str;
 }
 
-FileSystemModule::FileSystemModule(const std::string& devName, const std::string& mntPoint, EntityOwner* owner,
-    const std::string& name, const std::string& description, ctk::HierarchyModifier hierarchyModifier,
-    const std::unordered_set<std::string>& tags, const std::string& pathToTrigger)
-: ctk::ApplicationModule(owner, name, description, hierarchyModifier, tags), triggerGroup(this, pathToTrigger) {
+FileSystemModule::FileSystemModule(const std::string& devName, const std::string& mntPoint, ctk::ModuleGroup* owner,
+    const std::string& name, const std::string& description, const std::unordered_set<std::string>& tags,
+    const std::string& pathToTrigger)
+: ctk::ApplicationModule(owner, name, description, tags), trigger(this, pathToTrigger, "", "Trigger input") {
   tmp[0] = devName;
   tmp[1] = mntPoint;
 }
@@ -273,14 +272,13 @@ void FileSystemModule::mainLoop() {
       }
       status.writeAll();
     }
-    group.readUntil(triggerGroup.trigger.getId());
+    group.readUntil(trigger.getId());
   }
 }
 
-NetworkModule::NetworkModule(const std::string& device, EntityOwner* owner, const std::string& name,
-    const std::string& description, ctk::HierarchyModifier hierarchyModifier,
-    const std::unordered_set<std::string>& tags, const std::string& pathToTrigger)
-: ctk::ApplicationModule(owner, name, description, hierarchyModifier, tags), triggerGroup(this, pathToTrigger) {
+NetworkModule::NetworkModule(const std::string& device, ctk::ModuleGroup* owner, const std::string& name,
+    const std::string& description, const std::unordered_set<std::string>& tags, const std::string& pathToTrigger)
+: ctk::ApplicationModule(owner, name, description, tags), trigger(this, pathToTrigger, "", "Trigger input") {
   networkDeviceName = device;
   status.data.emplace_back(ctk::ScalarOutput<double>{&status, "rx_packates", "1/s", "Received packates.", {"DAQ"}});
   status.data.emplace_back(ctk::ScalarOutput<double>{&status, "tx_packates", "1/s", "Transmitted packates.", {"DAQ"}});
@@ -322,6 +320,6 @@ void NetworkModule::mainLoop() {
 
   while(1) {
     read();
-    triggerGroup.trigger.read();
+    trigger.read();
   }
 }

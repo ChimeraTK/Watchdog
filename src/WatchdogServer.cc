@@ -117,8 +117,7 @@ WatchdogServer::WatchdogServer() : Application("WatchdogServer") {
    */
 
   if(config.get<ChimeraTK::Boolean>("Configuration/MicroDAQ/enable") == true) {
-    daq = ctk::MicroDAQ<uint64_t>{
-        this, "microDAQ", "DAQ module", "DAQ", "/Trigger/tick", ctk::HierarchyModifier::none, {"MicroDAQ"}};
+    daq = ctk::MicroDAQ<uint64_t>{this, "microDAQ", "DAQ module", "DAQ", "/Trigger/tick", {"MicroDAQ"}};
   }
 
   /*
@@ -127,7 +126,8 @@ WatchdogServer::WatchdogServer() : Application("WatchdogServer") {
 
   if(config.get<uint>("Configuration/enableServerHistory") != 0) {
     uint serverHistroyLength = config.get<uint>("Configuration/serverHistoryLength", (uint)100);
-    history = ctk::history::ServerHistory{this, "history", "History", serverHistroyLength, false};
+    history = ctk::history::ServerHistory{
+        this, "history", "History module", serverHistroyLength, "history", false, "history"};
   }
 }
 
@@ -139,6 +139,4 @@ void WatchdogServer::initialise() {
   std::cout << "****************************************************************" << std::endl;
   std::cout << "*** Watchdog server version " << AppVersion::major << "." << AppVersion::minor << "."
             << AppVersion::patch << std::endl;
-  warnUnconnectedVariables();
-  dumpConnections();
 }
