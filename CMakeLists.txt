@@ -22,9 +22,9 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/set_default_flags.cmake)
 include(cmake/add_dependency.cmake)
 
 add_dependency(ChimeraTK-ApplicationCore 03.00 REQUIRED)
-add_dependency(ChimeraTK-ApplicationCore-MicroDAQ 02.00)
-add_dependency(ChimeraTK-ApplicationCore-LoggingModule 01.00)
-add_dependency(ChimeraTK-ApplicationCore-ServerHistoryModule 01.00)
+add_dependency(ChimeraTK-ApplicationCore-MicroDAQ 02.00 REQUIRED)
+add_dependency(ChimeraTK-ApplicationCore-LoggingModule 01.00 REQUIRED)
+add_dependency(ChimeraTK-ApplicationCore-ServerHistoryModule 01.00 REQUIRED)
 
 find_package(Boost COMPONENTS date_time REQUIRED)
 
