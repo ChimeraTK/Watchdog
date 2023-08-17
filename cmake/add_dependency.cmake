@@ -32,6 +32,9 @@ FUNCTION(add_dependency dependency_project_name required_version)
   foreach(arg IN LISTS ARGN)
     SET(components ${components} ${arg})
   endforeach()
+  if("${required_version}" MATCHES "REQUIRED")
+    message(FATAL_ERROR "wrong usage: add_dependency(${dependency_project_name} ${required_version} ...)")
+  endif()
   FIND_PACKAGE(${dependency_project_name} ${required_version} COMPONENTS ${components})
   include_directories(SYSTEM ${${dependency_project_name}_INCLUDE_DIRS} ${${dependency_project_name}_INCLUDE_DIR})
   link_directories(${${dependency_project_name}_LIBRARY_DIRS})
@@ -49,3 +52,21 @@ FUNCTION(add_dependency dependency_project_name required_version)
   SET(${dependency_project_name}_INCLUDE_DIRS ${${dependency_project_name}_INCLUDE_DIRS} PARENT_SCOPE)
   SET(${dependency_project_name}_PREFIX ${${dependency_project_name}_PREFIX} PARENT_SCOPE)
 ENDFUNCTION(add_dependency)
+
+# make sure that cmake finds modules provided by project-template.
+# since with new cmake concept for imported targets, dependencies also search for implicit dependencies,
+# all projects using add_dependency also require this module path.
+set(_projectTemplateModulePath ${CMAKE_SOURCE_DIR}/cmake/Modules)
+# substr search is better than regex if paths have special characters
+string(FIND ":${CMAKE_MODULE_PATH}:" ":${_projectTemplateModulePath}:" _projectTemplateModulePathPos)
+if (${_projectTemplateModulePathPos} EQUAL -1)
+    list(APPEND CMAKE_MODULE_PATH "${_projectTemplateModulePath}")
+endif()
+
+message(WARNING "
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+You are using add_dependency() in your CMakeLists.txt which is deprecated and may lead to subtle problems. Please follow the project-template migration guide to cmake imported targets.
+Furhter processing is delayed by 5 seconds.
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+")
+execute_process(COMMAND ${CMAKE_COMMAND} -E sleep 5.0)

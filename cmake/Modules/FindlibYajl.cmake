@@ -1,7 +1,11 @@
 #######################################################################################################################
-# enable_code_style_check.cmake
 #
-# Enable automatic check of coding style as part of the tests.
+# cmake module for finding the yajl library
+#
+# returns:
+#   libYajl_FOUND       : true or false, depending on whether the package was found
+#   libYajl_LIBRARY     : path to the library
+# @author Patrick Nonn, DESY
 #
 #######################################################################################################################
 
@@ -17,9 +21,14 @@
 #
 #######################################################################################################################
 
-enable_testing()
-add_test(NAME coding_style COMMAND ${CMAKE_SOURCE_DIR}/cmake/check-coding-style.sh ${CMAKE_BINARY_DIR}
-                           WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+set(libYajl_FOUND 0)
 
-# coding style will return 77 if no clang-format-14 could be found AND none of the other tests fail
-set_property(TEST coding_style PROPERTY SKIP_RETURN_CODE 77)
+find_library(libYajl_LIBRARY
+    NAMES yajl yajl.so libyajl.so
+    PATHS /usr/lib /usr/lib32 /usr/lib64 /usr/local/lib
+    HINTS ${CMAKE_INSTALL_LIBDIR}
+)
+
+# use a macro provided by CMake to check if all the listed arguments are valid and set Yajl_FOUND accordingly
+include(FindPackageHandleStandardArgs)
+find_package_handle_standard_args(libYajl REQUIRED_VARS libYajl_LIBRARY)
