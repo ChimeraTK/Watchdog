@@ -70,8 +70,8 @@ struct WatchdogServer : public ctk::Application {
 
   WatchdogModuleGroup watchdog{this, "watchdog", "Module monitoring the watchdog process"};
 
-  ctk::DataLossCounter<uint64_t> dataLossCounter{this, "DataLossCounter",
-      "Statistics on lost data within this watchdog server", "Trigger/tick", ctk::HierarchyModifier::none};
+  ctk::DataLossCounter<uint64_t> dataLossCounter{
+      this, "DataLossCounter", "Statistics on lost data within this watchdog server", "Trigger/tick"};
 
   logging::LoggingModule logging;
 
