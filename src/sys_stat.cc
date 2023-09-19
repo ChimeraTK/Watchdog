@@ -5,7 +5,7 @@
  * sys_stat.cc
  *
  *  Created on: Sep 6, 2017
- *      Author: zenker
+ *      Author: Klaus Zenker (HZDR)
  */
 
 #include "sys_stat.h"

@@ -6,7 +6,7 @@
  * ProcessModule.h
  *
  *  Created on: Sep 6, 2017
- *      Author: zenker
+ *      Author: Klaus Zenker (HZDR)
  */
 
 #include <ChimeraTK/ApplicationCore/ApplicationCore.h>

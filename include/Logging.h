@@ -6,7 +6,7 @@
  * Logging.h
  *
  *  Created on: Jan 22, 2018
- *      Author: zenker
+ *      Author: Klaus Zenker (HZDR)
  */
 
 #include <ChimeraTK/ApplicationCore/Logging.h>

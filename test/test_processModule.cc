@@ -5,7 +5,7 @@
  * test_processModule.cc
  *
  *  Created on: Jan 15, 2018
- *      Author: zenker
+ *      Author: Klaus Zenker (HZDR)
  *
  *  Call with option --log_level=message to see messages from the tests.
  *  Select tests using e.g. --run_test=testFailOnWrongDirectory

@@ -5,7 +5,7 @@
  * Logging.cc
  *
  *  Created on: Jan 22, 2018
- *      Author: zenker
+ *      Author: Klaus Zenker (HZDR)
  */
 #include "Logging.h"
 

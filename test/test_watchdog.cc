@@ -5,7 +5,7 @@
  * test_processModule.cc
  *
  *  Created on: Jan 31, 2018
- *      Author: zenker
+ *      Author: Klaus Zenker (HZDR)
  */
 #define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MODULE ProcessModuleTest

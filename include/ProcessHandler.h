@@ -6,7 +6,7 @@
  * ProcessHandler.h
  *
  *  Created on: Dec 1, 2017
- *      Author: zenker
+ *      Author: Klaus Zenker (HZDR)
  */
 
 #include "Logging.h"

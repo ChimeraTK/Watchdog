@@ -5,7 +5,7 @@
  * LoggingModule.cc
  *
  *  Created on: Jan 18, 2018
- *      Author: zenker
+ *      Author: Klaus Zenker (HZDR)
  */
 
 #include "LogFileReader.h"

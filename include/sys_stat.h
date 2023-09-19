@@ -6,7 +6,7 @@
  * sys_stst.h
  *
  *  Created on: Sep 6, 2017
- *      Author: zenker
+ *      Author: Klaus Zenker (HZDR)
  */
 
 #include <proc/readproc.h>

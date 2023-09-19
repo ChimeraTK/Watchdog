@@ -5,7 +5,7 @@
  * test_procReader.cc
  *
  *  Created on: Sep 7, 2017
- *      Author: zenker
+ *      Author: Klaus Zenker (HZDR)
  */
 #define BOOST_TEST_DYN_LINK
 #define BOOST_TEST_MODULE sysTest
