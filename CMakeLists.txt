@@ -5,26 +5,27 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/Modules)
 
 set(${PROJECT_NAME}_MAJOR_VERSION 02)
 set(${PROJECT_NAME}_MINOR_VERSION 01)
-set(${PROJECT_NAME}_PATCH_VERSION 00)
+set(${PROJECT_NAME}_PATCH_VERSION 01)
+
 include(cmake/set_version_numbers.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/set_default_flags.cmake)
+include(cmake/set_control_system_adapter.cmake)
+
 
 # Options
 option(ENABLE_TESTING      "Build unit tests"      ON)
-option(ENABLE_DOCUMENTAION "Enable create of doxygen documentation"      ON)
+option(ENABLE_DOCUMENTATION "Enable create of doxygen documentation"      ON)
 
-if( ENABLE_DOCUMENTAION )
+if( ENABLE_DOCUMENTATION )
   SET( SUPPRESS_AUTO_DOC_BUILD FALSE)
 else()
   SET( SUPPRESS_AUTO_DOC_BUILD TRUE)
-endif( ENABLE_DOCUMENTAION )
+endif( ENABLE_DOCUMENTATION )
 
-include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/set_default_flags.cmake)
-include(cmake/add_dependency.cmake)
-
-add_dependency(ChimeraTK-ApplicationCore 03.00 REQUIRED)
-add_dependency(ChimeraTK-ApplicationCore-MicroDAQ 02.00 REQUIRED)
-add_dependency(ChimeraTK-ApplicationCore-LoggingModule 01.00 REQUIRED)
-add_dependency(ChimeraTK-ApplicationCore-ServerHistoryModule 01.00 REQUIRED)
+find_package(ChimeraTK-ApplicationCore 03.00 REQUIRED)
+find_package(ChimeraTK-ApplicationCore-MicroDAQ 02.00 REQUIRED)
+find_package(ChimeraTK-ApplicationCore-LoggingModule 01.00 REQUIRED)
+find_package(ChimeraTK-ApplicationCore-ServerHistoryModule 01.00 REQUIRED)
 
 find_package(Boost COMPONENTS date_time REQUIRED)
 
@@ -36,16 +37,6 @@ CHECK_INCLUDE_FILE( proc/procps.h HAS_PROCPS_H)
 if(NOT HAS_PROCPS_H)
   message(FATAL_ERROR "Could not find procps header file. Please install procps dev pacakge.")
 endif(NOT HAS_PROCPS_H)
-
-include(cmake/set_control_system_adapter.cmake)
-
-FIND_PACKAGE(PkgConfig REQUIRED)
-set(LIBXML++_VERSION "libxml++-2.6")
-PKG_CHECK_MODULES(LibXML++ REQUIRED ${LIBXML++_VERSION})
-PKG_CHECK_MODULES(glib REQUIRED glib-2.0)
-include_directories(SYSTEM "${LibXML++_INCLUDEDIR}/${LIBXML++_VERSION}")
-include_directories(${LibXML++_INCLUDE_DIRS})
-
 
 include(cmake/enable_code_coverage_report.cmake)
 # enable coding style test
@@ -69,29 +60,23 @@ if(CMAKE_BUILD_TYPE MATCHES Debug)
   add_library(${PROJECT_NAME}lib SHARED ${library_sources} )
   set_target_properties(${PROJECT_NAME}lib PROPERTIES VERSION ${${PROJECT_NAME}_FULL_LIBRARY_VERSION}
                                                     SOVERSION ${${PROJECT_NAME}_SOVERSION})
-  target_link_libraries(${PROJECT_NAME}lib ${Boost_LIBRARIES}
-                                           ${ChimeraTK-ApplicationCore-MicroDAQ_LIBRARIES}
-                                           ${ChimeraTK-ApplicationCore_LIBRARIES}
-                                           ${ChimeraTK-ApplicationCore-LoggingModule_LIBRARIES}
-                                           ${ChimeraTK-ApplicationCore-ServerHistoryModule_LIBRARIES}
+  target_link_libraries(${PROJECT_NAME}lib ChimeraTK::ChimeraTK-ApplicationCore 
+                                           ChimeraTK::ChimeraTK-ApplicationCore-LoggingModule
+                                           ChimeraTK::ChimeraTK-ApplicationCore-ServerHistoryModule
+                                           ChimeraTK::ChimeraTK-ApplicationCore-MicroDAQ
                                            procps
-                                           ${Boost_process_LIBRARIES}
                                            )
   install(TARGETS ${PROJECT_NAME}lib LIBRARY DESTINATION lib)
 
   # main server executable
   add_executable(${PROJECT_NAME} ${server_sources})
-  target_link_libraries(${PROJECT_NAME} ${ChimeraTK-ApplicationCore_LIBRARIES}
-                                        ${Adapter_LIBRARIES}
-                                        ${LibXML++_LIBRARIES}
-                                        procps
+  target_link_libraries(${PROJECT_NAME} ChimeraTK::ChimeraTK-ApplicationCore
+                                        ChimeraTK::SelectedAdapter
                                         ${PROJECT_NAME}lib)
 
   # XML file generation
   add_executable(${PROJECT_NAME}-xmlGenerator ${server_sources})
-  target_link_libraries(${PROJECT_NAME}-xmlGenerator ${ChimeraTK-ApplicationCore_LIBRARIES}
-                                                     ${LibXML++_LIBRARIES}
-                                                     procps
+  target_link_libraries(${PROJECT_NAME}-xmlGenerator ChimeraTK::ChimeraTK-ApplicationCore
                                                      ${PROJECT_NAME}lib)
   set_target_properties(${PROJECT_NAME}-xmlGenerator PROPERTIES COMPILE_FLAGS "-DGENERATE_XML")
 
@@ -106,24 +91,20 @@ else()
   if(ADAPTER STREQUAL EPICSIOC) # This is exclusive to EPICSIOC, because this line was not present, before I added EPICSIOS as an adapter.
     set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS ${Adapter_LINK_FLAGS})
   endif(ADAPTER STREQUAL EPICSIOC)
-  target_link_libraries(${PROJECT_NAME} ${Boost_LIBRARIES}
-                                        ${ChimeraTK-ApplicationCore_LIBRARIES}
-                                        ${Adapter_LIBRARIES}
-                                        ${LibXML++_LIBRARIES}
+  target_link_libraries(${PROJECT_NAME} ChimeraTK::SelectedAdapter
                                         procps
-                                        ${ChimeraTK-ApplicationCore-MicroDAQ_LIBRARIES}
-                                        ${ChimeraTK-ApplicationCore-LoggingModule_LIBRARIES}
-                                        ${ChimeraTK-ApplicationCore-ServerHistoryModule_LIBRARIES})
+                                        ChimeraTK::ChimeraTK-ApplicationCore 
+                                        ChimeraTK::ChimeraTK-ApplicationCore-LoggingModule
+                                        ChimeraTK::ChimeraTK-ApplicationCore-ServerHistoryModule
+                                        ChimeraTK::ChimeraTK-ApplicationCore-MicroDAQ)
 
   # XML file generation
   add_executable(${PROJECT_NAME}-xmlGenerator ${server_sources} ${library_sources})
-  target_link_libraries(${PROJECT_NAME}-xmlGenerator ${Boost_LIBRARIES}
-                                                     ${ChimeraTK-ApplicationCore_LIBRARIES}
-                                                     ${LibXML++_LIBRARIES}
-                                                     procps
-                                                     ${ChimeraTK-ApplicationCore-MicroDAQ_LIBRARIES}
-                                                     ${ChimeraTK-ApplicationCore-LoggingModule_LIBRARIES}
-                                                     ${ChimeraTK-ApplicationCore-ServerHistoryModule_LIBRARIES})
+  target_link_libraries(${PROJECT_NAME}-xmlGenerator procps
+                                                     ChimeraTK::ChimeraTK-ApplicationCore 
+                                                     ChimeraTK::ChimeraTK-ApplicationCore-LoggingModule
+                                                     ChimeraTK::ChimeraTK-ApplicationCore-ServerHistoryModule
+                                                     ChimeraTK::ChimeraTK-ApplicationCore-MicroDAQ)
 
   set_target_properties(${PROJECT_NAME}-xmlGenerator PROPERTIES COMPILE_FLAGS "-DGENERATE_XML")
 endif(CMAKE_BUILD_TYPE MATCHES Debug)
