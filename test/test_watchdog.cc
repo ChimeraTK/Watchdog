@@ -14,11 +14,6 @@
 #include "ChimeraTK/ApplicationCore/TestFacility.h"
 #include "ProcessModule.h"
 #include "WatchdogServer.h"
-#include <libxml++/libxml++.h>
-
-#include <ChimeraTK/ApplicationCore/ConfigReader.h>
-#include <ChimeraTK/ApplicationCore/PeriodicTrigger.h>
-#include <ChimeraTK/RegisterPath.h>
 
 #include <boost/test/unit_test.hpp>
 

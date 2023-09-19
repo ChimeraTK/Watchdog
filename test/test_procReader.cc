@@ -16,8 +16,7 @@
 #include <boost/test/unit_test.hpp>
 
 #include <iostream>
-#include <signal.h>
-#include <vector>
+
 using namespace boost::unit_test_framework;
 
 using namespace std;
