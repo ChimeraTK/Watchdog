@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<uamapping>
+<csa:uamapping xmlns:csa="https://github.com/ChimeraTK/ControlSystemAdapter-OPC-UA-Adapter">
         <config rootFolder="watchdog_server" description="Watchdog server">
                 <server applicationName="watchdog_server" port="11000" />
                 <!--login username="test" password="test123" /--> 
         </config>
-</uamapping>
+</csa:uamapping>
