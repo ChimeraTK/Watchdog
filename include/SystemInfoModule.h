@@ -35,17 +35,13 @@ class SystemInfoModule : public ctk::ApplicationModule {
    * These vales are read from \c /proc/stat
    */
   struct cpu {
-    unsigned long long totalUser;
-    unsigned long long totalUserLow;
-    unsigned long long totalSys;
-    unsigned long long totalIdle;
+    unsigned long long totalUser{0};
+    unsigned long long totalUserLow{0};
+    unsigned long long totalSys{0};
+    unsigned long long totalIdle{0};
     cpu(unsigned long long totUser = 0, unsigned long long totUserLow = 0, unsigned long long TotSys = 0,
-        unsigned long long TotIdle = 0) {
-      totalUser = totUser;
-      totalUserLow = totUserLow;
-      totalSys = TotSys;
-      totalIdle = TotIdle;
-    }
+        unsigned long long TotIdle = 0)
+    : totalUser(totUser), totalUserLow(totUserLow), totalSys(TotSys), totalIdle(TotIdle) {}
   };
 
   /**
