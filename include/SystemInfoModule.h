@@ -13,7 +13,6 @@
 #include <unordered_set>
 
 #include <ChimeraTK/ApplicationCore/ApplicationCore.h>
-#include <ChimeraTK/ApplicationCore/HierarchyModifyingGroup.h>
 #include <ChimeraTK/ApplicationCore/Logging.h>
 
 namespace ctk = ChimeraTK;
