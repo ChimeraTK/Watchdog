@@ -11,8 +11,8 @@
 #include "SystemInfoModule.h"
 
 #include "sys_stat.h"
-#include <proc/readproc.h>
-#include <proc/sysinfo.h>
+//#include <proc/readproc.h>
+//#include <proc/sysinfo.h>
 #include <sys/vfs.h>
 
 #include <cerrno>
@@ -45,7 +45,7 @@ void SystemInfoModule::mainLoop() {
   double uptime_secs;
   double idle_secs;
   // read the system start time (uncertainty in the order of seconds...)
-  uptime(&uptime_secs, &idle_secs);
+//  uptime(&uptime_secs, &idle_secs);
   auto now = boost::posix_time::second_clock::local_time();
   status.startTime = boost::posix_time::to_time_t(now) - std::stoi(std::to_string(uptime_secs));
   status.startTimeStr = boost::posix_time::to_simple_string(boost::posix_time::from_time_t(status.startTime));
@@ -54,14 +54,14 @@ void SystemInfoModule::mainLoop() {
   status.uptime_secTotal = std::stoi(std::to_string(uptime_secs));
   status.uptime_secTotal.write();
 
-  meminfo();
-  try {
-    status.maxMem = std::stoi(std::to_string(kb_main_total));
-    status.maxMem.write();
-  }
-  catch(std::exception& e) {
-    logger->sendMessage(std::string("meminfo conversion failed: ") + e.what(), logging::LogLevel::ERROR);
-  }
+//  meminfo();
+//  try {
+//    status.maxMem = std::stoi(std::to_string(kb_main_total));
+//    status.maxMem.write();
+//  }
+//  catch(std::exception& e) {
+//    logger->sendMessage(std::string("meminfo conversion failed: ") + e.what(), logging::LogLevel::ERROR);
+//  }
 
   info.ticksPerSecond = sysconf(_SC_CLK_TCK);
   for(auto it = sysInfo.ibegin(); it != sysInfo.iend(); it++) {
@@ -87,25 +87,25 @@ void SystemInfoModule::mainLoop() {
   readCPUInfo(lastInfo);
 
   while(true) {
-    meminfo();
-    try {
-      status.maxMem = std::stoi(std::to_string(kb_main_total));
-      status.freeMem = std::stoi(std::to_string(kb_main_free));
-      status.cachedMem = std::stoi(std::to_string(kb_main_cached));
-      status.usedMem = std::stoi(std::to_string(status.maxMem - status.freeMem - status.cachedMem));
-      status.maxSwap = std::stoi(std::to_string(kb_swap_total));
-      status.freeSwap = std::stoi(std::to_string(kb_swap_free));
-      status.usedSwap = std::stoi(std::to_string(status.maxSwap - status.freeSwap));
-    }
-    catch(std::exception& e) {
-      logger->sendMessage(std::string("meminfo conversion failed: ") + e.what(), logging::LogLevel::ERROR);
-    }
+//    meminfo();
+//    try {
+//      status.maxMem = std::stoi(std::to_string(kb_main_total));
+//      status.freeMem = std::stoi(std::to_string(kb_main_free));
+//      status.cachedMem = std::stoi(std::to_string(kb_main_cached));
+//      status.usedMem = std::stoi(std::to_string(status.maxMem - status.freeMem - status.cachedMem));
+//      status.maxSwap = std::stoi(std::to_string(kb_swap_total));
+//      status.freeSwap = std::stoi(std::to_string(kb_swap_free));
+//      status.usedSwap = std::stoi(std::to_string(status.maxSwap - status.freeSwap));
+//    }
+//    catch(std::exception& e) {
+//      logger->sendMessage(std::string("meminfo conversion failed: ") + e.what(), logging::LogLevel::ERROR);
+//    }
     status.memoryUsage = 1. * status.usedMem / status.maxMem * 100.;
     status.swapUsage = 1. * status.usedSwap / status.maxSwap * 100.;
 
     // get system uptime
     try {
-      uptime(&uptime_secs, &idle_secs);
+//      uptime(&uptime_secs, &idle_secs);
       //\ToDo: Use stoul once unsigned long is available
       status.uptime_secTotal = std::stoi(std::to_string(uptime_secs));
       status.uptime_day = std::stoi(std::to_string(status.uptime_secTotal / 86400));
@@ -121,7 +121,7 @@ void SystemInfoModule::mainLoop() {
 
     std::vector<double> v_tmp(3);
 
-    loadavg(&v_tmp[0], &v_tmp[1], &v_tmp[2]);
+//    loadavg(&v_tmp[0], &v_tmp[1], &v_tmp[2]);
     status.loadAvg = v_tmp;
 
     calculatePCPU();

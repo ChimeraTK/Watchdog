@@ -9,7 +9,7 @@
  *      Author: Klaus Zenker (HZDR)
  */
 
-#include <proc/readproc.h>
+//#include <proc/readproc.h>
 
 #include <iostream>
 #include <map>
@@ -33,13 +33,6 @@ namespace proc_util {
    * \return True if the process is running and registered in the \c /proc folder
    */
   bool isProcessRunning(const int& PID);
-
-  /**
-   * Read procps information of a certain process.
-   * \param PID pid of the process to be considered.
-   * \throws std::runtime_error In case no process with the given PID exists.
-   */
-  std::shared_ptr<proc_t> getInfo(const size_t& PID);
 
   /**
    * Read the number of processes that belong to the same process group id (PGID).

@@ -20,6 +20,9 @@ target_link_libraries(test_sys_stat ${PROJECT_NAME}lib
                                     ${Boost_UNIT_TEST_FRAMEWORK_LIBRARIES})
 add_test(test_sys_stat test_sys_stat)
 
+add_executable(test_libproc2 ${CMAKE_SOURCE_DIR}/test/test_libproc2.cc)
+target_link_libraries(test_libproc2 PRIVATE PkgConfig::libproc2)
+
 FILE( COPY cpuinfo_arm
            cpuinfo_amd64
       DESTINATION ${PROJECT_BINARY_DIR}/test )

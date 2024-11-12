@@ -128,12 +128,6 @@ struct ProcessInfoModule : public ctk::ApplicationModule {
    */
   void mainLoop() override;
 
-  /**
-   * Fill process information read via proc interface.
-   * \remark When changing the pidOffset to get information of another child the
-   * cpu usage value will be wrong for the first reading!
-   */
-  void FillProcInfo(const std::shared_ptr<proc_t>& info);
 };
 
 /**

@@ -1,5 +1,5 @@
+cmake_minimum_required(VERSION 3.5)
 PROJECT(watchdog-server)
-cmake_minimum_required(VERSION 2.8.12)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/Modules)
 
@@ -29,7 +29,10 @@ find_package(ChimeraTK-ApplicationCore-ServerHistoryModule 01.00 REQUIRED)
 
 find_package(Boost COMPONENTS date_time REQUIRED)
 
-find_library(procps NAMES procps REQUIRED)
+FIND_PACKAGE(PkgConfig REQUIRED)
+PKG_CHECK_MODULES(libproc2 REQUIRED IMPORTED_TARGET libproc2)
+
+find_library(procps NAMES procps)
 # Just check for procps.h although more headers are used by the watchdog
 # If that header is found assume that the dev package is installed
 include(CheckIncludeFile)
@@ -37,6 +40,8 @@ CHECK_INCLUDE_FILE( proc/procps.h HAS_PROCPS_H)
 if(NOT HAS_PROCPS_H)
   message(FATAL_ERROR "Could not find procps header file. Please install procps dev pacakge.")
 endif(NOT HAS_PROCPS_H)
+
+SET(PROCLIB PkgConfig::libproc2)
 
 include(cmake/enable_code_coverage_report.cmake)
 # enable coding style test
@@ -64,7 +69,7 @@ if(CMAKE_BUILD_TYPE MATCHES Debug)
                                            ChimeraTK::ChimeraTK-ApplicationCore-LoggingModule
                                            ChimeraTK::ChimeraTK-ApplicationCore-ServerHistoryModule
                                            ChimeraTK::ChimeraTK-ApplicationCore-MicroDAQ
-                                           procps
+                                           ${PROCLIB}
                                            )
   install(TARGETS ${PROJECT_NAME}lib LIBRARY DESTINATION lib)
 
@@ -92,7 +97,7 @@ else()
     set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS ${Adapter_LINK_FLAGS})
   endif(ADAPTER STREQUAL EPICSIOC)
   target_link_libraries(${PROJECT_NAME} ChimeraTK::SelectedAdapter
-                                        procps
+                                        ${PROCLIB}
                                         ChimeraTK::ChimeraTK-ApplicationCore 
                                         ChimeraTK::ChimeraTK-ApplicationCore-LoggingModule
                                         ChimeraTK::ChimeraTK-ApplicationCore-ServerHistoryModule
@@ -100,7 +105,7 @@ else()
 
   # XML file generation
   add_executable(${PROJECT_NAME}-xmlGenerator ${server_sources} ${library_sources})
-  target_link_libraries(${PROJECT_NAME}-xmlGenerator procps
+  target_link_libraries(${PROJECT_NAME}-xmlGenerator ${PROCLIB}
                                                      ChimeraTK::ChimeraTK-ApplicationCore 
                                                      ChimeraTK::ChimeraTK-ApplicationCore-LoggingModule
                                                      ChimeraTK::ChimeraTK-ApplicationCore-ServerHistoryModule
