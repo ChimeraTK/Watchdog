@@ -54,7 +54,7 @@ struct ProcessInfoModule : public ctk::ApplicationModule {
       /** Uptime of the system */
       ctk::ScalarPollInput<uint> sysStartTime{this, "startTime", "s", "System start time (seconds since EPOCH)"};
       ctk::ScalarPollInput<uint> sysUpTime{this, "uptimeSecTotal", "s", "Uptime of the system"};
-      ctk::ScalarPollInput<uint> maxMem{this, "maxMem", "kB", "Maximum available memory"};
+      ctk::ScalarPollInput<uint64_t> maxMem{this, "maxMem", "kB", "Maximum available memory"};
     } status{this, "status", ""};
 
     struct Info : public ctk::VariableGroup {
@@ -127,7 +127,21 @@ struct ProcessInfoModule : public ctk::ApplicationModule {
    * Application core main loop.
    */
   void mainLoop() override;
-
+#ifdef WITH_PROCPS
+  /**
+   * Fill process information read via proc interface.
+   * \remark When changing the pidOffset to get information of another child the
+   * cpu usage value will be wrong for the first reading!
+   */
+  void FillProcInfo(const std::shared_ptr<proc_t>& info);
+#else
+  /**
+   * Fill process information read via proc interface.
+   * \remark When changing the pidOffset to get information of another child the
+   * cpu usage value will be wrong for the first reading!
+   */
+  void FillProcInfo(uint* pid = nullptr);
+#endif
 };
 
 /**

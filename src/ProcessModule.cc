@@ -10,6 +10,10 @@
 
 #include "ProcessModule.h"
 
+#ifndef WITH_PROCPS
+#  include <libproc2/pids.h>
+#endif
+
 #include <signal.h>
 
 // This symbol is introduced by procps and in boost 1.71 a function likely is used!
@@ -23,7 +27,12 @@ void ProcessInfoModule::mainLoop() {
   auto group = readAnyGroup();
   while(true) {
     try {
-//      FillProcInfo(proc_util::getInfo(info.processPID));
+#ifdef WITH_PROCPS
+      FillProcInfo(proc_util::getInfo(info.processPID));
+#else
+      uint tmpPID = info.processPID;
+      FillProcInfo(&tmpPID);
+#endif
       logger->sendMessage(
           std::string("Process is running (PID: ") + std::to_string(info.processPID) + ")", logging::LogLevel::DEBUG);
     }
@@ -36,66 +45,134 @@ void ProcessInfoModule::mainLoop() {
     group.readUntil(trigger.getId());
   }
 }
+#ifdef WITH_PROCPS
+void ProcessInfoModule::FillProcInfo(const std::shared_ptr<proc_t>& infoPtr) {
+  if(infoPtr != nullptr) {
+    auto now = boost::posix_time::microsec_clock::local_time();
+    int old_time = 0;
+    try {
+      //\FixMe: Exception is thrown on server start -> find out why.
+      old_time = std::stoi(std::to_string(statistics.utime + statistics.stime + statistics.cutime + statistics.cstime));
+      statistics.utime = std::stoi(std::to_string(infoPtr->utime));
+      statistics.stime = std::stoi(std::to_string(infoPtr->stime));
+      statistics.cutime = std::stoi(std::to_string(infoPtr->cutime));
+      statistics.cstime = std::stoi(std::to_string(infoPtr->cstime));
 
-//void ProcessInfoModule::FillProcInfo(const std::shared_ptr<proc_t>& infoPtr) {
-//  if(infoPtr != nullptr) {
-//    auto now = boost::posix_time::microsec_clock::local_time();
-//    int old_time = 0;
-//    try {
-//      //\FixMe: Exception is thrown on server start -> find out why.
-//      old_time = std::stoi(std::to_string(statistics.utime + statistics.stime + statistics.cutime + statistics.cstime));
-//      statistics.utime = std::stoi(std::to_string(infoPtr->utime));
-//      statistics.stime = std::stoi(std::to_string(infoPtr->stime));
-//      statistics.cutime = std::stoi(std::to_string(infoPtr->cutime));
-//      statistics.cstime = std::stoi(std::to_string(infoPtr->cstime));
-//
-//      // info->start_time reads s since system was started
-//      int relativeStartTime = 1. * std::stoi(std::to_string(infoPtr->start_time)) / system.info.ticksPerSecond;
-//      statistics.startTime = system.status.sysStartTime + relativeStartTime;
-//      statistics.startTimeStr =
-//          boost::posix_time::to_simple_string(boost::posix_time::from_time_t(statistics.startTime));
-//      statistics.priority = std::stoi(std::to_string(infoPtr->priority));
-//      statistics.nice = std::stoi(std::to_string(infoPtr->nice));
-//      statistics.rss = std::stoi(std::to_string(infoPtr->rss));
-//      statistics.mem = std::stoi(std::to_string(infoPtr->vm_rss));
-//
-//      statistics.memoryUsage = 1. * statistics.mem / system.status.maxMem * 100.;
-//
-//      statistics.runtime = std::stoi(std::to_string(
-//          system.status.sysUpTime - std::stoi(std::to_string(infoPtr->start_time)) * 1. / system.info.ticksPerSecond));
-//    }
-//    catch(std::exception& e) {
-//      logger->sendMessage(std::string("FillProcInfo::Conversion failed: ") + e.what(), logging::LogLevel::ERROR);
-//    }
-//    // check if it is the first call after process is started (time_stamp  == not_a_date_time)
-//    if(!time_stamp.is_special()) {
-//      boost::posix_time::time_duration diff = now - time_stamp;
-//      statistics.pcpu = 1. * (statistics.utime + statistics.stime + statistics.cutime + statistics.cstime - old_time) /
-//          system.info.ticksPerSecond / (1. * diff.total_milliseconds() / 1000) * 100;
-//      statistics.avgcpu = 1. * (statistics.utime + statistics.stime + statistics.cutime + statistics.cstime) /
-//          system.info.ticksPerSecond / statistics.runtime * 100;
-//    }
-//    time_stamp = now;
-//  }
-//  else {
-//    time_stamp = boost::posix_time::not_a_date_time;
-//    statistics.utime = 0;
-//    statistics.stime = 0;
-//    statistics.cutime = 0;
-//    statistics.cstime = 0;
-//    statistics.startTime = 0;
-//    statistics.startTimeStr = "";
-//    statistics.priority = 0;
-//    statistics.nice = 0;
-//    statistics.rss = 0;
-//    statistics.pcpu = 0;
-//    statistics.avgcpu = 0;
-//    statistics.runtime = 0;
-//    statistics.mem = 0;
-//    statistics.memoryUsage = 0.;
-//  }
-//}
+      // info->start_time reads s since system was started
+      int relativeStartTime = 1. * std::stoi(std::to_string(infoPtr->start_time)) / system.info.ticksPerSecond;
+      statistics.startTime = system.status.sysStartTime + relativeStartTime;
+      statistics.startTimeStr =
+          boost::posix_time::to_simple_string(boost::posix_time::from_time_t(statistics.startTime));
+      statistics.priority = std::stoi(std::to_string(infoPtr->priority));
+      statistics.nice = std::stoi(std::to_string(infoPtr->nice));
+      statistics.rss = std::stoi(std::to_string(infoPtr->rss));
+      statistics.mem = std::stoi(std::to_string(infoPtr->vm_rss));
 
+      statistics.memoryUsage = 1. * statistics.mem / system.status.maxMem * 100.;
+
+      statistics.runtime = std::stoi(std::to_string(
+          system.status.sysUpTime - std::stoi(std::to_string(infoPtr->start_time)) * 1. / system.info.ticksPerSecond));
+    }
+    catch(std::exception& e) {
+      logger->sendMessage(std::string("FillProcInfo::Conversion failed: ") + e.what(), logging::LogLevel::ERROR);
+    }
+    // check if it is the first call after process is started (time_stamp  == not_a_date_time)
+    if(!time_stamp.is_special()) {
+      boost::posix_time::time_duration diff = now - time_stamp;
+      statistics.pcpu = 1. * (statistics.utime + statistics.stime + statistics.cutime + statistics.cstime - old_time) /
+          system.info.ticksPerSecond / (1. * diff.total_milliseconds() / 1000) * 100;
+      statistics.avgcpu = 1. * (statistics.utime + statistics.stime + statistics.cutime + statistics.cstime) /
+          system.info.ticksPerSecond / statistics.runtime * 100;
+    }
+    time_stamp = now;
+  }
+  else {
+    time_stamp = boost::posix_time::not_a_date_time;
+    statistics.utime = 0;
+    statistics.stime = 0;
+    statistics.cutime = 0;
+    statistics.cstime = 0;
+    statistics.startTime = 0;
+    statistics.startTimeStr = "";
+    statistics.priority = 0;
+    statistics.nice = 0;
+    statistics.rss = 0;
+    statistics.pcpu = 0;
+    statistics.avgcpu = 0;
+    statistics.runtime = 0;
+    statistics.mem = 0;
+    statistics.memoryUsage = 0.;
+  }
+}
+#else
+void ProcessInfoModule::FillProcInfo(uint* pid) {
+  if(pid) {
+    auto now = boost::posix_time::microsec_clock::local_time();
+    int old_time =
+        std::stoi(std::to_string(statistics.utime + statistics.stime + statistics.cutime + statistics.cstime));
+    struct pids_info* infoptr = nullptr;
+    struct pids_fetch* stack;
+    fatal_proc_unmounted(infoptr, 0);
+    if(!infoptr) {
+      ctk::runtime_error("FillProcInfo::Failed to access proc data.");
+    }
+    enum pids_item Items[] = {PIDS_ID_PID,
+        PIDS_TICS_USER,     // utime
+        PIDS_TICS_SYSTEM,   // stime
+        PIDS_TICS_USER_C,   // utime+cutime
+        PIDS_TICS_SYSTEM_C, // stime+cstime
+        PIDS_RSS, PIDS_NICE, PIDS_PRIORITY, PIDS_TIME_START, PIDS_TIME_ELAPSED, PIDS_MEM_RES};
+
+    if(procps_pids_new(&infoptr, Items, 11) < 0) return;
+    stack = procps_pids_select(infoptr, pid, 1, PIDS_SELECT_PID);
+    if(stack->counts->total < 1 || PIDS_VAL(0, s_int, stack->stacks[0], info) != (int)(*pid)) {
+      logger->sendMessage(
+          std::string("FillProcInfo::Failed to read data for PID: ") + std::to_string(*pid), logging::LogLevel::ERROR);
+      return;
+    }
+    statistics.utime = PIDS_VAL(1, ull_int, stack->stacks[0], info);
+    statistics.stime = PIDS_VAL(2, ull_int, stack->stacks[0], info);
+    statistics.cutime = PIDS_VAL(3, ull_int, stack->stacks[0], info) - (uint)statistics.utime;
+    statistics.cstime = PIDS_VAL(4, ull_int, stack->stacks[0], info);
+    statistics.rss = PIDS_VAL(5, ul_int, stack->stacks[0], info);
+    statistics.nice = PIDS_VAL(6, s_int, stack->stacks[0], info);
+    statistics.priority = PIDS_VAL(7, s_int, stack->stacks[0], info);
+    statistics.startTime = system.status.sysStartTime + (uint)PIDS_VAL(8, real, stack->stacks[0], info);
+    statistics.startTimeStr = boost::posix_time::to_simple_string(boost::posix_time::from_time_t(statistics.startTime));
+
+    statistics.runtime = (uint)PIDS_VAL(9, real, stack->stacks[0], info);
+    statistics.mem = PIDS_VAL(10, ul_int, stack->stacks[0], info);
+    statistics.memoryUsage = 1. * statistics.mem / system.status.maxMem * 100.;
+    procps_pids_unref(&infoptr);
+    // check if it is the first call after process is started (time_stamp  == not_a_date_time)
+    if(!time_stamp.is_special()) {
+      boost::posix_time::time_duration diff = now - time_stamp;
+      statistics.pcpu = 1. * (statistics.utime + statistics.stime + statistics.cutime + statistics.cstime - old_time) /
+          system.info.ticksPerSecond / (1. * diff.total_milliseconds() / 1000) * 100;
+      statistics.avgcpu = 1. * (statistics.utime + statistics.stime + statistics.cutime + statistics.cstime) /
+          system.info.ticksPerSecond / statistics.runtime * 100;
+    }
+    time_stamp = now;
+  }
+  else {
+    time_stamp = boost::posix_time::not_a_date_time;
+    statistics.utime = 0;
+    statistics.stime = 0;
+    statistics.cutime = 0;
+    statistics.cstime = 0;
+    statistics.startTime = 0;
+    statistics.startTimeStr = "";
+    statistics.priority = 0;
+    statistics.nice = 0;
+    statistics.rss = 0;
+    statistics.pcpu = 0;
+    statistics.avgcpu = 0;
+    statistics.runtime = 0;
+    statistics.mem = 0;
+    statistics.memoryUsage = 0.;
+  }
+}
+#endif
 void ProcessControlModule::mainLoop() {
   std::stringstream handlerMessage;
   logger->sendMessage(std::string("New ProcessModule started!"), logging::LogLevel::INFO);
@@ -146,7 +223,8 @@ void ProcessControlModule::mainLoop() {
               std::to_string(config.maxFails) + ", Restarts: " + std::to_string(status.nRestarts) + "/" +
               std::to_string(config.maxRestarts),
           logging::LogLevel::DEBUG);
-//      if(_historyOn) FillProcInfo(nullptr);
+
+      if(_historyOn) FillProcInfo(nullptr);
       writeAll();
       group.readUntil(trigger.getId());
       continue;
@@ -207,7 +285,7 @@ void ProcessControlModule::mainLoop() {
           _restartRequired = false;
         }
         // fill 0 since the process is started here and not running yet
-//        if(_historyOn) FillProcInfo(nullptr);
+        if(_historyOn) FillProcInfo(nullptr);
         try {
           logger->sendMessage(
               std::string("Trying to start a new process: ") + (std::string)config.path + "/" + (std::string)config.cmd,
@@ -232,14 +310,26 @@ void ProcessControlModule::mainLoop() {
         logger->sendMessage(std::string("Process is running...") + std::to_string(status.isRunning) +
                 " PID: " + std::to_string(info.processPID),
             logging::LogLevel::DEBUG);
-//        try {
-//          FillProcInfo(proc_util::getInfo(info.processPID + config.pidOffset));
-//        }
-//        catch(std::runtime_error& e) {
-//          logger->sendMessage(std::string("Failed to read information for process ") +
-//                  std::to_string(info.processPID + config.pidOffset) + ". Check if pidOffset is set correctly!",
-//              logging::LogLevel::ERROR);
-//        }
+#ifdef WITH_PROCPS
+        try {
+          FillProcInfo(proc_util::getInfo(info.processPID + config.pidOffset));
+        }
+        catch(std::runtime_error& e) {
+          logger->sendMessage(std::string("Failed to read information for process ") +
+                  std::to_string(info.processPID + config.pidOffset) + ". Check if pidOffset is set correctly!",
+              logging::LogLevel::ERROR);
+        }
+#else
+        try {
+          uint tmpPID = info.processPID + config.pidOffset;
+          FillProcInfo(&tmpPID);
+        }
+        catch(std::runtime_error& e) {
+          logger->sendMessage(std::string("Failed to read information for process ") +
+                  std::to_string(info.processPID + config.pidOffset) + ". Check if pidOffset is set correctly!",
+              logging::LogLevel::ERROR);
+        }
+#endif
       }
     }
     else {
@@ -250,7 +340,7 @@ void ProcessControlModule::mainLoop() {
         logger->sendMessage(
             std::string("Process Running: ") + std::to_string(status.isRunning) + ". Process is not running...OK",
             logging::LogLevel::DEBUG);
-//        if(_historyOn) FillProcInfo(nullptr);
+        if(_historyOn) FillProcInfo(nullptr);
       }
       else {
         // process should not run and is running
@@ -301,7 +391,7 @@ void ProcessControlModule::SetOffline() {
   processLogfile = "";
   processLogfile.write();
   */
-//  FillProcInfo(nullptr);
+  FillProcInfo(nullptr);
 }
 
 void ProcessControlModule::Failed() {

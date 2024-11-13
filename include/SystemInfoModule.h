@@ -87,13 +87,13 @@ class SystemInfoModule : public ctk::ApplicationModule {
     using ctk::VariableGroup::VariableGroup;
 
     //\todo: Implement the following as unsigned long!
-    ctk::ScalarOutput<uint> maxMem{this, "maxMem", "kB", "Maximum available memory", {"ProcessModuleInput"}};
-    ctk::ScalarOutput<uint> freeMem{this, "freeMem", "kB", "Free memory", {"DAQ", "history"}};
-    ctk::ScalarOutput<uint> cachedMem{this, "cachedMem", "kB", "Cached memory"};
-    ctk::ScalarOutput<uint> usedMem{this, "usedMem", "kB", "Used memory", {"DAQ", "history"}};
-    ctk::ScalarOutput<uint> maxSwap{this, "maxSwap", "kB", "Swap size"};
-    ctk::ScalarOutput<uint> freeSwap{this, "freeSwap", "kB", "Free swap", {"DAQ"}};
-    ctk::ScalarOutput<uint> usedSwap{this, "usedSwap", "kB", "Used swap", {"DAQ", "history"}};
+    ctk::ScalarOutput<uint64_t> maxMem{this, "maxMem", "kB", "Maximum available memory", {"ProcessModuleInput"}};
+    ctk::ScalarOutput<uint64_t> freeMem{this, "freeMem", "kB", "Free memory", {"DAQ", "history"}};
+    ctk::ScalarOutput<uint64_t> cachedMem{this, "cachedMem", "kB", "Cached memory"};
+    ctk::ScalarOutput<uint64_t> usedMem{this, "usedMem", "kB", "Used memory", {"DAQ", "history"}};
+    ctk::ScalarOutput<uint64_t> maxSwap{this, "maxSwap", "kB", "Swap size"};
+    ctk::ScalarOutput<uint64_t> freeSwap{this, "freeSwap", "kB", "Free swap", {"DAQ"}};
+    ctk::ScalarOutput<uint64_t> usedSwap{this, "usedSwap", "kB", "Used swap", {"DAQ", "history"}};
     ctk::ScalarOutput<double> memoryUsage{this, "memoryUsage", "%", "Relative memory usage", {"DAQ", "history"}};
     ctk::ScalarOutput<double> swapUsage{this, "swapUsage", "%", "Relative swap usage", {"DAQ", "history"}};
     //\todo: Implement the following as long!

@@ -30,18 +30,20 @@ find_package(ChimeraTK-ApplicationCore-ServerHistoryModule 01.00 REQUIRED)
 find_package(Boost COMPONENTS date_time REQUIRED)
 
 FIND_PACKAGE(PkgConfig REQUIRED)
-PKG_CHECK_MODULES(libproc2 REQUIRED IMPORTED_TARGET libproc2)
-
-find_library(procps NAMES procps)
-# Just check for procps.h although more headers are used by the watchdog
-# If that header is found assume that the dev package is installed
-include(CheckIncludeFile)
-CHECK_INCLUDE_FILE( proc/procps.h HAS_PROCPS_H)
-if(NOT HAS_PROCPS_H)
-  message(FATAL_ERROR "Could not find procps header file. Please install procps dev pacakge.")
-endif(NOT HAS_PROCPS_H)
-
-SET(PROCLIB PkgConfig::libproc2)
+PKG_CHECK_MODULES(libproc2 IMPORTED_TARGET libproc2)
+if(libproc2_FOUND)
+  SET(PROCLIB PkgConfig::libproc2)
+else()
+  find_library(procps NAMES procps REQUIRED)
+  # Just check for procps.h although more headers are used by the watchdog
+  # If that header is found assume that the dev package is installed
+  include(CheckIncludeFile)
+  CHECK_INCLUDE_FILE( proc/procps.h HAS_PROCPS_H)
+  if(NOT HAS_PROCPS_H)
+    message(FATAL_ERROR "Could not find procps header file. Please install procps dev pacakge.")
+  endif(NOT HAS_PROCPS_H)
+  SET(PROCLIB procps)
+endif(libproc2_FOUND) 
 
 include(cmake/enable_code_coverage_report.cmake)
 # enable coding style test

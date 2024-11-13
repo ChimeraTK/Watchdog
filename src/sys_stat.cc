@@ -9,10 +9,12 @@
  */
 
 #include "sys_stat.h"
-
-//#include <proc/readproc.h>
-//#include <proc/sysinfo.h>
-
+#ifdef WITH_PROCPS
+#  include <proc/readproc.h>
+#  include <proc/sysinfo.h>
+#else
+#  include <libproc2/pids.h>
+#endif
 #include <boost/algorithm/string.hpp>
 
 #include <algorithm>
@@ -28,56 +30,95 @@ namespace proc_util {
   std::mutex proc_mutex;
 
   bool isProcessRunning(const int& PID) {
-//    std::lock_guard<std::mutex> lock(proc_mutex);
-//    pid_t pid = PID;
-//    PROCTAB* proc = openproc(PROC_FILLSTAT | PROC_PID, &pid, NULL);
-//    proc_t* proc_info = readproc(proc, NULL);
-//    // Check in addition if the tid is correct. It happened that the pointer was not NULL but the process was dead.
-//    if(proc_info == NULL || proc_info->tid != pid) {
-//      freeproc(proc_info);
-//      closeproc(proc);
-//      return false;
-//    }
-//    freeproc(proc_info);
-//    closeproc(proc);
+#ifdef WITH_PROCPS
+    std::lock_guard<std::mutex> lock(proc_mutex);
+    pid_t pid = PID;
+    PROCTAB* proc = openproc(PROC_FILLSTAT | PROC_PID, &pid, NULL);
+    proc_t* proc_info = readproc(proc, NULL);
+    // Check in addition if the tid is correct. It happened that the pointer was not NULL but the process was dead.
+    if(proc_info == NULL || proc_info->tid != pid) {
+      freeproc(proc_info);
+      closeproc(proc);
+      return false;
+    }
+    freeproc(proc_info);
+    closeproc(proc);
+#else
+    struct pids_info* infoptr = nullptr;
+    struct pids_fetch* stack;
+    fatal_proc_unmounted(infoptr, 0);
+    if(!infoptr) {
+      std::runtime_error("proc_util::Failed to access proc data.");
+    }
+    enum pids_item Items[] = {PIDS_ID_PID};
+    if(procps_pids_new(&infoptr, Items, 1) < 0) return false;
+    uint tempPID = PID;
+    stack = procps_pids_select(infoptr, &tempPID, 2, PIDS_SELECT_PID);
+    if(stack->counts->total < 1 || PIDS_VAL(0, s_int, stack->stacks[0], info) != PID) {
+      return false;
+    }
+    else {
+      return true;
+    }
+#endif
     return true;
   }
 
   size_t getNChilds(const size_t& PGID, std::ostream& os) {
-//    std::lock_guard<std::mutex> lock(proc_mutex);
-//    PROCTAB* proc = openproc(PROC_FILLMEM | PROC_FILLSTAT | PROC_FILLSTATUS);
-//    proc_t* proc_info;
     size_t nChild = 0;
-//    while((proc_info = readproc(proc, NULL)) != NULL) {
-//      if(PGID == (unsigned)proc_info->pgrp && PGID != (unsigned)proc_info->tid) {
-//        os << "Found child for PGID: " << PGID << " with PID: " << proc_info->tid << std::endl;
-//        nChild++;
-//      }
-//      freeproc(proc_info);
-//    }
-//    closeproc(proc);
+#ifdef WITH_PROCPS
+    std::lock_guard<std::mutex> lock(proc_mutex);
+    PROCTAB* proc = openproc(PROC_FILLMEM | PROC_FILLSTAT | PROC_FILLSTATUS);
+    proc_t* proc_info;
+
+    while((proc_info = readproc(proc, NULL)) != NULL) {
+      if(PGID == (unsigned)proc_info->pgrp && PGID != (unsigned)proc_info->tid) {
+        os << "Found child for PGID: " << PGID << " with PID: " << proc_info->tid << std::endl;
+        nChild++;
+      }
+      freeproc(proc_info);
+    }
+    closeproc(proc);
+#else
+    struct pids_info* infoptr = nullptr;
+    struct pids_stack* stack;
+    stack = fatal_proc_unmounted(infoptr, 0);
+    enum pids_item Items[] = {PIDS_ID_PID, PIDS_ID_PGRP};
+    if(procps_pids_new(&infoptr, Items, 2) < 0) {
+      std::runtime_error("Failed to identify nChilds.");
+    }
+    while((stack = procps_pids_get(infoptr, PIDS_FETCH_TASKS_ONLY))) {
+      if(PGID == (size_t)PIDS_VAL(1, s_int, stack, info) && PGID != (size_t)PIDS_VAL(0, s_int, stack, info)) {
+        os << "Found child for PGID: " << PGID << " with PID: " << PIDS_VAL(0, s_int, stack, info) << std::endl;
+        nChild++;
+      }
+    }
+    procps_pids_unref(&infoptr);
+#endif
     return nChild;
   }
 
-//  std::shared_ptr<proc_t> getInfo(const size_t& PID) {
-//    std::lock_guard<std::mutex> lock(proc_mutex);
-//    pid_t pid = PID;
-//    PROCTAB* proc = openproc(PROC_FILLMEM | PROC_FILLSTAT | PROC_FILLSTATUS | PROC_PID, &pid, NULL);
-//    proc_t* proc_info;
-//    std::shared_ptr<proc_t> result(nullptr);
-//    proc_info = readproc(proc, NULL);
-//    if(proc_info == NULL) {
-//      freeproc(proc_info);
-//      closeproc(proc);
-//      std::stringstream ss;
-//      ss << "Process " << PID << " not found when trying to read process information.";
-//      throw std::runtime_error(ss.str());
-//    }
-//    result.reset(new proc_t(*proc_info));
-//    freeproc(proc_info);
-//    closeproc(proc);
-//    return result;
-//  }
+#ifdef WITH_PROCPS
+  std::shared_ptr<proc_t> getInfo(const size_t& PID) {
+    std::lock_guard<std::mutex> lock(proc_mutex);
+    pid_t pid = PID;
+    PROCTAB* proc = openproc(PROC_FILLMEM | PROC_FILLSTAT | PROC_FILLSTATUS | PROC_PID, &pid, NULL);
+    proc_t* proc_info;
+    std::shared_ptr<proc_t> result(nullptr);
+    proc_info = readproc(proc, NULL);
+    if(proc_info == NULL) {
+      freeproc(proc_info);
+      closeproc(proc);
+      std::stringstream ss;
+      ss << "Process " << PID << " not found when trying to read process information.";
+      throw std::runtime_error(ss.str());
+    }
+    result.reset(new proc_t(*proc_info));
+    freeproc(proc_info);
+    closeproc(proc);
+    return result;
+  }
+#endif
 } // namespace proc_util
 
 std::string space2underscore(std::string text) {

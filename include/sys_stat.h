@@ -9,8 +9,9 @@
  *      Author: Klaus Zenker (HZDR)
  */
 
-//#include <proc/readproc.h>
-
+#ifdef WITH_PROCPS
+#  include <proc/readproc.h>
+#endif
 #include <iostream>
 #include <map>
 #include <memory>
@@ -34,6 +35,14 @@ namespace proc_util {
    */
   bool isProcessRunning(const int& PID);
 
+#ifdef WITH_PROCPS
+  /**
+   * Read procps information of a certain process.
+   * \param PID pid of the process to be considered.
+   * \throws std::runtime_error In case no process with the given PID exists.
+   */
+  std::shared_ptr<proc_t> getInfo(const size_t& PID);
+#endif
   /**
    * Read the number of processes that belong to the same process group id (PGID).
    * \param PGID The process group id used to look for processes
