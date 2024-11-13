@@ -73,6 +73,10 @@ if(CMAKE_BUILD_TYPE MATCHES Debug)
                                            ChimeraTK::ChimeraTK-ApplicationCore-MicroDAQ
                                            ${PROCLIB}
                                            )
+  if(NOT libproc2_FOUND)
+    set_target_properties(${PROJECT_NAME}lib PROPERTIES COMPILE_FLAGS "-DWITH_PROCPS")
+  endif(NOT libproc2_FOUND)
+
   install(TARGETS ${PROJECT_NAME}lib LIBRARY DESTINATION lib)
 
   # main server executable
@@ -114,6 +118,11 @@ else()
                                                      ChimeraTK::ChimeraTK-ApplicationCore-MicroDAQ)
 
   set_target_properties(${PROJECT_NAME}-xmlGenerator PROPERTIES COMPILE_FLAGS "-DGENERATE_XML")
+  if(NOT libproc2_FOUND)
+    set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS "-DWITH_PROCPS")
+    set_target_properties(${PROJECT_NAME}-xmlGenerator PROPERTIES COMPILE_FLAGS "-DWITH_PROCPS -DGENERATE_XML")
+  endif(NOT libproc2_FOUND)
+
 endif(CMAKE_BUILD_TYPE MATCHES Debug)
 
 # Set RPATH to find root dependencies automatically
