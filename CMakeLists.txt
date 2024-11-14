@@ -73,10 +73,6 @@ if(CMAKE_BUILD_TYPE MATCHES Debug)
                                            ChimeraTK::ChimeraTK-ApplicationCore-MicroDAQ
                                            ${PROCLIB}
                                            )
-  if(NOT libproc2_FOUND)
-    set_target_properties(${PROJECT_NAME}lib PROPERTIES COMPILE_FLAGS "-DWITH_PROCPS")
-  endif(NOT libproc2_FOUND)
-
   install(TARGETS ${PROJECT_NAME}lib LIBRARY DESTINATION lib)
 
   # main server executable
@@ -89,7 +85,14 @@ if(CMAKE_BUILD_TYPE MATCHES Debug)
   add_executable(${PROJECT_NAME}-xmlGenerator ${server_sources})
   target_link_libraries(${PROJECT_NAME}-xmlGenerator ChimeraTK::ChimeraTK-ApplicationCore
                                                      ${PROJECT_NAME}lib)
-  set_target_properties(${PROJECT_NAME}-xmlGenerator PROPERTIES COMPILE_FLAGS "-DGENERATE_XML")
+  if(libproc2_FOUND)
+    set_target_properties(${PROJECT_NAME}-xmlGenerator PROPERTIES COMPILE_FLAGS "-DGENERATE_XML")
+  else()
+    set_target_properties(${PROJECT_NAME}lib PROPERTIES COMPILE_FLAGS "-DWITH_PROCPS")
+    set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS "-DWITH_PROCPS")
+    set_target_properties(${PROJECT_NAME}-xmlGenerator PROPERTIES COMPILE_FLAGS "-DGENERATE_XML -DWITH_PROCPS")
+  endif(libproc2_FOUND)
+
 
   if( ENABLE_TESTING )
     ENABLE_TESTING()
