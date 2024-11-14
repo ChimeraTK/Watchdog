@@ -27,10 +27,9 @@
 #include <string>
 
 namespace proc_util {
-  std::mutex proc_mutex;
-
-  bool isProcessRunning(const int& PID) {
 #ifdef WITH_PROCPS
+  std::mutex proc_mutex;
+  bool isProcessRunning(const int& PID) {
     std::lock_guard<std::mutex> lock(proc_mutex);
     pid_t pid = PID;
     PROCTAB* proc = openproc(PROC_FILLSTAT | PROC_PID, &pid, NULL);
@@ -43,32 +42,11 @@ namespace proc_util {
     }
     freeproc(proc_info);
     closeproc(proc);
-#else
-    struct pids_info* infoptr = nullptr;
-    struct pids_fetch* stack;
-    fatal_proc_unmounted(infoptr, 0);
-    if(!infoptr) {
-      std::runtime_error("proc_util::Failed to access proc data.");
-    }
-    enum pids_item Items[] = {PIDS_ID_PID};
-    if(procps_pids_new(&infoptr, Items, 1) < 0) return false;
-    uint tempPID = PID;
-    stack = procps_pids_select(infoptr, &tempPID, 2, PIDS_SELECT_PID);
-    if(stack->counts->total < 1 || PIDS_VAL(0, s_int, stack->stacks[0], info) != PID) {
-      procps_pids_unref(&infoptr);
-      return false;
-    }
-    else {
-      procps_pids_unref(&infoptr);
-      return true;
-    }
-#endif
     return true;
   }
 
   size_t getNChilds(const size_t& PGID, std::ostream& os) {
     size_t nChild = 0;
-#ifdef WITH_PROCPS
     std::lock_guard<std::mutex> lock(proc_mutex);
     PROCTAB* proc = openproc(PROC_FILLMEM | PROC_FILLSTAT | PROC_FILLSTATUS);
     proc_t* proc_info;
@@ -81,26 +59,9 @@ namespace proc_util {
       freeproc(proc_info);
     }
     closeproc(proc);
-#else
-    struct pids_info* infoptr = nullptr;
-    struct pids_stack* stack;
-    stack = fatal_proc_unmounted(infoptr, 0);
-    enum pids_item Items[] = {PIDS_ID_PID, PIDS_ID_PGRP};
-    if(procps_pids_new(&infoptr, Items, 2) < 0) {
-      std::runtime_error("Failed to identify nChilds.");
-    }
-    while((stack = procps_pids_get(infoptr, PIDS_FETCH_TASKS_ONLY))) {
-      if(PGID == (size_t)PIDS_VAL(1, s_int, stack, info) && PGID != (size_t)PIDS_VAL(0, s_int, stack, info)) {
-        os << "Found child for PGID: " << PGID << " with PID: " << PIDS_VAL(0, s_int, stack, info) << std::endl;
-        nChild++;
-      }
-    }
-    procps_pids_unref(&infoptr);
-#endif
     return nChild;
   }
 
-#ifdef WITH_PROCPS
   std::shared_ptr<proc_t> getInfo(const size_t& PID) {
     std::lock_guard<std::mutex> lock(proc_mutex);
     pid_t pid = PID;
@@ -119,6 +80,25 @@ namespace proc_util {
     freeproc(proc_info);
     closeproc(proc);
     return result;
+  }
+#else
+  bool isProcessRunning(const int& PID, pids_info* infoptr) {
+    struct pids_fetch* stack;
+    uint tempPID = PID;
+    stack = procps_pids_select(infoptr, &tempPID, 2, PIDS_SELECT_PID);
+    return !(stack->counts->total < 1 || PIDS_VAL(0, s_int, stack->stacks[0], info) != PID);
+  }
+
+  size_t getNChilds(const size_t& PGID, pids_info* infoptr, std::ostream& os) {
+    size_t nChild = 0;
+    struct pids_stack* stack;
+    while((stack = procps_pids_get(infoptr, PIDS_FETCH_TASKS_ONLY))) {
+      if(PGID == (size_t)PIDS_VAL(1, s_int, stack, info) && PGID != (size_t)PIDS_VAL(0, s_int, stack, info)) {
+        os << "Found child for PGID: " << PGID << " with PID: " << PIDS_VAL(0, s_int, stack, info) << std::endl;
+        nChild++;
+      }
+    }
+    return nChild;
   }
 #endif
 } // namespace proc_util

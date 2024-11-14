@@ -11,6 +11,8 @@
 
 #ifdef WITH_PROCPS
 #  include <proc/readproc.h>
+#else
+#  include <libproc2/pids.h>
 #endif
 #include <iostream>
 #include <map>
@@ -27,6 +29,7 @@
 namespace proc_util {
   extern std::mutex proc_mutex;
 
+#ifdef WITH_PROCPS
   /**
    * Use system folder \c /proc to search for a process with the given process ID.
    * If a directory with the given PID is found the process is running.
@@ -35,20 +38,38 @@ namespace proc_util {
    */
   bool isProcessRunning(const int& PID);
 
-#ifdef WITH_PROCPS
   /**
    * Read procps information of a certain process.
    * \param PID pid of the process to be considered.
    * \throws std::runtime_error In case no process with the given PID exists.
    */
   std::shared_ptr<proc_t> getInfo(const size_t& PID);
-#endif
+
   /**
    * Read the number of processes that belong to the same process group id (PGID).
    * \param PGID The process group id used to look for processes
    * \param os Stream used to print messages.
    */
   size_t getNChilds(const size_t& PGID, std::ostream& os = std::cout);
+#else
+  /**
+   * Use system folder \c /proc to search for a process with the given process ID.
+   * If a directory with the given PID is found the process is running.
+   * \param PID Process ID to look for
+   * \param infoptr Expected is a prepared info pointer that has two entries: PIDS_ID_PID, PIDS_ID_PGRP
+   * \return True if the process is running and registered in the \c /proc folder
+   */
+  bool isProcessRunning(const int& PID, pids_info* infoptr);
+
+  /**
+   * Read the number of processes that belong to the same process group id (PGID).
+   * \param PGID The process group id used to look for processes
+   * \param infoptr Expected is a prepared info pointer that has two entries: PIDS_ID_PID, PIDS_ID_PGRP
+   * \param os Stream used to print messages.
+   */
+  size_t getNChilds(const size_t& PGID, pids_info* infoptr, std::ostream& os = std::cout);
+#endif
+
 } // namespace proc_util
 
 /**

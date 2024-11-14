@@ -45,6 +45,7 @@ void ProcessHandler::setupHandler() {
   }
 }
 
+#ifdef WITH_PROCPS
 ProcessHandler::ProcessHandler(const std::string& _PIDFileName, const bool _deletePIDFile, int& _PID,
     std::ostream& _stream, const std::string& _name)
 : pid(-1), pidFile("/tmp/" + _PIDFileName + ".PID"), deletePIDFile(_deletePIDFile), signum(SIGINT), os(_stream),
@@ -63,12 +64,41 @@ ProcessHandler::ProcessHandler(
 : pid(-1), pidFile("/tmp/" + _PIDFileName + ".PID"), deletePIDFile(_deletePIDFile), signum(SIGINT), os(_stream),
   log(logging::LogLevel::DEBUG), name(_name + "/ProcessHandler: "), connected(true), killTimeout(1) {}
 
+#else
+ProcessHandler::ProcessHandler(const std::string& _PIDFileName, pids_info* _infoptr, const bool _deletePIDFile,
+    int& _PID, std::ostream& _stream, const std::string& _name)
+: pid(-1), pidFile("/tmp/" + _PIDFileName + ".PID"), deletePIDFile(_deletePIDFile), signum(SIGINT), os(_stream),
+  log(logging::LogLevel::DEBUG), name(_name + "/ProcessHandler: "), connected(true), killTimeout(1), infoptr(_infoptr) {
+  _PID = -1;
+  if(readTempPID(_PID)) {
+    if(isProcessRunningWrapper(_PID))
+      pid = _PID;
+    else
+      _PID = -1;
+  }
+}
+
+ProcessHandler::ProcessHandler(const std::string& _PIDFileName, pids_info* _infoptr, const bool _deletePIDFile,
+    std::ostream& _stream, const std::string& _name)
+: pid(-1), pidFile("/tmp/" + _PIDFileName + ".PID"), deletePIDFile(_deletePIDFile), signum(SIGINT), os(_stream),
+  log(logging::LogLevel::DEBUG), name(_name + "/ProcessHandler: "), connected(true), killTimeout(1), infoptr(_infoptr) {
+}
+#endif
+
 ProcessHandler::~ProcessHandler() {
   if(connected) cleanup();
 }
 
+bool ProcessHandler::isProcessRunningWrapper(const int& _pid) {
+#ifdef WITH_PROCPS
+  return proc_util::isProcessRunning(_pid);
+#else
+  return proc_util::isProcessRunning(_pid, infoptr);
+#endif
+}
+
 void ProcessHandler::cleanup() {
-  if(pid > 0 && proc_util::isProcessRunning(pid)) {
+  if(pid > 0 && isProcessRunningWrapper(pid)) {
     if(log == logging::LogLevel::DEBUG) {
       os << logging::LogLevel::DEBUG << name << logging::getTime() << "Going to kill (" << signum
          << ") process in the destructor of ProcessHandler for process: " << pid << std::endl;
@@ -84,7 +114,7 @@ void ProcessHandler::cleanup() {
     }
     for(size_t i = 0; i < killTimeout; i++) {
       sleep(1);
-      if(!proc_util::isProcessRunning(pid)) {
+      if(!isProcessRunningWrapper(pid)) {
         running = false;
         break;
       }
@@ -97,7 +127,7 @@ void ProcessHandler::cleanup() {
       }
       kill(-pid, SIGKILL);
       usleep(200000);
-      if(proc_util::isProcessRunning(pid)) {
+      if(isProcessRunningWrapper(pid)) {
         os << logging::LogLevel::ERROR << name << logging::getTime()
            << "When cleaning up the ProcessHandler the process " << pid
            << " could not be stopped. Even using signal SIGKILL!" << std::endl;
@@ -135,7 +165,7 @@ size_t ProcessHandler::startProcess(const std::string& path, const std::string& 
     throw std::runtime_error("Path or command not set before starting a process!");
   }
   // process could be stopped even if it was present when the ProcessHandler was constructed.
-  if(pid > 0 && proc_util::isProcessRunning(pid)) {
+  if(pid > 0 && isProcessRunningWrapper(pid)) {
     if(log <= logging::LogLevel::ERROR) {
       os << logging::LogLevel::ERROR << name << logging::getTime()
          << "There is still a process running that was not cleaned up! I will do a cleanup now." << std::endl;

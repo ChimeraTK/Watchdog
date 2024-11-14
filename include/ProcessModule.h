@@ -29,8 +29,7 @@ namespace ctk = ChimeraTK;
  */
 struct ProcessInfoModule : public ctk::ApplicationModule {
   ProcessInfoModule(ctk::ModuleGroup* owner, const std::string& name, const std::string& description,
-      const std::unordered_set<std::string>& tags = {}, const std::string& pathToTrigger = "/Trigger/tick")
-  : ctk::ApplicationModule(owner, name, description, tags), trigger(this, pathToTrigger, "", "Trigger input"){};
+      const std::unordered_set<std::string>& tags = {}, const std::string& pathToTrigger = "/Trigger/tick");
 
   ctk::ScalarPushInput<uint64_t> trigger;
 
@@ -141,6 +140,8 @@ struct ProcessInfoModule : public ctk::ApplicationModule {
    * cpu usage value will be wrong for the first reading!
    */
   void FillProcInfo(uint* pid = nullptr);
+  struct pids_info* infoptr{nullptr};
+  struct pids_info* infoptrPID{nullptr};
 #endif
 };
 
