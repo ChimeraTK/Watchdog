@@ -23,6 +23,8 @@ add_test(test_sys_stat test_sys_stat)
 if(libproc2_FOUND)
 add_executable(test_libproc2 ${CMAKE_SOURCE_DIR}/test/test_libproc2.cc)
 target_link_libraries(test_libproc2 PRIVATE PkgConfig::libproc2)
+else()
+set_target_properties(test_procReader PROPERTIES COMPILE_FLAGS "-DWITH_PROCPS")
 endif(libproc2_FOUND)
 
 FILE( COPY cpuinfo_arm
