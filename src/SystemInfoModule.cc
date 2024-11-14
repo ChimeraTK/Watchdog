@@ -17,6 +17,7 @@
 #else
 #  include "libproc2/meminfo.h"
 #  include "libproc2/misc.h"
+#  include "libproc2/stat.h"
 #endif
 #include <sys/vfs.h>
 
@@ -41,8 +42,15 @@ SystemInfoModule::SystemInfoModule(ctk::ModuleGroup* owner, const std::string& n
   }
   status.cpu_use = std::make_unique<ctk::ArrayOutput<double>>(&status, "cpuUsage", "%", sysInfo.getNCpu(),
       "CPU usage for each processor", std::unordered_set<std::string>{"history"});
+#ifdef WITH_PROCPS
   //  // add 1 since cpuTotal should be added too
   lastInfo = std::vector<cpu>(sysInfo.getNCpu() + 1);
+#else
+  procps_stat_new(&infoptr);
+  enum stat_item items[] = {STAT_TIC_DELTA_USER, STAT_TIC_DELTA_NICE, STAT_TIC_DELTA_SYSTEM, STAT_TIC_DELTA_IDLE};
+  // read once to get delta later on
+  procps_stat_reap(infoptr, STAT_REAP_CPUS_ONLY, items, 4);
+#endif
 }
 
 void SystemInfoModule::mainLoop() {
@@ -71,39 +79,42 @@ void SystemInfoModule::mainLoop() {
   catch(std::exception& e) {
     logger->sendMessage(std::string("meminfo conversion failed: ") + e.what(), logging::LogLevel::ERROR);
   }
+  info.ticksPerSecond = sysconf(_SC_CLK_TCK);
 #else
-  struct meminfo_info* infoptr = nullptr;
+  struct meminfo_info* meminfoptr = nullptr;
   struct meminfo_stack* stack;
 
   enum meminfo_item items[] = {MEMINFO_MEM_FREE, MEMINFO_MEM_SHARED, MEMINFO_MEM_TOTAL, MEMINFO_MEM_USED,
       MEMINFO_SWAP_FREE, MEMINFO_SWAP_TOTAL, MEMINFO_SWAP_USED};
-  procps_meminfo_new(&infoptr);
-  stack = procps_meminfo_select(infoptr, items, 7);
+  procps_meminfo_new(&meminfoptr);
+  stack = procps_meminfo_select(meminfoptr, items, 7);
   status.maxMem = MEMINFO_VAL(2, ul_int, stack, info);
   status.maxMem.write();
+  info.ticksPerSecond = procps_hertz_get();
 #endif
-  info.ticksPerSecond = sysconf(_SC_CLK_TCK);
   for(auto it = sysInfo.ibegin(); it != sysInfo.iend(); it++) {
     info.strInfos.at(it->first) = it->second;
   }
   info.nCPU = sysInfo.getNCpu();
   info.writeAll();
 
+#ifdef WITH_PROCPS
   if(lastInfo.size() != (unsigned)(info.nCPU + 1)) {
     logger->sendMessage(std::string("Failed to open system file /proc/stat") + std::to_string(lastInfo.size()) +
             "\t nCPU" + std::to_string(info.nCPU),
         logging::LogLevel::ERROR);
     throw std::runtime_error("Vector size mismatch in SystemInfoModule::mainLoop.");
   }
-
+#endif
   std::ifstream file("/proc/stat");
   if(!file.is_open()) {
     logger->sendMessage("Failed to open system file /proc/stat", logging::LogLevel::ERROR);
     file.close();
     return;
   }
-
+#ifdef WITH_PROCPS
   readCPUInfo(lastInfo);
+#endif
   while(true) {
 #ifdef WITH_PROCPS
     meminfo();
@@ -120,7 +131,7 @@ void SystemInfoModule::mainLoop() {
       logger->sendMessage(std::string("meminfo conversion failed: ") + e.what(), logging::LogLevel::ERROR);
     }
 #else
-    stack = procps_meminfo_select(infoptr, items, 7);
+    stack = procps_meminfo_select(meminfoptr, items, 7);
     status.freeMem = MEMINFO_VAL(0, ul_int, stack, info);
     status.cachedMem = MEMINFO_VAL(1, ul_int, stack, info);
     status.maxMem = MEMINFO_VAL(2, ul_int, stack, info);
@@ -139,13 +150,12 @@ void SystemInfoModule::mainLoop() {
 #else
       procps_uptime(&uptime_secs, &idle_secs);
 #endif
-      //\ToDo: Use stoul once unsigned long is available
-      status.uptime_secTotal = std::stoi(std::to_string(uptime_secs));
-      status.uptime_day = std::stoi(std::to_string(status.uptime_secTotal / 86400));
-      status.uptime_hour = std::stoi(std::to_string((status.uptime_secTotal - (status.uptime_day * 86400)) / 3600));
-      status.uptime_min = std::stoi(
+      status.uptime_secTotal = std::stoul(std::to_string(uptime_secs));
+      status.uptime_day = std::stoul(std::to_string(status.uptime_secTotal / 86400));
+      status.uptime_hour = std::stoul(std::to_string((status.uptime_secTotal - (status.uptime_day * 86400)) / 3600));
+      status.uptime_min = std::stoul(
           std::to_string((status.uptime_secTotal - (status.uptime_day * 86400) - (status.uptime_hour * 3600)) / 60));
-      status.uptime_sec = std::stoi(std::to_string(status.uptime_secTotal - (status.uptime_day * 86400) -
+      status.uptime_sec = std::stoul(std::to_string(status.uptime_secTotal - (status.uptime_day * 86400) -
           (status.uptime_hour * 3600) - (status.uptime_min * 60)));
     }
     catch(std::exception& e) {
@@ -169,15 +179,16 @@ void SystemInfoModule::mainLoop() {
     trigger.read();
   }
 #ifndef WITH_PROCPS
-  procps_meminfo_unref(&infoptr);
+  procps_meminfo_unref(&meminfoptr);
+  procps_stat_unref(&infoptr);
 #endif
 }
 
+#ifdef WITH_PROCPS
 void SystemInfoModule::calculatePCPU() {
   unsigned long long total;
   double tmp;
   std::vector<double> usage_tmp(info.nCPU + 1);
-  std::vector<std::string> strs;
   std::vector<cpu> vcpu(info.nCPU + 1);
   readCPUInfo(vcpu);
   auto lastcpu = lastInfo.begin();
@@ -244,6 +255,49 @@ void SystemInfoModule::readCPUInfo(std::vector<cpu>& vcpu) {
     }
   }
 }
+#else
+void SystemInfoModule::calculatePCPU() {
+  unsigned long long total;
+  double tmp;
+  std::vector<double> usage_tmp(info.nCPU + 1);
+  std::vector<cpu> vcpu(info.nCPU + 1);
+  readCPUInfo(vcpu);
+  auto itcpu = vcpu.begin();
+  for(size_t iCPU = 0; iCPU < (info.nCPU + 1); iCPU++, itcpu++) {
+    total = itcpu->totalUser + itcpu->totalUserLow + itcpu->totalSys;
+    tmp = total;
+    total += itcpu->totalIdle;
+    tmp /= total;
+    tmp *= 100.;
+    usage_tmp.at(iCPU) = tmp;
+  }
+  status.cpu_useTotal = usage_tmp.back();
+  usage_tmp.pop_back();
+  status.cpu_use->operator=(usage_tmp);
+}
+
+void SystemInfoModule::readCPUInfo(std::vector<cpu>& vcpu) {
+  enum stat_item items[] = {STAT_TIC_DELTA_USER, STAT_TIC_DELTA_NICE, STAT_TIC_DELTA_SYSTEM, STAT_TIC_DELTA_IDLE};
+  struct stat_stack* stack;
+  struct stat_reaped* reaped = procps_stat_reap(infoptr, STAT_REAP_CPUS_ONLY, items, 4);
+  if(vcpu.size() != (size_t)(reaped->cpus->total + 1)) {
+    ctk::logic_error("Number of CPUs is wrong in SystemInfoModule::readCPUInfo");
+  }
+  size_t i = 0;
+  for(auto it = vcpu.begin(); it != vcpu.end(); it++, i++) {
+    if(i == 0) {
+      stack = reaped->summary;
+    }
+    else {
+      stack = reaped->cpus->stacks[i - 1];
+    }
+    it->totalUser = STAT_VAL(0, ull_int, stack, info);
+    it->totalUserLow = STAT_VAL(1, ull_int, stack, info);
+    it->totalSys = STAT_VAL(2, ull_int, stack, info);
+    it->totalIdle = STAT_VAL(3, ull_int, stack, info);
+  }
+}
+#endif
 
 std::string getTime(ctk::ApplicationModule* mod) {
   std::string str{"WATCHDOG_SERVER: "};

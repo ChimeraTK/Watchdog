@@ -42,12 +42,15 @@ class SystemInfoModule : public ctk::ApplicationModule {
         unsigned long long TotIdle = 0)
     : totalUser(totUser), totalUserLow(totUserLow), totalSys(TotSys), totalIdle(TotIdle) {}
   };
-
+#ifdef WITH_PROCPS
   /**
    * CPU usage parameters (see cpu) for the total system and the individual cores.
    * Therefore, the size of this vector is nCores + 1
    */
   std::vector<cpu> lastInfo;
+#else
+  struct stat_info* infoptr{nullptr};
+#endif
 
   /**
    * Calculates the percentage of cpu usage.
@@ -97,10 +100,11 @@ class SystemInfoModule : public ctk::ApplicationModule {
     ctk::ScalarOutput<double> memoryUsage{this, "memoryUsage", "%", "Relative memory usage", {"DAQ", "history"}};
     ctk::ScalarOutput<double> swapUsage{this, "swapUsage", "%", "Relative swap usage", {"DAQ", "history"}};
     //\todo: Implement the following as long!
-    ctk::ScalarOutput<uint> startTime{
+    ctk::ScalarOutput<uint64_t> startTime{
         this, "startTime", "s", "start time of system with respect to EPOCH", {"ProcessModuleInput"}};
     ctk::ScalarOutput<std::string> startTimeStr{this, "startTimeStr", "", "startTimeStr"};
-    ctk::ScalarOutput<uint> uptime_secTotal{this, "uptimeSecTotal", "s", "Total uptime", {"DAQ", "ProcessModuleInput"}};
+    ctk::ScalarOutput<uint64_t> uptime_secTotal{
+        this, "uptimeSecTotal", "s", "Total uptime", {"DAQ", "ProcessModuleInput"}};
     ctk::ScalarOutput<uint> uptime_day{this, "uptimeDays", "day", "Days up"};
     ctk::ScalarOutput<uint> uptime_hour{this, "uptimeHours", "h", "Hours up"};
     ctk::ScalarOutput<uint> uptime_min{this, "uptimeMin", "min", "Minutes up"};

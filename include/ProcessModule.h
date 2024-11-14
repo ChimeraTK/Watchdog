@@ -52,8 +52,8 @@ struct ProcessInfoModule : public ctk::ApplicationModule {
     struct Status : public ctk::VariableGroup {
       using ctk::VariableGroup::VariableGroup;
       /** Uptime of the system */
-      ctk::ScalarPollInput<uint> sysStartTime{this, "startTime", "s", "System start time (seconds since EPOCH)"};
-      ctk::ScalarPollInput<uint> sysUpTime{this, "uptimeSecTotal", "s", "Uptime of the system"};
+      ctk::ScalarPollInput<uint64_t> sysStartTime{this, "startTime", "s", "System start time (seconds since EPOCH)"};
+      ctk::ScalarPollInput<uint64_t> sysUpTime{this, "uptimeSecTotal", "s", "Uptime of the system"};
       ctk::ScalarPollInput<uint64_t> maxMem{this, "maxMem", "kB", "Maximum available memory"};
     } status{this, "status", ""};
 

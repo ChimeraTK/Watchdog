@@ -55,9 +55,11 @@ namespace proc_util {
     uint tempPID = PID;
     stack = procps_pids_select(infoptr, &tempPID, 2, PIDS_SELECT_PID);
     if(stack->counts->total < 1 || PIDS_VAL(0, s_int, stack->stacks[0], info) != PID) {
+      procps_pids_unref(&infoptr);
       return false;
     }
     else {
+      procps_pids_unref(&infoptr);
       return true;
     }
 #endif

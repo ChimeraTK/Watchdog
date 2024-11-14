@@ -19,8 +19,11 @@
 
 #include "sys/types.h"
 
+#include <chrono>
 #include <iostream>
 #include <string>
+#include <thread>
+using namespace std::chrono_literals;
 
 void readMeminfo() {
   struct meminfo_info* info = nullptr;
@@ -64,6 +67,35 @@ void disk() {
   int type = DISKSTATS_VAL(1, s_int, stack, info);
   std::cout << devname << "\t type: " << type << std::endl;
 }
+
+void cpuUsage() {
+  enum stat_item items[] = {STAT_TIC_USER, STAT_TIC_NICE, STAT_TIC_SYSTEM, STAT_TIC_IDLE, STAT_TIC_DELTA_USER,
+      STAT_TIC_DELTA_NICE, STAT_TIC_DELTA_SYSTEM, STAT_TIC_DELTA_IDLE};
+  struct stat_info* info = nullptr;
+  procps_stat_new(&info);
+  struct stat_stack* stack;
+  for(size_t tt = 0; tt < 10; tt++) {
+    struct stat_reaped* reaped = procps_stat_reap(info, STAT_REAP_CPUS_ONLY, items, 8);
+    for(size_t i = 0; i < reaped->cpus->total; ++i) {
+      stack = reaped->cpus->stacks[i];
+      std::cout << "Vals: ";
+      for(size_t j = 0; j < 8; ++j) {
+        auto val = STAT_VAL(j, ull_int, stack, info);
+        std::cout << val << "\t";
+      }
+      std::cout << std::endl;
+    }
+    std::cout << "Vals: ";
+    stack = reaped->summary;
+    for(size_t j = 0; j < 8; ++j) {
+      auto val = STAT_VAL(j, ull_int, stack, info);
+      std::cout << val << "\t";
+    }
+    std::cout << "\n" << std::endl;
+    std::this_thread::sleep_for(1s);
+  }
+}
+
 void PID() {
   struct pids_info* info = nullptr;
   struct pids_stack* stack;
@@ -98,7 +130,7 @@ void PID(uint PID) {
       PIDS_TIME_START, PIDS_TIME_ELAPSED, PIDS_TIME_ALL_C, PIDS_TICS_ALL};
 
   if(procps_pids_new(&info, Items, 9) < 0) return;
-  uint arr[2] = {PID, 105403};
+  uint arr[2] = {PID, PID};
   stack = procps_pids_select(info, arr, 2, PIDS_SELECT_PID);
   std::cout << "Total: " << stack->counts->total << std::endl;
   for(size_t i = 0; i < 2; ++i) {
@@ -118,9 +150,10 @@ void PID(uint PID) {
 }
 
 int main() {
-  disk();
+  //  disk();
   general();
-  readMeminfo();
-  PID(8982);
+  //  readMeminfo();
+  //  PID(8982);
+  cpuUsage();
   return 0;
 }
