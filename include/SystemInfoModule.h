@@ -48,6 +48,11 @@ class SystemInfoModule : public ctk::ApplicationModule {
    * Therefore, the size of this vector is nCores + 1
    */
   std::vector<cpu> lastInfo;
+
+  /**
+   * Read values from the \c /proc/stat for all cpu cores (cpux) and overall values (cpu).
+   */
+  void readCPUInfo(std::vector<cpu>& vcpu);
 #else
   struct stat_info* infoptr{nullptr};
 #endif
@@ -58,11 +63,6 @@ class SystemInfoModule : public ctk::ApplicationModule {
    * If cpu usage is set to -1 there was an overflow in the \c /proc/stat file.
    */
   void calculatePCPU();
-
-  /**
-   * Read values from the \c /proc/stat for all cpu cores (cpux) and overall values (cpu).
-   */
-  void readCPUInfo(std::vector<cpu>& vcpu);
 
  public:
   SystemInfoModule(ctk::ModuleGroup* owner, const std::string& name, const std::string& description,

@@ -47,9 +47,9 @@ SystemInfoModule::SystemInfoModule(ctk::ModuleGroup* owner, const std::string& n
   lastInfo = std::vector<cpu>(sysInfo.getNCpu() + 1);
 #else
   procps_stat_new(&infoptr);
-  enum stat_item items[] = {STAT_TIC_DELTA_USER, STAT_TIC_DELTA_NICE, STAT_TIC_DELTA_SYSTEM, STAT_TIC_DELTA_IDLE};
+  enum stat_item items[] = {STAT_TIC_SUM_DELTA_BUSY, STAT_TIC_SUM_DELTA_TOTAL};
   // read once to get delta later on
-  procps_stat_reap(infoptr, STAT_REAP_CPUS_ONLY, items, 4);
+  procps_stat_reap(infoptr, STAT_REAP_CPUS_ONLY, items, 2);
 #endif
 }
 
@@ -257,45 +257,22 @@ void SystemInfoModule::readCPUInfo(std::vector<cpu>& vcpu) {
 }
 #else
 void SystemInfoModule::calculatePCPU() {
-  unsigned long long total;
-  double tmp;
-  std::vector<double> usage_tmp(info.nCPU + 1);
+  std::vector<double> usage_tmp(info.nCPU);
   std::vector<cpu> vcpu(info.nCPU + 1);
-  readCPUInfo(vcpu);
-  auto itcpu = vcpu.begin();
-  for(size_t iCPU = 0; iCPU < (info.nCPU + 1); iCPU++, itcpu++) {
-    total = itcpu->totalUser + itcpu->totalUserLow + itcpu->totalSys;
-    tmp = total;
-    total += itcpu->totalIdle;
-    tmp /= total;
-    tmp *= 100.;
-    usage_tmp.at(iCPU) = tmp;
-  }
-  status.cpu_useTotal = usage_tmp.back();
-  usage_tmp.pop_back();
-  status.cpu_use->operator=(usage_tmp);
-}
-
-void SystemInfoModule::readCPUInfo(std::vector<cpu>& vcpu) {
-  enum stat_item items[] = {STAT_TIC_DELTA_USER, STAT_TIC_DELTA_NICE, STAT_TIC_DELTA_SYSTEM, STAT_TIC_DELTA_IDLE};
+  enum stat_item items[] = {STAT_TIC_SUM_DELTA_BUSY, STAT_TIC_SUM_DELTA_TOTAL};
   struct stat_stack* stack;
-  struct stat_reaped* reaped = procps_stat_reap(infoptr, STAT_REAP_CPUS_ONLY, items, 4);
+  struct stat_reaped* reaped = procps_stat_reap(infoptr, STAT_REAP_CPUS_ONLY, items, 2);
   if(vcpu.size() != (size_t)(reaped->cpus->total + 1)) {
     ctk::logic_error("Number of CPUs is wrong in SystemInfoModule::readCPUInfo");
   }
-  size_t i = 0;
-  for(auto it = vcpu.begin(); it != vcpu.end(); it++, i++) {
-    if(i == 0) {
-      stack = reaped->summary;
-    }
-    else {
-      stack = reaped->cpus->stacks[i - 1];
-    }
-    it->totalUser = STAT_VAL(0, ull_int, stack, info);
-    it->totalUserLow = STAT_VAL(1, ull_int, stack, info);
-    it->totalSys = STAT_VAL(2, ull_int, stack, info);
-    it->totalIdle = STAT_VAL(3, ull_int, stack, info);
+  stack = reaped->summary;
+  status.cpu_useTotal = 100. * STAT_VAL(0, ull_int, stack, info) / STAT_VAL(1, ull_int, stack, info);
+
+  for(size_t i = 0; i < info.nCPU; i++) {
+    stack = reaped->cpus->stacks[i];
+    usage_tmp.at(i) = 100. * STAT_VAL(0, ull_int, stack, info) / STAT_VAL(1, ull_int, stack, info);
   }
+  status.cpu_use->operator=(usage_tmp);
 }
 #endif
 
