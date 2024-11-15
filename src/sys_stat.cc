@@ -9,10 +9,12 @@
  */
 
 #include "sys_stat.h"
-
-#include <proc/readproc.h>
-#include <proc/sysinfo.h>
-
+#ifdef WITH_PROCPS
+#  include <proc/readproc.h>
+#  include <proc/sysinfo.h>
+#else
+#  include <libproc2/pids.h>
+#endif
 #include <boost/algorithm/string.hpp>
 
 #include <algorithm>
@@ -25,8 +27,8 @@
 #include <string>
 
 namespace proc_util {
+#ifdef WITH_PROCPS
   std::mutex proc_mutex;
-
   bool isProcessRunning(const int& PID) {
     std::lock_guard<std::mutex> lock(proc_mutex);
     pid_t pid = PID;
@@ -44,10 +46,11 @@ namespace proc_util {
   }
 
   size_t getNChilds(const size_t& PGID, std::ostream& os) {
+    size_t nChild = 0;
     std::lock_guard<std::mutex> lock(proc_mutex);
     PROCTAB* proc = openproc(PROC_FILLMEM | PROC_FILLSTAT | PROC_FILLSTATUS);
     proc_t* proc_info;
-    size_t nChild = 0;
+
     while((proc_info = readproc(proc, NULL)) != NULL) {
       if(PGID == (unsigned)proc_info->pgrp && PGID != (unsigned)proc_info->tid) {
         os << "Found child for PGID: " << PGID << " with PID: " << proc_info->tid << std::endl;
@@ -78,6 +81,26 @@ namespace proc_util {
     closeproc(proc);
     return result;
   }
+#else
+  bool isProcessRunning(const int& PID, pids_info* infoptr) {
+    struct pids_fetch* stack;
+    uint tempPID = PID;
+    stack = procps_pids_select(infoptr, &tempPID, 2, PIDS_SELECT_PID);
+    return !(stack->counts->total < 1 || PIDS_VAL(0, s_int, stack->stacks[0], info) != PID);
+  }
+
+  size_t getNChilds(const size_t& PGID, pids_info* infoptr, std::ostream& os) {
+    size_t nChild = 0;
+    struct pids_stack* stack;
+    while((stack = procps_pids_get(infoptr, PIDS_FETCH_TASKS_ONLY))) {
+      if(PGID == (size_t)PIDS_VAL(1, s_int, stack, info) && PGID != (size_t)PIDS_VAL(0, s_int, stack, info)) {
+        os << "Found child for PGID: " << PGID << " with PID: " << PIDS_VAL(0, s_int, stack, info) << std::endl;
+        nChild++;
+      }
+    }
+    return nChild;
+  }
+#endif
 } // namespace proc_util
 
 std::string space2underscore(std::string text) {

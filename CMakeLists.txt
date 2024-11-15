@@ -1,11 +1,11 @@
+cmake_minimum_required(VERSION 3.5)
 PROJECT(watchdog-server)
-cmake_minimum_required(VERSION 2.8.12)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake/Modules)
 
 set(${PROJECT_NAME}_MAJOR_VERSION 02)
-set(${PROJECT_NAME}_MINOR_VERSION 01)
-set(${PROJECT_NAME}_PATCH_VERSION 02)
+set(${PROJECT_NAME}_MINOR_VERSION 02)
+set(${PROJECT_NAME}_PATCH_VERSION 00)
 
 include(cmake/set_version_numbers.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/set_default_flags.cmake)
@@ -29,14 +29,21 @@ find_package(ChimeraTK-ApplicationCore-ServerHistoryModule 01.00 REQUIRED)
 
 find_package(Boost COMPONENTS date_time REQUIRED)
 
-find_library(procps NAMES procps REQUIRED)
-# Just check for procps.h although more headers are used by the watchdog
-# If that header is found assume that the dev package is installed
-include(CheckIncludeFile)
-CHECK_INCLUDE_FILE( proc/procps.h HAS_PROCPS_H)
-if(NOT HAS_PROCPS_H)
-  message(FATAL_ERROR "Could not find procps header file. Please install procps dev pacakge.")
-endif(NOT HAS_PROCPS_H)
+FIND_PACKAGE(PkgConfig REQUIRED)
+PKG_CHECK_MODULES(libproc2 IMPORTED_TARGET libproc2)
+if(libproc2_FOUND)
+  SET(PROCLIB PkgConfig::libproc2)
+else()
+  find_library(procps NAMES procps REQUIRED)
+  # Just check for procps.h although more headers are used by the watchdog
+  # If that header is found assume that the dev package is installed
+  include(CheckIncludeFile)
+  CHECK_INCLUDE_FILE( proc/procps.h HAS_PROCPS_H)
+  if(NOT HAS_PROCPS_H)
+    message(FATAL_ERROR "Could not find procps header file. Please install procps dev pacakge.")
+  endif(NOT HAS_PROCPS_H)
+  SET(PROCLIB procps)
+endif(libproc2_FOUND) 
 
 include(cmake/enable_code_coverage_report.cmake)
 # enable coding style test
@@ -64,7 +71,7 @@ if(CMAKE_BUILD_TYPE MATCHES Debug)
                                            ChimeraTK::ChimeraTK-ApplicationCore-LoggingModule
                                            ChimeraTK::ChimeraTK-ApplicationCore-ServerHistoryModule
                                            ChimeraTK::ChimeraTK-ApplicationCore-MicroDAQ
-                                           procps
+                                           ${PROCLIB}
                                            )
   install(TARGETS ${PROJECT_NAME}lib LIBRARY DESTINATION lib)
 
@@ -78,7 +85,14 @@ if(CMAKE_BUILD_TYPE MATCHES Debug)
   add_executable(${PROJECT_NAME}-xmlGenerator ${server_sources})
   target_link_libraries(${PROJECT_NAME}-xmlGenerator ChimeraTK::ChimeraTK-ApplicationCore
                                                      ${PROJECT_NAME}lib)
-  set_target_properties(${PROJECT_NAME}-xmlGenerator PROPERTIES COMPILE_FLAGS "-DGENERATE_XML")
+  if(libproc2_FOUND)
+    set_target_properties(${PROJECT_NAME}-xmlGenerator PROPERTIES COMPILE_FLAGS "-DGENERATE_XML")
+  else()
+    set_target_properties(${PROJECT_NAME}lib PROPERTIES COMPILE_FLAGS "-DWITH_PROCPS")
+    set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS "-DWITH_PROCPS")
+    set_target_properties(${PROJECT_NAME}-xmlGenerator PROPERTIES COMPILE_FLAGS "-DGENERATE_XML -DWITH_PROCPS")
+  endif(libproc2_FOUND)
+
 
   if( ENABLE_TESTING )
     ENABLE_TESTING()
@@ -92,7 +106,7 @@ else()
     set_target_properties(${PROJECT_NAME} PROPERTIES LINK_FLAGS ${Adapter_LINK_FLAGS})
   endif(ADAPTER STREQUAL EPICSIOC)
   target_link_libraries(${PROJECT_NAME} ChimeraTK::SelectedAdapter
-                                        procps
+                                        ${PROCLIB}
                                         ChimeraTK::ChimeraTK-ApplicationCore 
                                         ChimeraTK::ChimeraTK-ApplicationCore-LoggingModule
                                         ChimeraTK::ChimeraTK-ApplicationCore-ServerHistoryModule
@@ -100,13 +114,18 @@ else()
 
   # XML file generation
   add_executable(${PROJECT_NAME}-xmlGenerator ${server_sources} ${library_sources})
-  target_link_libraries(${PROJECT_NAME}-xmlGenerator procps
+  target_link_libraries(${PROJECT_NAME}-xmlGenerator ${PROCLIB}
                                                      ChimeraTK::ChimeraTK-ApplicationCore 
                                                      ChimeraTK::ChimeraTK-ApplicationCore-LoggingModule
                                                      ChimeraTK::ChimeraTK-ApplicationCore-ServerHistoryModule
                                                      ChimeraTK::ChimeraTK-ApplicationCore-MicroDAQ)
 
   set_target_properties(${PROJECT_NAME}-xmlGenerator PROPERTIES COMPILE_FLAGS "-DGENERATE_XML")
+  if(NOT libproc2_FOUND)
+    set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS "-DWITH_PROCPS")
+    set_target_properties(${PROJECT_NAME}-xmlGenerator PROPERTIES COMPILE_FLAGS "-DWITH_PROCPS -DGENERATE_XML")
+  endif(NOT libproc2_FOUND)
+
 endif(CMAKE_BUILD_TYPE MATCHES Debug)
 
 # Set RPATH to find root dependencies automatically

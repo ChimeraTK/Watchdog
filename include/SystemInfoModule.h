@@ -42,7 +42,7 @@ class SystemInfoModule : public ctk::ApplicationModule {
         unsigned long long TotIdle = 0)
     : totalUser(totUser), totalUserLow(totUserLow), totalSys(TotSys), totalIdle(TotIdle) {}
   };
-
+#ifdef WITH_PROCPS
   /**
    * CPU usage parameters (see cpu) for the total system and the individual cores.
    * Therefore, the size of this vector is nCores + 1
@@ -50,16 +50,19 @@ class SystemInfoModule : public ctk::ApplicationModule {
   std::vector<cpu> lastInfo;
 
   /**
+   * Read values from the \c /proc/stat for all cpu cores (cpux) and overall values (cpu).
+   */
+  void readCPUInfo(std::vector<cpu>& vcpu);
+#else
+  struct stat_info* infoptr{nullptr};
+#endif
+
+  /**
    * Calculates the percentage of cpu usage.
    * This is done in total and for core found on the system.
    * If cpu usage is set to -1 there was an overflow in the \c /proc/stat file.
    */
   void calculatePCPU();
-
-  /**
-   * Read values from the \c /proc/stat for all cpu cores (cpux) and overall values (cpu).
-   */
-  void readCPUInfo(std::vector<cpu>& vcpu);
 
  public:
   SystemInfoModule(ctk::ModuleGroup* owner, const std::string& name, const std::string& description,
@@ -87,20 +90,21 @@ class SystemInfoModule : public ctk::ApplicationModule {
     using ctk::VariableGroup::VariableGroup;
 
     //\todo: Implement the following as unsigned long!
-    ctk::ScalarOutput<uint> maxMem{this, "maxMem", "kB", "Maximum available memory", {"ProcessModuleInput"}};
-    ctk::ScalarOutput<uint> freeMem{this, "freeMem", "kB", "Free memory", {"DAQ", "history"}};
-    ctk::ScalarOutput<uint> cachedMem{this, "cachedMem", "kB", "Cached memory"};
-    ctk::ScalarOutput<uint> usedMem{this, "usedMem", "kB", "Used memory", {"DAQ", "history"}};
-    ctk::ScalarOutput<uint> maxSwap{this, "maxSwap", "kB", "Swap size"};
-    ctk::ScalarOutput<uint> freeSwap{this, "freeSwap", "kB", "Free swap", {"DAQ"}};
-    ctk::ScalarOutput<uint> usedSwap{this, "usedSwap", "kB", "Used swap", {"DAQ", "history"}};
+    ctk::ScalarOutput<uint64_t> maxMem{this, "maxMem", "kB", "Maximum available memory", {"ProcessModuleInput"}};
+    ctk::ScalarOutput<uint64_t> freeMem{this, "freeMem", "kB", "Free memory", {"DAQ", "history"}};
+    ctk::ScalarOutput<uint64_t> cachedMem{this, "cachedMem", "kB", "Cached memory"};
+    ctk::ScalarOutput<uint64_t> usedMem{this, "usedMem", "kB", "Used memory", {"DAQ", "history"}};
+    ctk::ScalarOutput<uint64_t> maxSwap{this, "maxSwap", "kB", "Swap size"};
+    ctk::ScalarOutput<uint64_t> freeSwap{this, "freeSwap", "kB", "Free swap", {"DAQ"}};
+    ctk::ScalarOutput<uint64_t> usedSwap{this, "usedSwap", "kB", "Used swap", {"DAQ", "history"}};
     ctk::ScalarOutput<double> memoryUsage{this, "memoryUsage", "%", "Relative memory usage", {"DAQ", "history"}};
     ctk::ScalarOutput<double> swapUsage{this, "swapUsage", "%", "Relative swap usage", {"DAQ", "history"}};
     //\todo: Implement the following as long!
-    ctk::ScalarOutput<uint> startTime{
+    ctk::ScalarOutput<uint64_t> startTime{
         this, "startTime", "s", "start time of system with respect to EPOCH", {"ProcessModuleInput"}};
     ctk::ScalarOutput<std::string> startTimeStr{this, "startTimeStr", "", "startTimeStr"};
-    ctk::ScalarOutput<uint> uptime_secTotal{this, "uptimeSecTotal", "s", "Total uptime", {"DAQ", "ProcessModuleInput"}};
+    ctk::ScalarOutput<uint64_t> uptime_secTotal{
+        this, "uptimeSecTotal", "s", "Total uptime", {"DAQ", "ProcessModuleInput"}};
     ctk::ScalarOutput<uint> uptime_day{this, "uptimeDays", "day", "Days up"};
     ctk::ScalarOutput<uint> uptime_hour{this, "uptimeHours", "h", "Hours up"};
     ctk::ScalarOutput<uint> uptime_min{this, "uptimeMin", "min", "Minutes up"};

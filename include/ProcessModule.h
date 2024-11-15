@@ -29,8 +29,7 @@ namespace ctk = ChimeraTK;
  */
 struct ProcessInfoModule : public ctk::ApplicationModule {
   ProcessInfoModule(ctk::ModuleGroup* owner, const std::string& name, const std::string& description,
-      const std::unordered_set<std::string>& tags = {}, const std::string& pathToTrigger = "/Trigger/tick")
-  : ctk::ApplicationModule(owner, name, description, tags), trigger(this, pathToTrigger, "", "Trigger input"){};
+      const std::unordered_set<std::string>& tags = {}, const std::string& pathToTrigger = "/Trigger/tick");
 
   ctk::ScalarPushInput<uint64_t> trigger;
 
@@ -52,9 +51,9 @@ struct ProcessInfoModule : public ctk::ApplicationModule {
     struct Status : public ctk::VariableGroup {
       using ctk::VariableGroup::VariableGroup;
       /** Uptime of the system */
-      ctk::ScalarPollInput<uint> sysStartTime{this, "startTime", "s", "System start time (seconds since EPOCH)"};
-      ctk::ScalarPollInput<uint> sysUpTime{this, "uptimeSecTotal", "s", "Uptime of the system"};
-      ctk::ScalarPollInput<uint> maxMem{this, "maxMem", "kB", "Maximum available memory"};
+      ctk::ScalarPollInput<uint64_t> sysStartTime{this, "startTime", "s", "System start time (seconds since EPOCH)"};
+      ctk::ScalarPollInput<uint64_t> sysUpTime{this, "uptimeSecTotal", "s", "Uptime of the system"};
+      ctk::ScalarPollInput<uint64_t> maxMem{this, "maxMem", "kB", "Maximum available memory"};
     } status{this, "status", ""};
 
     struct Info : public ctk::VariableGroup {
@@ -127,13 +126,23 @@ struct ProcessInfoModule : public ctk::ApplicationModule {
    * Application core main loop.
    */
   void mainLoop() override;
-
+#ifdef WITH_PROCPS
   /**
    * Fill process information read via proc interface.
    * \remark When changing the pidOffset to get information of another child the
    * cpu usage value will be wrong for the first reading!
    */
   void FillProcInfo(const std::shared_ptr<proc_t>& info);
+#else
+  /**
+   * Fill process information read via proc interface.
+   * \remark When changing the pidOffset to get information of another child the
+   * cpu usage value will be wrong for the first reading!
+   */
+  void FillProcInfo(uint* pid = nullptr);
+  struct pids_info* infoptr{nullptr};
+  struct pids_info* infoptrPID{nullptr};
+#endif
 };
 
 /**

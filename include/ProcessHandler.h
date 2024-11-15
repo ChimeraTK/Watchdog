@@ -14,6 +14,10 @@
 #include <iostream>
 #include <string>
 
+#ifndef WITH_PROCPS
+#  include <libproc2/pids.h>
+#endif
+
 /**
  * \brief Handler used to start and stop processes.
  *
@@ -42,6 +46,12 @@
  */
 struct ProcessHandler {
  private:
+  /**
+   * Wrapper function have the distinction between procps version at a single place.
+   *
+   */
+  bool isProcessRunningWrapper(const int& pid);
+
   /**
    * Read the PID from a temporary file that is created by the child process.
    */
@@ -76,7 +86,11 @@ struct ProcessHandler {
   const std::string name; ///< Name of this class
   bool connected;         ///< If false no cleanup is performed on destructor call
   size_t killTimeout;     ///< Time in seconds to wait for a process to exit before using SIGKILL
+#ifndef WITH_PROCPS
+  struct pids_info* infoptr{nullptr};
+#endif
  public:
+#ifdef WITH_PROCPS
   /**
    * Constructor.
    * It is checked if a process is already running. This is done by testing if the
@@ -93,7 +107,6 @@ struct ProcessHandler {
    */
   ProcessHandler(const std::string& PIDFileName, const bool deletePIDFile, int& PID, std::ostream& os,
       const std::string& name = "");
-
   /**
    * Constructor.
    * \param PIDFileName the name of the PID file -> will result in: PIDFileName.PID
@@ -107,6 +120,44 @@ struct ProcessHandler {
    */
   ProcessHandler(const std::string& PIDFileName, const bool deletePIDFile = false, std::ostream& os = std::cout,
       const std::string& name = "");
+#else
+  /**
+   * Constructor.
+   * It is checked if a process is already running. This is done by testing if the
+   * PID file already exists and a process with the PID read from the PID file is found.
+   * \param PIDFileName the name of the PID file -> will result in: PIDFileName.PID
+   * \param os The ostream used to send status messages and errors.
+   * \param deletePIDFile If true the PID file deleted directly after reading the PID.
+   * \param name Give a name to the ProcessHandler to distinguish between multiple handlers.
+   * It is used in the messages send by the handler.
+   * This avoids overwriting the PID in case a second ProcessHandler starts a process
+   * with the same PID file settings. But you can not check for a running process if the
+   * ProcessHandler is not terminated correctly and started again.
+   * \param PID The PID is set in case a running process was found. Else it is set to -1.
+   * \param infoptr Procps info pointer. It will not be cleaned up here! It has to contain two entries: PIDS_ID_PID,
+   * PIDS_ID_PGRP
+   */
+  ProcessHandler(const std::string& PIDFileName, pids_info* infoptr, const bool deletePIDFile, int& PID,
+      std::ostream& os, const std::string& name = "");
+
+  /**
+   * Constructor.
+   * \param PIDFileName the name of the PID file -> will result in: PIDFileName.PID
+   * \param os The ostream used to send status messages and errors.
+   * \param deletePIDFile If true the PID file deleted directly after reading the PID.
+   * \param name Give a name to the ProcessHandler to distinguish between multiple handlers.
+   * \param infoptr Procps info pointer. It will not be cleaned up here! It has to contain two entries: PIDS_ID_PID,
+   * PIDS_ID_PGRP
+   * It is used in the messages send by the handler.
+   * This avoids overwriting the PID in case a second ProcessHandler starts a process
+   * with the same PID file settings. But you can not check for a running process if the
+   * ProcessHandler is not terminated correctly and started again.
+   */
+  ProcessHandler(const std::string& PIDFileName, pids_info* infoptr, const bool deletePIDFile = false,
+      std::ostream& os = std::cout, const std::string& name = "");
+
+#endif
+
   ~ProcessHandler();
 
   /**
@@ -145,7 +196,9 @@ struct ProcessHandler {
   /**
    * \param sig Signal used to kill the process (e.g. SIGINT = 2, SIGKILL = 9)
    */
-  void setSigNum(int sig) { signum = sig; }
+  void setSigNum(int sig) {
+    signum = sig;
+  }
 
   /**
    * Tell all file handles to be closed when exec is called.
@@ -163,7 +216,9 @@ struct ProcessHandler {
    *
    * Depending on the level messages are put to the ostream.
    */
-  void SetLogLevel(const logging::LogLevel& level) { log = level; }
+  void SetLogLevel(const logging::LogLevel& level) {
+    log = level;
+  }
 
   /**
    * Setup handler for SIGCHLD signals.
@@ -179,7 +234,9 @@ struct ProcessHandler {
    *
    * \param timeout The time (given in seconds) to wait before killing the process using SIGKILL
    */
-  void setKillTimeout(const size_t timeout) { killTimeout = timeout; }
+  void setKillTimeout(const size_t timeout) {
+    killTimeout = timeout;
+  }
 
   void Disconnect();
 };

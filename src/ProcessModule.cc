@@ -10,11 +10,45 @@
 
 #include "ProcessModule.h"
 
+#ifndef WITH_PROCPS
+#  include <libproc2/pids.h>
+#endif
+
 #include <signal.h>
 
 // This symbol is introduced by procps and in boost 1.71 a function likely is used!
 #undef likely
 #include "boost/date_time/posix_time/posix_time.hpp"
+
+ProcessInfoModule::ProcessInfoModule(ctk::ModuleGroup* owner, const std::string& name, const std::string& description,
+    const std::unordered_set<std::string>& tags, const std::string& pathToTrigger)
+: ctk::ApplicationModule(owner, name, description, tags), trigger(this, pathToTrigger, "", "Trigger input") {
+#ifndef WITH_PROCPS
+  fatal_proc_unmounted(infoptr, 0);
+  if(!infoptr) {
+    ctk::runtime_error("ProcessInfoModule::Failed to access proc data.");
+  }
+  enum pids_item Items[] = {PIDS_ID_PID,
+      PIDS_TICS_USER,     // utime
+      PIDS_TICS_SYSTEM,   // stime
+      PIDS_TICS_USER_C,   // utime+cutime
+      PIDS_TICS_SYSTEM_C, // stime+cstime
+      PIDS_RSS, PIDS_NICE, PIDS_PRIORITY, PIDS_TIME_START, PIDS_TIME_ELAPSED, PIDS_MEM_RES};
+
+  if(procps_pids_new(&infoptr, Items, 11) < 0) {
+    ctk::runtime_error("Failed to prepare procps in ProcessInfoModule.");
+  }
+
+  fatal_proc_unmounted(infoptrPID, 0);
+  if(!infoptrPID) {
+    std::runtime_error("ProcessInfoModule::Failed to access proc data.");
+  }
+  enum pids_item ItemsPID[] = {PIDS_ID_PID, PIDS_ID_PGRP};
+  if(procps_pids_new(&infoptrPID, ItemsPID, 1) < 0) {
+    ctk::runtime_error("Failed to prepare procps PID in ProcessInfoModule");
+  }
+#endif
+};
 
 void ProcessInfoModule::mainLoop() {
   info.processPID = getpid();
@@ -23,7 +57,12 @@ void ProcessInfoModule::mainLoop() {
   auto group = readAnyGroup();
   while(true) {
     try {
+#ifdef WITH_PROCPS
       FillProcInfo(proc_util::getInfo(info.processPID));
+#else
+      uint tmpPID = info.processPID;
+      FillProcInfo(&tmpPID);
+#endif
       logger->sendMessage(
           std::string("Process is running (PID: ") + std::to_string(info.processPID) + ")", logging::LogLevel::DEBUG);
     }
@@ -35,8 +74,12 @@ void ProcessInfoModule::mainLoop() {
     writeAll();
     group.readUntil(trigger.getId());
   }
+#ifndef WITH_PROCPS
+  procps_pids_unref(&infoptr);
+  procps_pids_unref(&infoptrPID);
+#endif
 }
-
+#ifdef WITH_PROCPS
 void ProcessInfoModule::FillProcInfo(const std::shared_ptr<proc_t>& infoPtr) {
   if(infoPtr != nullptr) {
     auto now = boost::posix_time::microsec_clock::local_time();
@@ -95,7 +138,63 @@ void ProcessInfoModule::FillProcInfo(const std::shared_ptr<proc_t>& infoPtr) {
     statistics.memoryUsage = 0.;
   }
 }
+#else
+void ProcessInfoModule::FillProcInfo(uint* pid) {
+  if(pid) {
+    auto now = boost::posix_time::microsec_clock::local_time();
+    int old_time =
+        std::stoi(std::to_string(statistics.utime + statistics.stime + statistics.cutime + statistics.cstime));
+    struct pids_fetch* stack;
 
+    stack = procps_pids_select(infoptr, pid, 1, PIDS_SELECT_PID);
+    if(stack->counts->total < 1 || PIDS_VAL(0, s_int, stack->stacks[0], info) != (int)(*pid)) {
+      logger->sendMessage(
+          std::string("FillProcInfo::Failed to read data for PID: ") + std::to_string(*pid), logging::LogLevel::ERROR);
+      return;
+    }
+    statistics.utime = PIDS_VAL(1, ull_int, stack->stacks[0], info);
+    statistics.stime = PIDS_VAL(2, ull_int, stack->stacks[0], info);
+    statistics.cutime = PIDS_VAL(3, ull_int, stack->stacks[0], info) - (uint)statistics.utime;
+    statistics.cstime = PIDS_VAL(4, ull_int, stack->stacks[0], info);
+    statistics.rss = PIDS_VAL(5, ul_int, stack->stacks[0], info);
+    statistics.nice = PIDS_VAL(6, s_int, stack->stacks[0], info);
+    statistics.priority = PIDS_VAL(7, s_int, stack->stacks[0], info);
+    statistics.startTime = system.status.sysStartTime + (uint)PIDS_VAL(8, real, stack->stacks[0], info);
+    statistics.startTimeStr = boost::posix_time::to_simple_string(boost::posix_time::from_time_t(statistics.startTime));
+
+    statistics.runtime = (uint)PIDS_VAL(9, real, stack->stacks[0], info);
+    statistics.mem = PIDS_VAL(10, ul_int, stack->stacks[0], info);
+    statistics.memoryUsage = 1. * statistics.mem / system.status.maxMem * 100.;
+
+    // check if it is the first call after process is started (time_stamp  == not_a_date_time)
+    if(!time_stamp.is_special()) {
+      boost::posix_time::time_duration diff = now - time_stamp;
+      statistics.pcpu = 1. * (statistics.utime + statistics.stime + statistics.cutime + statistics.cstime - old_time) /
+          system.info.ticksPerSecond / (1. * diff.total_milliseconds() / 1000) * 100;
+      statistics.avgcpu = 1. * (statistics.utime + statistics.stime + statistics.cutime + statistics.cstime) /
+          system.info.ticksPerSecond / statistics.runtime * 100;
+    }
+    time_stamp = now;
+  }
+  else {
+    time_stamp = boost::posix_time::not_a_date_time;
+    statistics.utime = 0;
+    statistics.stime = 0;
+    statistics.cutime = 0;
+    statistics.cstime = 0;
+    statistics.startTime = 0;
+    statistics.startTimeStr = "";
+    statistics.priority = 0;
+    statistics.nice = 0;
+    statistics.rss = 0;
+    statistics.pcpu = 0;
+    statistics.avgcpu = 0;
+    statistics.runtime = 0;
+    statistics.mem = 0;
+    statistics.memoryUsage = 0.;
+  }
+}
+#endif
 void ProcessControlModule::mainLoop() {
   std::stringstream handlerMessage;
   logger->sendMessage(std::string("New ProcessModule started!"), logging::LogLevel::INFO);
@@ -103,7 +202,11 @@ void ProcessControlModule::mainLoop() {
   status.nRestarts = 0;
 
   try {
+#ifdef WITH_PROCPS
     process.reset(new ProcessHandler(getName(), false, info.processPID, handlerMessage));
+#else
+    process.reset(new ProcessHandler(getName(), infoptrPID, false, info.processPID, handlerMessage));
+#endif
     evaluateMessage(handlerMessage);
     if(info.processPID > 0) {
       logger->sendMessage(
@@ -146,6 +249,7 @@ void ProcessControlModule::mainLoop() {
               std::to_string(config.maxFails) + ", Restarts: " + std::to_string(status.nRestarts) + "/" +
               std::to_string(config.maxRestarts),
           logging::LogLevel::DEBUG);
+
       if(_historyOn) FillProcInfo(nullptr);
       writeAll();
       group.readUntil(trigger.getId());
@@ -213,12 +317,19 @@ void ProcessControlModule::mainLoop() {
               std::string("Trying to start a new process: ") + (std::string)config.path + "/" + (std::string)config.cmd,
               logging::LogLevel::INFO);
           // log level of the process handler is DEBUG per default. So all messages will end up here
+#ifdef WITH_PROCPS
           process.reset(new ProcessHandler(getName(), false, handlerMessage, this->getName()));
-
+#else
+          process.reset(new ProcessHandler(getName(), infoptrPID, false, handlerMessage, this->getName()));
+#endif
           SetOnline(process->startProcess((std::string)config.path, (std::string)config.cmd,
               (std::string)config.externalLogfile, (std::string)config.env, config.overwriteEnv));
           evaluateMessage(handlerMessage);
+#ifdef WITH_PROCPS
           status.nChilds = proc_util::getNChilds(info.processPID, handlerMessage);
+#else
+          status.nChilds = proc_util::getNChilds(info.processPID, infoptrPID, handlerMessage);
+#endif
           logger->sendMessage(handlerMessage.str(), logging::LogLevel::DEBUG);
         }
         catch(std::runtime_error& e) {
@@ -232,8 +343,14 @@ void ProcessControlModule::mainLoop() {
         logger->sendMessage(std::string("Process is running...") + std::to_string(status.isRunning) +
                 " PID: " + std::to_string(info.processPID),
             logging::LogLevel::DEBUG);
+
         try {
+#ifdef WITH_PROCPS
           FillProcInfo(proc_util::getInfo(info.processPID + config.pidOffset));
+#else
+          uint tmpPID = info.processPID + config.pidOffset;
+          FillProcInfo(&tmpPID);
+#endif
         }
         catch(std::runtime_error& e) {
           logger->sendMessage(std::string("Failed to read information for process ") +
@@ -267,6 +384,10 @@ void ProcessControlModule::mainLoop() {
     writeAll();
     group.readUntil(trigger.getId());
   }
+#ifndef WITH_PROCPS
+  procps_pids_unref(&infoptr);
+  procps_pids_unref(&infoptrPID);
+#endif
 }
 
 void ProcessControlModule::SetOnline(const int& pid) {
@@ -322,7 +443,11 @@ void ProcessControlModule::Failed() {
 void ProcessControlModule::CheckIsOnline(const int pid) {
   logger->sendMessage(
       std::string("Checking process status for process: ") + std::to_string(pid), logging::LogLevel::DEBUG);
+#ifdef WITH_PROCPS
   if(!proc_util::isProcessRunning(pid)) {
+#else
+  if(!proc_util::isProcessRunning(pid, infoptrPID)) {
+#endif
     logger->sendMessage(std::string("Child process with PID  ") + std::to_string(info.processPID) +
             " is not running, but it should run!",
         logging::LogLevel::ERROR);
