@@ -1,0 +1,15 @@
+{
+    "creators": [
+        {
+            "name": "Zenker, Klaus",
+            "affiliation": "Helmholtz-Zentrum Dresden-Rossendorf",
+            "orcid": "0000-0002-8120-6806"
+        }
+    ],
+    "title": "ChimeraTK Watchdog",
+    "access_right": "open",
+    "upload_type": "software",
+    "license": "LGPL-3.0",
+    "pub_id": "39904",
+    "description": "The ChimeraTK Watchdog is an application for system monitoring and process control and monitoring for Linux based operating systems. It is an C++ application, which is based on the ChimeraTK framework. Thanks to the framework it can make use of the different control system adapters available in ChimeraTK, which means it can become e.g a Tango server, EPICS IOC , OPC UA server and so on."
+}
