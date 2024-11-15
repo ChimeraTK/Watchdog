@@ -1,4 +1,10 @@
 # Watchdog server
+[![License](https://img.shields.io/badge/license-LGPLv3-blue.svg)](https://www.gnu.org/licenses/lgpl-3.0.html)
+[![DOI](https://rodare.hzdr.de/badge/DOI/10.14278/rodare.3259.svg)](https://doi.org/10.14278/rodare.3259)
+![Supported Platforms][api-platforms]
+
+[api-platforms]: https://img.shields.io/badge/platforms-linux%20-blue.svg "Supported Platforms"
+
 The watchdog server is used to monitor the system, the watchdog itself and addition processes (started by the watchdog) with respect to their memory consumption, runtime and more.
 
 ## Details about the watchdog server and its operation

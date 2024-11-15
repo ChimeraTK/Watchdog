@@ -1,0 +1,37 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: ChimeraTK Watchdog
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - given-names: Klaus
+    family-names: Zenker
+    orcid: 'https://orcid.org/0000-0002-8120-6806'
+    affiliation: Helmholtz-Zentrum Dresden-Rossendorf
+identifiers:
+  - type: doi
+    value: 10.14278/rodare.3259
+repository-code: 'https://github.com/ChimeraTK/Watchdog'
+abstract: >-
+  The ChimeraTK Watchdog is an application for system
+  monitoring and process control and monitoring for Linux
+  based operating systems. It is an C++ application, which
+  is based on the ChimeraTK framework. Thanks to the
+  framework it can make use of the different control system
+  adapters available in ChimeraTK, which means it can become
+  e.g a Tango server, EPICS IOC , OPC UA server and so on.
+keywords:
+  - ChimeraTK
+  - Control System
+  - OPC UA
+  - Tango
+  - EPICS
+license: LGPL-3.0
+commit: >-
+  https://github.com/ChimeraTK/Watchdog/commit/ef229b014881f2bd093f684222670fd4e917f3c0
+version: 02.01.02
+date-released: '2024-10-24'
