@@ -14,7 +14,7 @@ authors:
     affiliation: Helmholtz-Zentrum Dresden-Rossendorf
 identifiers:
   - type: doi
-    value: 10.14278/rodare.3259
+    value: 10.14278/rodare.3258
 repository-code: 'https://github.com/ChimeraTK/Watchdog'
 abstract: >-
   The ChimeraTK Watchdog is an application for system
@@ -32,6 +32,6 @@ keywords:
   - EPICS
 license: LGPL-3.0
 commit: >-
-  https://github.com/ChimeraTK/Watchdog/commit/ef229b014881f2bd093f684222670fd4e917f3c0
-version: 02.01.02
-date-released: '2024-10-24'
+  https://github.com/ChimeraTK/Watchdog/commit/b709401417ab15d182732d3745f357fe0f0d8a16
+version: 02.02.00
+date-released: '2024-11-18'
