@@ -54,5 +54,5 @@ struct LogFileModule : public ctk::ApplicationModule {
    */
   void mainLoop() override;
 
-  void terminate();
+  void terminate() override;
 };
