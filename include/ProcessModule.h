@@ -159,7 +159,7 @@ struct ProcessControlModule : public ProcessInfoModule {
   ProcessControlModule(ctk::ModuleGroup* owner, const std::string& name, const std::string& description,
       bool historyOn = false, const std::unordered_set<std::string>& tags = {},
       const std::string& pathToTrigger = "/Trigger/tick")
-  : ProcessInfoModule(owner, name, description, tags, pathToTrigger), _historyOn(historyOn){};
+  : ProcessInfoModule(owner, name, description, tags, pathToTrigger), _historyOn(historyOn) {};
 
   /**
    * Search for key words in the given stream (LogLevels like DEBUG, INFO...).

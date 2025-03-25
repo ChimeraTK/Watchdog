@@ -196,9 +196,7 @@ struct ProcessHandler {
   /**
    * \param sig Signal used to kill the process (e.g. SIGINT = 2, SIGKILL = 9)
    */
-  void setSigNum(int sig) {
-    signum = sig;
-  }
+  void setSigNum(int sig) { signum = sig; }
 
   /**
    * Tell all file handles to be closed when exec is called.
@@ -216,9 +214,7 @@ struct ProcessHandler {
    *
    * Depending on the level messages are put to the ostream.
    */
-  void SetLogLevel(const logging::LogLevel& level) {
-    log = level;
-  }
+  void SetLogLevel(const logging::LogLevel& level) { log = level; }
 
   /**
    * Setup handler for SIGCHLD signals.
@@ -234,9 +230,7 @@ struct ProcessHandler {
    *
    * \param timeout The time (given in seconds) to wait before killing the process using SIGKILL
    */
-  void setKillTimeout(const size_t timeout) {
-    killTimeout = timeout;
-  }
+  void setKillTimeout(const size_t timeout) { killTimeout = timeout; }
 
   void Disconnect();
 };

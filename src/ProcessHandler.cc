@@ -328,7 +328,7 @@ void ProcessHandler::setAllFHCloseOnExec() {
   rlim.rlim_max = 36;
 #endif
 
-    // Configured limit?
+  // Configured limit?
 #if defined(_SC_OPEN_MAX)
   max = sysconf(_SC_OPEN_MAX);
 #else
