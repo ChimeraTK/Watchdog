@@ -11,14 +11,16 @@
 #include "ProcessHandler.h"
 
 #include "sys_stat.h"
+
 #include <sys/wait.h>
 
 #include <fcntl.h> // open
+#include <signal.h>
+#include <unistd.h>
+
 #include <fstream>
 #include <iostream>
-#include <signal.h>
 #include <sstream>
-#include <unistd.h>
 
 // includes for set_all_close_on_exec
 #define _POSIX_C_SOURCE 200809L

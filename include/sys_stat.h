@@ -14,11 +14,12 @@
 #else
 #  include <libproc2/pids.h>
 #endif
+#include <string.h>
+
 #include <iostream>
 #include <map>
 #include <memory>
 #include <mutex>
-#include <string.h>
 #include <vector>
 
 /**

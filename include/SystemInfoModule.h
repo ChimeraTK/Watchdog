@@ -10,10 +10,11 @@
  */
 
 #include "sys_stat.h"
-#include <unordered_set>
 
 #include <ChimeraTK/ApplicationCore/ApplicationCore.h>
 #include <ChimeraTK/ApplicationCore/Logging.h>
+
+#include <unordered_set>
 
 namespace ctk = ChimeraTK;
 
