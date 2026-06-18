@@ -480,15 +480,15 @@ NetworkModule::NetworkModule(const std::string& device, ctk::ModuleGroup* owner,
     const std::string& description, const std::unordered_set<std::string>& tags, const std::string& pathToTrigger)
 : ctk::ApplicationModule(owner, name, description, tags), trigger(this, pathToTrigger, "", "Trigger input") {
   networkDeviceName = device;
-  status.data.emplace_back(ctk::ScalarOutput<double>{&status, "rx_packates", "1/s", "Received packates.", {"DAQ"}});
-  status.data.emplace_back(ctk::ScalarOutput<double>{&status, "tx_packates", "1/s", "Transmitted packates.", {"DAQ"}});
+  status.data.emplace_back(ctk::ScalarOutput<double>{&status, "rx_packets", "1/s", "Received packets.", {"DAQ"}});
+  status.data.emplace_back(ctk::ScalarOutput<double>{&status, "tx_packets", "1/s", "Transmitted packets.", {"DAQ"}});
   status.data.emplace_back(ctk::ScalarOutput<double>{&status, "rx", "MiB/s", "Data rate receive.", {"DAQ", "history"}});
   status.data.emplace_back(
       ctk::ScalarOutput<double>{&status, "tx", "MiB/s", "Data rate transmit.", {"DAQ", "history"}});
   status.data.emplace_back(
-      ctk::ScalarOutput<double>{&status, "rx_dropped", "1/s", "Dropped received packates.", {"DAQ", "history"}});
+      ctk::ScalarOutput<double>{&status, "rx_dropped", "1/s", "Dropped received packets.", {"DAQ", "history"}});
   status.data.emplace_back(
-      ctk::ScalarOutput<double>{&status, "tx_dropped", "1/s", "Dropped transmitted packates.", {"DAQ", "history"}});
+      ctk::ScalarOutput<double>{&status, "tx_dropped", "1/s", "Dropped transmitted packets.", {"DAQ", "history"}});
   status.data.emplace_back(ctk::ScalarOutput<double>{&status, "collisions", "1/s", "Number of collisions.", {"DAQ"}});
 }
 
@@ -505,8 +505,15 @@ void NetworkModule::read() {
     // check if this is the first reading and no data is stored yet in previousData
     if(previousData.files.size() != 0) {
       boost::posix_time::time_duration diff = tmp.time.at(i) - previousData.time.at(i);
-      status.data.at(i) =
-          1. * (tmp.data.at(i) - previousData.data.at(i)) / 1024 / 1024 / (diff.total_nanoseconds() / 1e9);
+      if(i == 2 || i == 3) {
+        // for data rate convert to MiB/s
+        status.data.at(i) =
+            (1. * (tmp.data.at(i) - previousData.data.at(i)) / 1024 / 1024 / (diff.total_nanoseconds() / 1e9));
+      }
+      else {
+        // for packet rates and collisions convert to 1/s
+        status.data.at(i) = (1. * (tmp.data.at(i) - previousData.data.at(i)) / (diff.total_nanoseconds() / 1e9));
+      }
     }
     in.close();
   }
