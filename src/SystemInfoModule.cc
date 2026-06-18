@@ -21,6 +21,10 @@
 #endif
 #include <sys/vfs.h>
 
+#include <dirent.h>
+
+#include <algorithm>
+#include <cctype>
 #include <cerrno>
 #include <chrono>
 #include <fstream>
@@ -33,9 +37,10 @@
 #undef likely
 #include "boost/date_time/posix_time/posix_time.hpp"
 
-SystemInfoModule::SystemInfoModule(ctk::ModuleGroup* owner, const std::string& name, const std::string& description,
-    const std::unordered_set<std::string>& tags, const std::string& pathToTrigger)
-: ctk::ApplicationModule(owner, name, description, tags), trigger(this, pathToTrigger, "", "Trigger input") {
+SystemInfoModule::SystemInfoModule(bool readProcessInfos, ctk::ModuleGroup* owner, const std::string& name,
+    const std::string& description, const std::unordered_set<std::string>& tags, const std::string& pathToTrigger)
+: ctk::ApplicationModule(owner, name, description, tags), readProcessInfos(readProcessInfos),
+  trigger(this, pathToTrigger, "", "Trigger input") {
   for(auto it = sysInfo.ibegin(); it != sysInfo.iend(); it++) {
     info.strInfos.emplace(
         it->first, ctk::ScalarOutput<std::string>{&info, space2underscore(it->first), "", space2underscore(it->first)});
@@ -51,6 +56,17 @@ SystemInfoModule::SystemInfoModule(ctk::ModuleGroup* owner, const std::string& n
   // read once to get delta later on
   procps_stat_reap(infoptr, STAT_REAP_CPUS_ONLY, items, 2);
 #endif
+  if(readProcessInfos) {
+    status.nProcesses = ctk::ScalarOutput<uint>{&status, "nProcesses", "", "Number of processes"};
+    status.nThreads = ctk::ScalarOutput<uint>{&status, "nThreads", "", "Number of threads"};
+    status.nRunning = ctk::ScalarOutput<uint>{&status, "nRunning", "", "Number of running processes"};
+    status.nSleeping = ctk::ScalarOutput<uint>{&status, "nSleeping", "", "Number of sleeping processes"};
+    status.nStopped = ctk::ScalarOutput<uint>{&status, "nStopped", "", "Number of stopped processes"};
+    status.nZombie = ctk::ScalarOutput<uint>{&status, "nZombie", "", "Number of zombie processes"};
+    status.nDead = ctk::ScalarOutput<uint>{&status, "nDead", "", "Number of dead processes"};
+    status.nWaiting = ctk::ScalarOutput<uint>{&status, "nWaiting", "", "Number of processes in waiting state"};
+    status.nIdle = ctk::ScalarOutput<uint>{&status, "nIdle", "", "Number of processes in idle state"};
+  }
 }
 
 void SystemInfoModule::mainLoop() {
@@ -172,6 +188,10 @@ void SystemInfoModule::mainLoop() {
     status.loadAvg = v_tmp;
 
     calculatePCPU();
+    status.t_cpu = readCPUTemperature();
+    if(readProcessInfos) {
+      fillProcessInfo();
+    }
 
     status.writeAll();
     logger->sendMessage("System data updated", logging::LogLevel::DEBUG);
@@ -275,6 +295,115 @@ void SystemInfoModule::calculatePCPU() {
   status.cpu_use->operator=(usage_tmp);
 }
 #endif
+
+double SystemInfoModule::readCPUTemperature() {
+  std::ifstream file("/sys/class/thermal/thermal_zone0/temp");
+  if(!file.is_open()) {
+    logger->sendMessage("Failed to open system file /sys/class/thermal/thermal_zone0/temp", logging::LogLevel::ERROR);
+    file.close();
+    return -1.;
+  }
+  double temp{0.};
+  file >> temp;
+  return temp / 1000.;
+}
+
+void SystemInfoModule::fillProcessInfo() {
+  std::vector<uint> nProcesses(8);
+  uint nThreads{0};
+  DIR* procDir = opendir("/proc");
+  if(procDir == nullptr) {
+    logger->sendMessage("Failed to open system folder /proc", logging::LogLevel::ERROR);
+    return;
+  }
+
+  struct dirent* entry = nullptr;
+  while((entry = readdir(procDir)) != nullptr) {
+    const std::string pidDirName = entry->d_name;
+    if(pidDirName.empty() ||
+        !std::all_of(pidDirName.begin(), pidDirName.end(), [](unsigned char c) { return std::isdigit(c) != 0; })) {
+      continue;
+    }
+
+    std::ifstream statFile("/proc/" + pidDirName + "/stat");
+    if(!statFile.is_open()) {
+      continue;
+    }
+
+    std::string line;
+    if(!std::getline(statFile, line)) {
+      continue;
+    }
+
+    const std::string::size_type statePos = line.rfind(") ");
+    if(statePos == std::string::npos || (statePos + 2) >= line.size()) {
+      continue;
+    }
+
+    std::istringstream statStream(line.substr(statePos + 2));
+    char state = '\0';
+    statStream >> state;
+    if(!statStream) {
+      continue;
+    }
+
+    std::string ignoredToken;
+    for(size_t i = 0; i < 16; ++i) {
+      if(!(statStream >> ignoredToken)) {
+        ignoredToken.clear();
+        break;
+      }
+    }
+
+    unsigned threadCount = 0;
+    if(!(statStream >> threadCount)) {
+      continue;
+    }
+
+    nProcesses.at(0)++;
+    nThreads += threadCount;
+
+    switch(state) {
+      case 'R':
+        nProcesses.at(1)++;
+        break;
+      case 'S':
+        nProcesses.at(2)++;
+        break;
+      case 'T':
+      case 't':
+        nProcesses.at(3)++;
+        break;
+      case 'Z':
+        nProcesses.at(4)++;
+        break;
+      case 'X':
+      case 'x':
+        nProcesses.at(5)++;
+        break;
+      case 'D':
+        nProcesses.at(6)++;
+        break;
+      case 'I':
+        nProcesses.at(7)++;
+        break;
+      default:
+        break;
+    }
+  }
+
+  closedir(procDir);
+
+  status.nProcesses = nProcesses.at(0);
+  status.nThreads = nThreads;
+  status.nRunning = nProcesses.at(1);
+  status.nSleeping = nProcesses.at(2);
+  status.nStopped = nProcesses.at(3);
+  status.nZombie = nProcesses.at(4);
+  status.nDead = nProcesses.at(5);
+  status.nWaiting = nProcesses.at(6);
+  status.nIdle = nProcesses.at(7);
+}
 
 std::string getTime(ctk::ApplicationModule* mod) {
   std::string str{"WATCHDOG_SERVER: "};

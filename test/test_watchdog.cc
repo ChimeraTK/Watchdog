@@ -22,7 +22,7 @@
 using namespace boost::unit_test_framework;
 
 struct testWD : public ctk::Application {
-  SystemInfoModule systemInfo{this, "system", "Module reading system information"};
+  SystemInfoModule systemInfo{false, this, "system", "Module reading system information"};
 
   ProcessGroup processGroup{this, "process", "Process module group"};
 

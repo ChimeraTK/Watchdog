@@ -29,8 +29,8 @@ std::set<std::pair<std::string, std::string>> findMountPoints() {
   while(in.good()) {
     in >> strin[0] >> strin[1] >> strin[2] >> strin[3] >> iin[0] >> iin[1];
     bfs::path p(strin[0]);
-    if(strin[0].substr(0, 7).compare("/dev/sd") == 0 || strin[0].substr(0, 8).compare("/dev/mmc")) {
-      if(strin[1].substr(0, 6).compare("/boot/") != 0) {
+    if(strin[0].substr(0, 7) == "/dev/sd" || strin[0].substr(0, 8) == "/dev/mmc") {
+      if(strin[1].substr(0, 6) != "/boot/" && strin[1].find("snap") == std::string::npos) {
         out.insert(std::make_pair(p.filename().string(), strin[1]));
       }
     }
@@ -76,6 +76,8 @@ WatchdogServer::WatchdogServer() : Application("WatchdogServer") {
       processGroup.processesLogExternal.emplace_back(&processGroup, processName, "process external log",
           "/Trigger/tick", "/processes/" + processName + "/config/logfileExternal");
     }
+    info = SystemInfoModule{config.get<ChimeraTK::Boolean>("Configuration/readSystemProcessesInfo", false), this,
+        "system", "Module reading system information"};
   }
   catch(std::out_of_range& e) {
     std::cerr << "Error in the xml file 'WatchdogServerConfig.xml': " << e.what() << std::endl;

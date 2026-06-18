@@ -13,6 +13,7 @@
 
 #include <ChimeraTK/ApplicationCore/ApplicationCore.h>
 #include <ChimeraTK/ApplicationCore/Logging.h>
+#include <ChimeraTK/ApplicationCore/ScalarAccessor.h>
 
 #include <unordered_set>
 
@@ -28,6 +29,19 @@ namespace ctk = ChimeraTK;
  */
 class SystemInfoModule : public ctk::ApplicationModule {
  private:
+  bool readProcessInfos; ///< If true process information is read and published as output variables. This is quite time
+                         ///< consuming and should be set to false if not needed.
+  double readCPUTemperature();
+  /**
+   * Read process information and fill the corresponding variables. This is done in a separate function since it is
+   * quite extensive and should not be mixed with the main loop function. The process information is read from
+   * \c /proc/[pid]/stat. Information that is read:
+   * - Number of processes on the system
+   * For each process that is found from \c //proc/[pid]/stat the following information is read:
+   * - State
+   * Finally the number of process in each state is counted and published as output variables.
+   */
+  void fillProcessInfo();
   SysInfo sysInfo;
 
   /**
@@ -66,8 +80,10 @@ class SystemInfoModule : public ctk::ApplicationModule {
   void calculatePCPU();
 
  public:
-  SystemInfoModule(ctk::ModuleGroup* owner, const std::string& name, const std::string& description,
-      const std::unordered_set<std::string>& tags = {}, const std::string& pathToTrigger = "/Trigger/tick");
+  SystemInfoModule(bool readProcessInfos, ctk::ModuleGroup* owner, const std::string& name,
+      const std::string& description, const std::unordered_set<std::string>& tags = {},
+      const std::string& pathToTrigger = "/Trigger/tick");
+  SystemInfoModule() = default;
 
   ctk::ScalarPushInput<uint64_t> trigger;
 
@@ -114,6 +130,8 @@ class SystemInfoModule : public ctk::ApplicationModule {
     ctk::ScalarOutput<double> cpu_useTotal{this, "cpuTotal", "%", "Total CPU usage", {"DAQ", "history"}};
     ctk::ArrayOutput<double> loadAvg{
         this, "loadAvg", "", 3, "Average load within last min, 5min, 15min", {"DAQ", "history"}};
+    ctk::ScalarOutput<double> t_cpu{this, "cpuTemperature", "°C", "CPU temperature", {"DAQ", "history"}};
+    ctk::ScalarOutput<uint> nProcesses, nThreads, nRunning, nSleeping, nStopped, nZombie, nDead, nWaiting, nIdle;
   } status{this, "status", "status of the system"};
   /** @} */
 
