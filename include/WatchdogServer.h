@@ -60,7 +60,7 @@ struct WatchdogServer : public ctk::Application {
 
   ctk::ConfigReader config{this, "Configuration", "WatchdogServerConfig.xml"};
 
-  SystemInfoModule info{this, "system", "Module reading system information"};
+  SystemInfoModule info;
 
   ProcessGroup processGroup{this, "processes", "Process module group"};
 

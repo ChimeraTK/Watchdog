@@ -25,6 +25,15 @@ This is the reason why also `watchdog-server-xmlGenerator` is installed in addit
 
 When upgrading the watchdag server package the persist file is temporaryly copied to `/etc/chimeratk/watchdog-server/` and treated as configuration file. In consequence the persist file is the same after upgrading the watchdog server packge. This is also true if the watchdog server package is removed and installed again later. Only purging the watchdog server package will remove the persist file and all the other configuration files.
 
+### System processes monitoring
+
+It is possible to monitor all processes of the system, i.e. collect the information:
+- Number of processes
+- Number of threads
+- Number of process in one of the states: running, sleeping, stopped, zombie, dead, waiting, idle
+
+By default this monitoring is off. It can be enabled by setting the variable `Configuration/readSystemProcessesInfo` true.
+
 ### MicroDAQ
 
 It also possible to aquire parameters of the watchdog in a file, produced by the `MicroDAQ` module from `ApplicationCore`. In order to enable this feature the  `WatchdogServerConfig.xml` file needs to be changed accordingly.
