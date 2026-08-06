@@ -30,7 +30,8 @@ std::set<std::pair<std::string, std::string>> findMountPoints() {
     in >> strin[0] >> strin[1] >> strin[2] >> strin[3] >> iin[0] >> iin[1];
     bfs::path p(strin[0]);
     if(strin[0].substr(0, 7) == "/dev/sd" || strin[0].substr(0, 8) == "/dev/mmc") {
-      if(strin[1].substr(0, 6) != "/boot/" && strin[1].find("snap") == std::string::npos) {
+      if(strin[1].substr(0, 6) != "/boot/" && strin[1].find("snap") == std::string::npos &&
+          strin[1].find("/var") == std::string::npos) {
         out.insert(std::make_pair(p.filename().string(), strin[1]));
       }
     }
